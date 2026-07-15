@@ -4,7 +4,6 @@
       {{ message }}
     </div>
   </transition>
-
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { ChatMessage } from '@/types/chat'
+import type { ChatInvitation, ChatMessage, ChatRoomListItem } from '@/types/chat'
 import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 interface WelcomePopup {
@@ -14,27 +14,33 @@ interface ChatState {
   onlineUsers: Set<string>
   roomMembers: Map<string, Set<string>>
   currentRoomId: string
+  rooms: ChatRoomListItem[]
+  invitations: ChatInvitation[]
+  hasUnreadInvitationNotice: boolean
 }
 
 export const useChatStore = defineStore('chat', {
   state: (): ChatState => ({
     messages: [],
     users: new Map(),
-    welcomePopup: { visible: false, message: "" },
+    welcomePopup: { visible: false, message: '' },
     onlineUsers: new Set(),
     roomMembers: new Map(),
-    currentRoomId: "lobby"
+    currentRoomId: 'lobby',
+    rooms: [],
+    invitations: [],
+    hasUnreadInvitationNotice: false,
   }),
 
   actions: {
     // #region 處理來自 WebSocket 的事件
     applyEvent(event: ChatWsEvent): void {
       switch (event.type) {
-        case "NEW_MESSAGE":
+        case 'NEW_MESSAGE':
           this.messages.push(event.payload.message)
           break
 
-        case "USER_ONLINE": {
+        case 'USER_ONLINE': {
           const { userId, name, account } = event.payload
           const id = String(userId)
 
@@ -66,6 +72,16 @@ export const useChatStore = defineStore('chat', {
         case 'LOBBY_SNAPSHOT':
           this.setLobbySnapshot(event.payload.userIds)
           break
+        case 'INVITATION_RECEIVED':
+          this.addInvitation(event.payload)
+          break
+
+        case 'ROOM_SNAPSHOT':
+          this.setRoomSnapshot(
+            event.payload.roomId,
+            event.payload.userIds,
+          )
+          break
 
         default:
           console.warn('[ChatStore] Unknown event:', event)
@@ -74,10 +90,62 @@ export const useChatStore = defineStore('chat', {
     // #endregion
 
     //# region 狀態處理
+    setInvitations(
+      invitations: ChatInvitation[],
+      options?: { markUnreadOnNew?: boolean },
+    ): void {
+      const markUnreadOnNew = options?.markUnreadOnNew ?? true
+      const existingIds = new Set(this.invitations.map((item) => item.invitationId))
+      const hasNewInvitation = invitations.some((item) => !existingIds.has(item.invitationId))
+
+      this.invitations = invitations
+
+      if (markUnreadOnNew && hasNewInvitation) {
+        this.hasUnreadInvitationNotice = true
+      }
+    },
+
+    addInvitation(invitation: ChatInvitation): void {
+      const exists = this.invitations.some((item) => item.invitationId === invitation.invitationId)
+
+      if (exists) return
+
+      this.invitations = [invitation, ...this.invitations]
+      this.hasUnreadInvitationNotice = true
+    },
+
+    removeInvitation(invitationId: string): void {
+      this.invitations = this.invitations.filter((item) => item.invitationId !== invitationId)
+    },
+
+    markInvitationsAsSeen(): void {
+      this.hasUnreadInvitationNotice = false
+    },
+
+    setRoomSnapshot(roomId: string, userIds: string[]): void {
+      const map = new Map(this.roomMembers)
+
+      map.set(
+        roomId,
+        new Set(userIds.map((userId) => String(userId))),
+      )
+
+      this.roomMembers = map
+    },
 
     setCurrentRoom(roomId: string): void {
       this.currentRoomId = roomId
       this.messages = []
+    },
+
+    setRooms(rooms: ChatRoomListItem[]): void {
+      this.rooms = rooms
+    },
+
+    upsertRoom(room: ChatRoomListItem): void {
+      const rooms = this.rooms.filter((item) => item.id !== room.id)
+      rooms.push(room)
+      this.rooms = rooms
     },
 
     handleUserOnline(payload: { userId: string; name: string; account: string }): void {
@@ -144,10 +212,8 @@ export const useChatStore = defineStore('chat', {
     },
 
     setLobbySnapshot(userIds: string[]): void {
-      const map = new Map(this.roomMembers)
-      map.set('lobby', new Set(userIds))
-      this.roomMembers = map
-    },
+      this.setRoomSnapshot('lobby', userIds)
+    }
     //# endregion
   },
 

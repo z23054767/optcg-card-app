@@ -52,6 +52,35 @@ export type LobbySnapshotEvent = BaseChatEvent<
   }
 >
 
+export type InvitationReceivedEvent = BaseChatEvent<
+  'INVITATION_RECEIVED',
+  {
+    invitationId: string
+
+    roomId: string
+    roomName: string | null
+
+    inviterId: string
+    inviterName: string
+    inviterAccount: string
+
+    inviteeId: string
+    inviteeAccount: string
+
+    status: 'pending' | 'accepted' | 'rejected'
+
+    createdAt: string
+  }
+>
+
+export type RoomSnapshotEvent = BaseChatEvent<
+  'ROOM_SNAPSHOT',
+  {
+    roomId: string
+    userIds: string[]
+  }
+>
+
 export type ChatWsEvent =
   | UserOnlineEvent
   | UserOfflineEvent
@@ -59,3 +88,5 @@ export type ChatWsEvent =
   | RoomLeftEvent
   | NewMessageEvent
   | LobbySnapshotEvent
+  | InvitationReceivedEvent
+  | RoomSnapshotEvent
