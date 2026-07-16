@@ -1,14 +1,22 @@
 <template>
-  <div class="flex mb-2" :class="isMine ? 'justify-end' : 'justify-start'">
-    <div class="max-w-[70%] rounded-lg px-3 py-2" :class="bubbleClass">
-      <!-- 名稱 -->
-      <div class="mb-1 text-xs" :class="nameClass">
-        {{ displayName }}
+  <div class="mb-2 flex" :class="isMine ? 'justify-end' : 'justify-start'">
+    <div class="flex max-w-[92%] items-end gap-1 sm:max-w-[82%] lg:max-w-[68%]" :class="rowClass">
+      <div class="shrink-0 px-0.5 pb-0.5 text-[11px] leading-none text-gray-400">
+        {{ formattedTime }}
       </div>
 
-      <!-- 訊息內容 -->
-      <div class="break-wrap-break-word">
-        {{ message.content }}
+      <div class="min-w-0">
+        <div v-if="!isMine" class="mb-1 px-1 text-[11px] leading-none text-gray-500">
+          {{ displayName }}
+        </div>
+        <div
+          class="w-fit rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm sm:text-[15px]"
+          :class="bubbleClass"
+        >
+          <div class="whitespace-pre-wrap break-words">
+            {{ message.content }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -54,11 +62,46 @@ const displayName = computed(() => {
   )
 })
 
-const bubbleClass = computed(() =>
-  isMine.value ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-900',
-)
+const rowClass = computed(() => (isMine.value ? 'flex-row-reverse' : 'flex-row'))
 
-const nameClass = computed(() =>
-  isMine.value ? 'text-right text-white/70' : 'text-left text-gray-600',
-)
+const bubbleClass = computed(() => {
+  if (isMine.value) {
+    return 'rounded-br-md bg-blue-500 text-white'
+  }
+
+  return 'rounded-bl-md border border-gray-200 bg-white text-gray-900'
+})
+
+const formattedTime = computed(() => formatMessageTime(props.message.createdAt))
+
+function formatMessageTime(isoTime: string): string {
+  const date = new Date(isoTime)
+
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const now = new Date()
+  const isSameDate =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+
+  const timeText = new Intl.DateTimeFormat('zh-TW', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
+
+  if (isSameDate) {
+    return timeText
+  }
+
+  const dateText = new Intl.DateTimeFormat('zh-TW', {
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+
+  return `${dateText} ${timeText}`
+}
 </script>

@@ -185,8 +185,21 @@ export interface ChatRoomListItem {
   /** 聊天室名稱 */
   name?: string | null
 
+  /** 聊天室頭像 */
+  avatarUrl?: string | null
+
   /** 建立者 ID */
   ownerId: string
+}
+
+/**
+ * 聊天室成員
+ */
+export interface ChatRoomMember {
+  userId: string
+  account: string
+  name: string
+  role: 'manager' | 'member'
 }
 
 /**
@@ -233,6 +246,39 @@ export interface InvitationReceivedEvent {
 }
 
 /**
+ * 聊天室被刪除事件
+ */
+export interface RoomDeletedEvent {
+  type: 'ROOM_DELETED'
+  payload: {
+    roomId: ChatRoomId
+  }
+}
+
+/**
+ * 成員被移除事件
+ */
+export interface MemberRemovedEvent {
+  type: 'MEMBER_REMOVED'
+  payload: {
+    roomId: ChatRoomId
+  }
+}
+
+/**
+ * 邀請被拒絕事件（推播給管理員）
+ */
+export interface InvitationRejectedEvent {
+  type: 'INVITATION_REJECTED'
+  payload: {
+    roomId: ChatRoomId
+    invitationId: string
+    inviteeId: string
+    inviteeAccount: string
+  }
+}
+
+/**
  * Server → Client WebSocket 訊息格式
  */
 export type ServerWsMessage =
@@ -244,3 +290,6 @@ export type ServerWsMessage =
   | LobbySnapshotEvent
   | RoomSnapshotEvent
   | InvitationReceivedEvent
+  | RoomDeletedEvent
+  | MemberRemovedEvent
+  | InvitationRejectedEvent

@@ -53,6 +53,7 @@ let onMessageHandler: ((message: ServerWsMessage) => void) | null = null;
  * WebSocket 成功建立後的 Callback
  */
 let onOpenHandler: (() => void) | null = null;
+let onAuthFailedHandler: (() => void) | null = null;
 
 /**
  * 重連最小等待時間
@@ -63,6 +64,8 @@ const RECONNECT_BASE_DELAY_MS = 1000;
  * 重連最大等待時間
  */
 const RECONNECT_MAX_DELAY_MS = 10000;
+const WS_CLOSE_AUTH_TOKEN_EXPIRED = 4001;
+const WS_CLOSE_AUTH_TOKEN_INVALID = 4002;
 
 /**
  * 清除重連 Timer
@@ -203,6 +206,19 @@ function createSocket(): void {
     socket = null;
     isConnecting = false;
 
+    const isAuthErrorClose =
+      event.code === WS_CLOSE_AUTH_TOKEN_EXPIRED ||
+      event.code === WS_CLOSE_AUTH_TOKEN_INVALID ||
+      event.reason === "AUTH_TOKEN_EXPIRED" ||
+      event.reason === "AUTH_TOKEN_INVALID";
+
+    if (isAuthErrorClose) {
+      shouldReconnect = false;
+      clearReconnectTimer();
+      onAuthFailedHandler?.();
+      return;
+    }
+
     if (shouldReconnect) {
       scheduleReconnect();
     }
@@ -220,10 +236,12 @@ export function connectChatSocket(
   token: string,
   onMessage: (message: ServerWsMessage) => void,
   onOpen?: () => void,
+  onAuthFailed?: () => void,
 ): void {
   connectionToken = token;
   onMessageHandler = onMessage;
   onOpenHandler = onOpen ?? null;
+  onAuthFailedHandler = onAuthFailed ?? null;
 
   /**
    * 開啟自動重連
@@ -294,6 +312,7 @@ export function disconnectChatSocket(): void {
   connectionToken = "";
   onMessageHandler = null;
   onOpenHandler = null;
+  onAuthFailedHandler = null;
 }
 
 /**

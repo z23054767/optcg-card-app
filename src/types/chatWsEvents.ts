@@ -81,6 +81,30 @@ export type RoomSnapshotEvent = BaseChatEvent<
   }
 >
 
+export type RoomDeletedEvent = BaseChatEvent<
+  'ROOM_DELETED',
+  {
+    roomId: string
+  }
+>
+
+export type MemberRemovedEvent = BaseChatEvent<
+  'MEMBER_REMOVED',
+  {
+    roomId: string
+  }
+>
+
+export type InvitationRejectedEvent = BaseChatEvent<
+  'INVITATION_REJECTED',
+  {
+    roomId: string
+    invitationId: string
+    inviteeId: string
+    inviteeAccount: string
+  }
+>
+
 export type ChatWsEvent =
   | UserOnlineEvent
   | UserOfflineEvent
@@ -90,3 +114,6 @@ export type ChatWsEvent =
   | LobbySnapshotEvent
   | InvitationReceivedEvent
   | RoomSnapshotEvent
+  | RoomDeletedEvent
+  | MemberRemovedEvent
+  | InvitationRejectedEvent

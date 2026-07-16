@@ -34,36 +34,86 @@
             🏠
           </span>
 
-          <span class="truncate">大廳聊天室</span>
+          <span class="truncate">大廳</span>
         </button>
       </div>
 
-      <div>
-        <div class="text-xs font-semibold text-gray-400 px-2 mb-2">我的聊天室</div>
+      <div class="space-y-3">
+        <div class="text-xs font-semibold text-gray-400 px-2 mb-1">我的聊天室</div>
 
-        <button
-          v-for="room in rooms"
-          :key="room.id"
-          class="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition"
-          :class="
-            currentRoomId === room.id
-              ? 'bg-blue-50 text-blue-700 font-semibold'
-              : 'hover:bg-gray-100 text-gray-700'
-          "
-          :title="getRoomName(room)"
-          @click="$emit('switch-room', room.id)"
-        >
-          <span
-            class="w-7 h-7 rounded-full flex items-center justify-center"
-            :class="room.type === 'private' ? 'bg-purple-100' : 'bg-green-100'"
+        <div>
+          <button
+            class="mb-1 flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs font-semibold text-gray-500 hover:bg-gray-100"
+            type="button"
+            @click="privateCollapsed = !privateCollapsed"
           >
-            {{ room.type === 'private' ? '🔒' : '👥' }}
-          </span>
+            <span>朋友</span>
+            <span class="text-sm transition-transform" :class="privateCollapsed ? '-rotate-90' : 'rotate-0'">
+              ▾
+            </span>
+          </button>
+          <div v-show="!privateCollapsed">
+            <button
+              v-for="room in privateRooms"
+              :key="room.id"
+              class="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition"
+              :class="
+                currentRoomId === room.id
+                  ? 'bg-blue-50 text-blue-700 font-semibold'
+                  : 'hover:bg-gray-100 text-gray-700'
+              "
+              :title="getRoomName(room)"
+              @click="$emit('switch-room', room.id)"
+            >
+              <span class="w-7 h-7 rounded-full flex items-center justify-center bg-purple-100"> 🔒 </span>
+              <span class="truncate">{{ getRoomName(room) }}</span>
+            </button>
+            <div v-if="privateRooms.length === 0" class="px-3 py-2 text-xs text-gray-400">
+              尚無朋友聊天室
+            </div>
+          </div>
+        </div>
 
-          <span class="truncate">
-            {{ getRoomName(room) }}
-          </span>
-        </button>
+        <div>
+          <button
+            class="mb-1 flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs font-semibold text-gray-500 hover:bg-gray-100"
+            type="button"
+            @click="groupCollapsed = !groupCollapsed"
+          >
+            <span>群組聊天</span>
+            <span class="text-sm transition-transform" :class="groupCollapsed ? '-rotate-90' : 'rotate-0'">
+              ▾
+            </span>
+          </button>
+          <div v-show="!groupCollapsed">
+            <button
+              v-for="room in groupRooms"
+              :key="room.id"
+              class="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition"
+              :class="
+                currentRoomId === room.id
+                  ? 'bg-blue-50 text-blue-700 font-semibold'
+                  : 'hover:bg-gray-100 text-gray-700'
+              "
+              :title="getRoomName(room)"
+              @click="$emit('switch-room', room.id)"
+            >
+              <span class="w-7 h-7 rounded-full flex items-center justify-center bg-green-100 overflow-hidden">
+                <img
+                  v-if="room.avatarUrl"
+                  :src="room.avatarUrl"
+                  alt="群組頭像"
+                  class="w-full h-full object-cover"
+                />
+                <span v-else>👥</span>
+              </span>
+              <span class="truncate">{{ getRoomName(room) }}</span>
+            </button>
+            <div v-if="groupRooms.length === 0" class="px-3 py-2 text-xs text-gray-400">
+              尚無群組聊天室
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </aside>
@@ -71,13 +121,17 @@
   <div v-if="open" class="fixed inset-0 z-30 bg-black/40 sm:hidden" @click="$emit('close')"></div>
 </template>
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import type { ChatRoomListItem } from '@/types/chat'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   rooms: ChatRoomListItem[]
   currentRoomId: string
 }>()
+
+const privateCollapsed = ref(false)
+const groupCollapsed = ref(false)
 
 defineEmits<{
   close: []
@@ -87,4 +141,12 @@ defineEmits<{
 function getRoomName(room: ChatRoomListItem): string {
   return room.name?.trim() || room.id
 }
+
+const privateRooms = computed(() =>
+  props.rooms.filter((room) => room.type === 'private'),
+)
+
+const groupRooms = computed(() =>
+  props.rooms.filter((room) => room.type === 'group'),
+)
 </script>

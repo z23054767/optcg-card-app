@@ -16,9 +16,32 @@
     </div>
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-2">
-        <button class="text-sm px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
+        <button
+          v-if="showCreateButton"
+          class="text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap"
           @click="$emit('create-room')">
-          建立
+          建立群組聊天
+        </button>
+        <button
+          v-if="showInviteMembersButton"
+          class="text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap"
+          @click="$emit('invite-members')"
+        >
+          邀請成員
+        </button>
+        <button
+          v-if="showManageGroupButton"
+          class="text-sm px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 whitespace-nowrap"
+          @click="$emit('open-manage-group')"
+        >
+          群組管理
+        </button>
+        <button
+          v-if="showMembersButton"
+          class="text-sm px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 whitespace-nowrap"
+          @click="$emit('open-members')"
+        >
+          成員
         </button>
         <span class="hidden sm:inline text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
           {{ onlineCount }} 人在線
@@ -46,12 +69,19 @@ defineProps<{
   currentRoomId: string
   onlineCount: number
   hasUnreadInvitations: boolean
+  showCreateButton: boolean
+  showInviteMembersButton: boolean
+  showManageGroupButton: boolean
+  showMembersButton: boolean
 }>()
 
 defineEmits<{
   'toggle-sidebar': []
   'create-room': []
+  'invite-members': []
+  'open-manage-group': []
   'back-to-lobby': []
   'toggle-user-menu': []
+  'open-members': []
 }>()
 </script>

@@ -37,7 +37,7 @@ export const useChatStore = defineStore('chat', {
     applyEvent(event: ChatWsEvent): void {
       switch (event.type) {
         case 'NEW_MESSAGE':
-          this.messages.push(event.payload.message)
+          this.appendMessage(event.payload.message)
           break
 
         case 'USER_ONLINE': {
@@ -81,6 +81,18 @@ export const useChatStore = defineStore('chat', {
             event.payload.roomId,
             event.payload.userIds,
           )
+          break
+
+        case 'ROOM_DELETED':
+          this.removeRoom(event.payload.roomId)
+          break
+
+        case 'MEMBER_REMOVED':
+          this.removeRoom(event.payload.roomId)
+          break
+
+        case 'INVITATION_REJECTED':
+          // 管理員側在 ChatView 直接處理，store 不需額外狀態
           break
 
         default:
@@ -138,6 +150,42 @@ export const useChatStore = defineStore('chat', {
       this.messages = []
     },
 
+    setMessages(messages: ChatMessage[]): void {
+      const map = new Map<string, ChatMessage>()
+
+      for (const message of messages) {
+        map.set(message.id, message)
+      }
+
+      this.messages = Array.from(map.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      )
+    },
+
+    prependMessages(messages: ChatMessage[]): void {
+      const map = new Map<string, ChatMessage>()
+
+      for (const message of messages) {
+        map.set(message.id, message)
+      }
+
+      for (const message of this.messages) {
+        map.set(message.id, message)
+      }
+
+      this.messages = Array.from(map.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      )
+    },
+
+    appendMessage(message: ChatMessage): void {
+      const exists = this.messages.some((item) => item.id === message.id)
+
+      if (exists) return
+
+      this.messages = [...this.messages, message]
+    },
+
     setRooms(rooms: ChatRoomListItem[]): void {
       this.rooms = rooms
     },
@@ -146,6 +194,10 @@ export const useChatStore = defineStore('chat', {
       const rooms = this.rooms.filter((item) => item.id !== room.id)
       rooms.push(room)
       this.rooms = rooms
+    },
+
+    removeRoom(roomId: string): void {
+      this.rooms = this.rooms.filter((item) => item.id !== roomId)
     },
 
     handleUserOnline(payload: { userId: string; name: string; account: string }): void {
