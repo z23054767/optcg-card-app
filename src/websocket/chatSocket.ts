@@ -136,12 +136,12 @@ function createSocket(): void {
   /**
    * 建立 WebSocket URL
    */
-  const webSocketURL = `${protocol}://localhost:3000/chat?token=${connectionToken}`;
+  const webSocketURL = `${protocol}://localhost:3000/chat?token=${encodeURIComponent(connectionToken)}`;
 
   isConnecting = true;
   socket = new WebSocket(webSocketURL);
 
-  console.log("[WS] connect to", webSocketURL);
+  console.log("[WS] connect to", `${protocol}://localhost:3000/chat`);
 
   /**
    * WebSocket 建立成功
@@ -208,9 +208,7 @@ function createSocket(): void {
 
     const isAuthErrorClose =
       event.code === WS_CLOSE_AUTH_TOKEN_EXPIRED ||
-      event.code === WS_CLOSE_AUTH_TOKEN_INVALID ||
-      event.reason === "AUTH_TOKEN_EXPIRED" ||
-      event.reason === "AUTH_TOKEN_INVALID";
+      event.code === WS_CLOSE_AUTH_TOKEN_INVALID;
 
     if (isAuthErrorClose) {
       shouldReconnect = false;

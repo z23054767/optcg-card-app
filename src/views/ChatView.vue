@@ -650,7 +650,7 @@ function openInvitations(): void {
 function logout(): void {
   disconnectChatSocket()
   auth.logout()
-  router.push('/login')
+  void router.replace('/login')
 }
 
 function toggleSidebar(): void {
@@ -759,10 +759,19 @@ onMounted(async () => {
       void loadMyInvitations()
       joinRoom(chat.currentRoomId)
     },
-    () => {
+    async () => {
+      const currentRoute = router.currentRoute.value
+
       disconnectChatSocket()
       auth.logout()
-      void router.push('/login')
+
+      await router.replace({
+        path: "/login",
+        query: {
+          redirect: currentRoute.fullPath,
+          reason: "expired",
+        },
+      })
     },
   )
 
