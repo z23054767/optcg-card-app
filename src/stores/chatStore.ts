@@ -90,7 +90,9 @@ export const useChatStore = defineStore('chat', {
         case 'MEMBER_REMOVED':
           this.removeRoom(event.payload.roomId)
           break
-
+        case "INVITATION_ACCEPTED":
+          // 管理員側在 ChatView 重新取得成員與邀請資料
+          break
         case 'INVITATION_REJECTED':
           // 管理員側在 ChatView 直接處理，store 不需額外狀態
           break

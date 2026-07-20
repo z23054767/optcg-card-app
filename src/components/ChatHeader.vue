@@ -1,63 +1,102 @@
 <template>
-  <header class="flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10">
-    <div class="flex items-center gap-3 min-w-0">
-      <button class="sm:hidden text-xl" @click="$emit('toggle-sidebar')">☰</button>
+  <header class="sticky top-0 z-10 border-b bg-white">
+    <div class="flex min-h-14 items-center gap-3 px-3 py-2 sm:px-4">
+      <button type="button"
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-gray-600 hover:bg-gray-100 sm:hidden"
+        aria-label="開啟聊天室選單" @click="$emit('toggle-sidebar')">
+        ☰
+      </button>
 
-      <div class="min-w-0">
-        <h1 class="text-lg font-semibold text-gray-800 truncate">
-          {{ title }}
-        </h1>
+      <div class="min-w-0 flex-1">
+        <div class="min-w-0">
+          <h1 class="truncate text-base font-semibold text-gray-800 sm:text-lg">
+            {{ title }}
+          </h1>
 
-        <button v-if="currentRoomId !== 'lobby'" class="text-xs text-blue-600 hover:underline"
-          @click="$emit('back-to-lobby')">
-          回到大廳
-        </button>
+          <div class="mt-0.5 flex items-center gap-2 text-xs">
+            <button v-if="currentRoomId !== 'lobby'" type="button"
+              class="text-blue-600 hover:text-blue-700 hover:underline" @click="$emit('back-to-lobby')">
+              ← 回到大廳
+            </button>
+
+            <span v-if="currentRoomId !== 'lobby'" class="text-gray-300">
+              |
+            </span>
+
+            <span class="inline-flex items-center gap-1 text-emerald-600">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+              {{ onlineCount }} 人在線
+            </span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2">
-        <button
-          v-if="showCreateButton"
-          class="text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap"
+
+      <div class="hidden shrink-0 items-center gap-2 sm:flex">
+        <button v-if="showCreateButton" type="button"
+          class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
           @click="$emit('create-room')">
           建立群組聊天
         </button>
-        <button
-          v-if="showInviteMembersButton"
-          class="text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap"
-          @click="$emit('invite-members')"
-        >
+
+        <button v-if="showInviteMembersButton" type="button"
+          class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+          @click="$emit('invite-members')">
           邀請成員
         </button>
-        <button
-          v-if="showManageGroupButton"
-          class="text-sm px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 whitespace-nowrap"
-          @click="$emit('open-manage-group')"
-        >
+
+        <button v-if="showManageGroupButton" type="button"
+          class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          @click="$emit('open-manage-group')">
           群組管理
         </button>
-        <button
-          v-if="showMembersButton"
-          class="text-sm px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 whitespace-nowrap"
-          @click="$emit('open-members')"
-        >
+
+        <button v-if="showMembersButton" type="button"
+          class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          @click="$emit('open-members')">
           成員
         </button>
-        <span class="hidden sm:inline text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
-          {{ onlineCount }} 人在線
-        </span>
       </div>
-      <button
-        class="relative w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center shrink-0"
-        @click="$emit('toggle-user-menu')"
-      >
+
+      <button type="button"
+        class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200"
+        aria-label="開啟使用者選單" @click="$emit('toggle-user-menu')">
         👤
-        <span
-          v-if="hasUnreadInvitations"
-          class="absolute -top-1 -right-1 h-4 min-w-4 rounded-full bg-red-500 text-white text-[10px] leading-4 text-center px-1 font-bold"
-        >
+
+        <span v-if="hasUnreadInvitations"
+          class="absolute -right-1 -top-1 h-4 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
           !
         </span>
+      </button>
+    </div>
+
+    <div v-if="
+      showCreateButton ||
+      showInviteMembersButton ||
+      showManageGroupButton ||
+      showMembersButton
+    " class="flex gap-2 overflow-x-auto border-t border-gray-100 px-3 py-2 sm:hidden">
+      <button v-if="showCreateButton" type="button"
+        class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+        @click="$emit('create-room')">
+        建立群組聊天
+      </button>
+
+      <button v-if="showInviteMembersButton" type="button"
+        class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+        @click="$emit('invite-members')">
+        邀請成員
+      </button>
+
+      <button v-if="showManageGroupButton" type="button"
+        class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        @click="$emit('open-manage-group')">
+        群組管理
+      </button>
+
+      <button v-if="showMembersButton" type="button"
+        class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        @click="$emit('open-members')">
+        成員
       </button>
     </div>
   </header>

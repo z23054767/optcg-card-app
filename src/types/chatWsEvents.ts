@@ -95,6 +95,16 @@ export type MemberRemovedEvent = BaseChatEvent<
   }
 >
 
+export type InvitationAcceptedEvent = BaseChatEvent<
+  "INVITATION_ACCEPTED",
+  {
+    roomId: string
+    invitationId: string
+    inviteeId: string
+    inviteeAccount: string
+  }
+>
+
 export type InvitationRejectedEvent = BaseChatEvent<
   'INVITATION_REJECTED',
   {
@@ -116,4 +126,5 @@ export type ChatWsEvent =
   | RoomSnapshotEvent
   | RoomDeletedEvent
   | MemberRemovedEvent
+  | InvitationAcceptedEvent
   | InvitationRejectedEvent

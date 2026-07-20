@@ -266,6 +266,19 @@ export interface MemberRemovedEvent {
 }
 
 /**
+ * 邀請被接受事件（推播給管理員）
+ */
+export type InvitationAcceptedEvent = {
+  type: "INVITATION_ACCEPTED"
+  payload: {
+    roomId: string
+    invitationId: string
+    inviteeId: string
+    inviteeAccount: string
+  }
+}
+
+/**
  * 邀請被拒絕事件（推播給管理員）
  */
 export interface InvitationRejectedEvent {
@@ -292,4 +305,5 @@ export type ServerWsMessage =
   | InvitationReceivedEvent
   | RoomDeletedEvent
   | MemberRemovedEvent
+  | InvitationAcceptedEvent
   | InvitationRejectedEvent

@@ -6,15 +6,11 @@
     <div class="flex flex-col flex-1 min-w-0 bg-white shadow-lg">
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId"
         :online-count="chat.currentRoomOnlineCount" :has-unread-invitations="chat.hasUnreadInvitationNotice"
-        :show-create-button="canCreateRoom"
-        :show-invite-members-button="canInviteMembers"
-        :show-manage-group-button="canManageGroup"
-        :show-members-button="isCurrentGroupRoom"
-        @open-sidebar="sidebarOpen = true"
-        @create-room="showCreateRoom = true" @back-to-lobby="backToLobby" @toggle-sidebar="toggleSidebar"
-        @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
-        @invite-members="showInviteMembers = true"
-        @open-manage-group="openGroupManage" />
+        :show-create-button="canCreateRoom" :show-invite-members-button="canInviteMembers"
+        :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
+        @open-sidebar="sidebarOpen = true" @create-room="showCreateRoom = true" @back-to-lobby="backToLobby"
+        @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
+        @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
 
       <UserMenu :open="showUserMenu" :name="auth.user?.name || auth.user?.account || '使用者'"
         :account="auth.user?.account || ''" :invitation-count="chat.invitations.length" @close="showUserMenu = false"
@@ -22,40 +18,20 @@
 
       <CreateRoomModal v-if="showCreateRoom" :loading="creatingRoom" @close="showCreateRoom = false"
         @create="createRoom" />
-      <InviteMembersModal
-        v-if="showInviteMembers"
-        :loading="invitingMembers"
-        @close="showInviteMembers = false"
-        @invite="inviteMembers"
-      />
-      <GroupManageModal
-        v-if="showGroupManage && currentRoom"
-        :room="currentRoom"
-        :members="roomMembers"
-        :loading-members="loadingRoomMembers"
-        :updating-info="updatingGroupInfo"
-        :deleting-room="deletingGroupRoom"
-        :removing-user-id="removingMemberUserId"
-        :transferring-user-id="transferringManagerUserId"
-        :invitations="roomInvitations"
-        :loading-invitations="loadingRoomInvitations"
-        :re-inviting-invitee-id="reInvitingInviteeId"
-        @close="showGroupManage = false"
-        @save-info="saveGroupInfo"
-        @remove-member="removeMember"
-        @transfer-manager="transferManager"
-        @delete-room="deleteGroupRoom"
-        @re-invite="reInvite"
-      />
+      <InviteMembersModal v-if="showInviteMembers" :loading="invitingMembers" @close="showInviteMembers = false"
+        @invite="inviteMembers" />
+      <GroupManageModal v-if="showGroupManage && currentRoom" :room="currentRoom" :members="roomMembers"
+        :loading-members="loadingRoomMembers" :updating-info="updatingGroupInfo" :deleting-room="deletingGroupRoom"
+        :removing-user-id="removingMemberUserId" :transferring-user-id="transferringManagerUserId"
+        :invitations="roomInvitations" :loading-invitations="loadingRoomInvitations"
+        :re-inviting-invitee-id="reInvitingInviteeId" @close="showGroupManage = false" @save-info="saveGroupInfo"
+        @remove-member="removeMember" @transfer-manager="transferManager" @delete-room="deleteGroupRoom"
+        @re-invite="reInvite" />
 
       <InvitationModal v-if="showInvitations" :invitations="chat.invitations" @close="showInvitations = false"
         @accept="acceptInvitation" @reject="rejectInvitation" />
-      <RoomMembersModal
-        v-if="showRoomMembers"
-        :members="roomMembers"
-        :loading="loadingRoomMembers"
-        @close="showRoomMembers = false"
-      />
+      <RoomMembersModal v-if="showRoomMembers" :members="roomMembers" :loading="loadingRoomMembers"
+        @close="showRoomMembers = false" />
 
       <main ref="messagesEl" class="relative flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3 bg-gray-50"
         @scroll="onScroll">
@@ -86,19 +62,12 @@
       <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
 
       <!-- Toast 通知 -->
-      <Transition
-        enter-active-class="transition-all duration-300"
-        enter-from-class="opacity-0 translate-y-2"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition-all duration-200"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 translate-y-2"
-      >
-        <div
-          v-if="toast"
+      <Transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 translate-y-2"
+        enter-to-class="opacity-100 translate-y-0" leave-active-class="transition-all duration-200"
+        leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-2">
+        <div v-if="toast"
           class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white pointer-events-none"
-          :class="toast.type === 'success' ? 'bg-gray-800' : 'bg-red-600'"
-        >
+          :class="toast.type === 'success' ? 'bg-gray-800' : 'bg-red-600'">
           {{ toast.type === 'success' ? '✓ ' : '✕ ' }}{{ toast.message }}
         </div>
       </Transition>
@@ -199,15 +168,15 @@ const filteredMessages = computed(() =>
 )
 type MessageTimelineItem =
   | {
-      type: 'separator'
-      key: string
-      label: string
-    }
+    type: 'separator'
+    key: string
+    label: string
+  }
   | {
-      type: 'message'
-      key: string
-      message: ChatMessageType
-    }
+    type: 'message'
+    key: string
+    message: ChatMessageType
+  }
 
 const messageTimelineItems = computed<MessageTimelineItem[]>(() => {
   const nowDate = new Date(dateLabelAnchor.value)
@@ -502,9 +471,22 @@ async function acceptInvitation(invitationId: string): Promise<void> {
 }
 
 async function rejectInvitation(invitationId: string): Promise<void> {
-  await rejectChatInvitationApi(invitationId)
+  try {
+    await rejectChatInvitationApi(invitationId)
 
-  chat.removeInvitation(invitationId)
+    chat.removeInvitation(invitationId)
+
+    /**
+     * 關閉邀請視窗，避免列表清空後仍停留在 Modal。
+     */
+    if (chat.invitations.length === 0) {
+      showInvitations.value = false
+    }
+
+    showToast('已拒絕聊天室邀請')
+  } catch {
+    showToast('拒絕邀請失敗，請稍後再試', 'error')
+  }
 }
 
 async function loadRoomMembers(roomId: string): Promise<void> {
@@ -555,7 +537,10 @@ async function loadRoomInvitations(roomId: string): Promise<void> {
 
   try {
     const response = await getRoomInvitationsApi(roomId)
-    roomInvitations.value = response.invitations ?? []
+
+    roomInvitations.value = [...(response.invitations ?? [])]
+  } catch {
+    showToast('取得邀請紀錄失敗，請稍後再試', 'error')
   } finally {
     loadingRoomInvitations.value = false
   }
@@ -565,8 +550,13 @@ async function reInvite(inviteeAccount: string): Promise<void> {
   if (!canManageGroup.value) return
 
   // 從邀請列表找到 inviteeId 以顯示 loading
-  const inv = roomInvitations.value.find((i) => i.inviteeAccount === inviteeAccount)
-  if (inv) reInvitingInviteeId.value = inv.inviteeId
+  const inv = roomInvitations.value.find(
+    (item) => item.inviteeAccount === inviteeAccount,
+  )
+
+  if (inv) {
+    reInvitingInviteeId.value = String(inv.inviteeId)
+  }
 
   try {
     await inviteChatRoomMembersApi(chat.currentRoomId, { inviteEmails: [inviteeAccount] })
@@ -691,43 +681,79 @@ onMounted(async () => {
   connectChatSocket(
     auth.token,
     (message: ServerWsMessage) => {
-      if (message.type === 'ROOM_DELETED') {
-        const deletedRoomId = message.payload.roomId
-        chat.applyEvent(message)
-        if (chat.currentRoomId === deletedRoomId) {
-          showGroupManage.value = false
-          void switchRoom('lobby')
-        }
-        return
-      }
+      switch (message.type) {
+        case "ROOM_DELETED": {
+          const { roomId } = message.payload
 
-      if (message.type === 'MEMBER_REMOVED') {
-        const removedRoomId = message.payload.roomId
-        chat.applyEvent(message)
-        // 若正在被移除的聊天室，強制切回大廳
-        if (chat.currentRoomId === removedRoomId) {
-          void switchRoom('lobby')
-          showToast('你已被移出此聊天室', 'error')
-        }
-        return
-      }
+          chat.applyEvent(message)
 
-      if (message.type === 'INVITATION_REJECTED') {
-        // in-place 更新：直接改狀態，立刻反映 UI
-        const idx = roomInvitations.value.findIndex(
-          (i) => i.invitationId === message.payload.invitationId,
-        )
-        if (idx !== -1) {
-          roomInvitations.value[idx]!.status = 'rejected'
-        }
-        // 若管理員 modal 正開著，無論 idx 結果如何都重新載入（保證同步最新資料）
-        if (showGroupManage.value) {
-          void loadRoomInvitations(message.payload.roomId)
-        }
-        return
-      }
+          if (chat.currentRoomId === roomId) {
+            showGroupManage.value = false
+            void switchRoom("lobby")
+          }
 
-      chat.applyEvent(message)
+          break
+        }
+
+        case "MEMBER_REMOVED": {
+          const { roomId } = message.payload
+
+          chat.applyEvent(message)
+
+          if (chat.currentRoomId === roomId) {
+            void switchRoom("lobby")
+            showToast("你已被移出此聊天室", "error")
+          }
+
+          break
+        }
+
+        case "INVITATION_ACCEPTED": {
+          const { roomId } = message.payload
+
+          console.log("[ChatView] 收到邀請接受事件", message.payload)
+
+          if (
+            showGroupManage.value &&
+            chat.currentRoomId === roomId
+          ) {
+            void Promise.all([
+              loadRoomMembers(roomId),
+              loadRoomInvitations(roomId),
+            ])
+          }
+
+          break
+        }
+
+        case "INVITATION_REJECTED": {
+          const { roomId, invitationId } = message.payload
+
+          console.log("[ChatView] 收到邀請拒絕事件", message.payload)
+
+          roomInvitations.value = roomInvitations.value.map((invitation) =>
+            invitation.invitationId === invitationId
+              ? {
+                ...invitation,
+                status: "rejected",
+              }
+              : invitation,
+          )
+
+          if (
+            showGroupManage.value &&
+            chat.currentRoomId === roomId
+          ) {
+            void loadRoomInvitations(roomId)
+          }
+
+          break
+        }
+
+        default:
+          chat.applyEvent(message)
+          break
+      }
     },
     () => {
       void loadMyInvitations()
