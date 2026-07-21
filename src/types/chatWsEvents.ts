@@ -115,6 +115,16 @@ export type InvitationRejectedEvent = BaseChatEvent<
   }
 >
 
+
+export type RoomManagerTransferredEvent = BaseChatEvent<
+  'ROOM_MANAGER_TRANSFERRED',
+  {
+    roomId: string
+    previousOwnerId: string
+    ownerId: string
+  }
+>
+
 export type ChatWsEvent =
   | UserOnlineEvent
   | UserOfflineEvent
@@ -128,3 +138,4 @@ export type ChatWsEvent =
   | MemberRemovedEvent
   | InvitationAcceptedEvent
   | InvitationRejectedEvent
+  | RoomManagerTransferredEvent

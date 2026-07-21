@@ -703,11 +703,15 @@ async function transferManager(userId: string): Promise<void> {
     await transferChatRoomManagerApi(chat.currentRoomId, {
       targetUserId: userId,
     })
+
+    showGroupManage.value = false
+
     await loadMyRooms()
     await loadRoomMembers(chat.currentRoomId)
-    showToast('已成功轉讓管理員')
+
+    showToast("已成功轉讓管理員")
   } catch {
-    showToast('轉讓失敗，請稍後再試', 'error')
+    showToast("轉讓失敗，請稍後再試", "error")
   } finally {
     transferringManagerUserId.value = null
   }
@@ -809,6 +813,25 @@ onMounted(async () => {
           if (chat.currentRoomId === roomId) {
             void switchRoom("lobby")
             showToast("你已被移出此聊天室", "error")
+          }
+
+          break
+        }
+
+        case "ROOM_MANAGER_TRANSFERRED": {
+          const { roomId, ownerId } = message.payload
+
+          chat.applyEvent(message)
+
+          if (chat.currentRoomId === roomId) {
+            void loadRoomMembers(roomId)
+
+            if (String(ownerId) === String(auth.userId)) {
+              showToast("你已成為聊天室管理員")
+            } else {
+              showGroupManage.value = false
+              showToast("聊天室管理員已變更")
+            }
           }
 
           break

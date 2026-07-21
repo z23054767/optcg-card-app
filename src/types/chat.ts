@@ -291,6 +291,19 @@ export interface InvitationRejectedEvent {
   }
 }
 
+
+/**
+ * 聊天室管理員已轉讓事件
+ */
+export interface RoomManagerTransferredEvent {
+  type: 'ROOM_MANAGER_TRANSFERRED'
+  payload: {
+    roomId: ChatRoomId
+    previousOwnerId: string
+    ownerId: string
+  }
+}
+
 /**
  * Server → Client WebSocket 訊息格式
  */
@@ -307,3 +320,4 @@ export type ServerWsMessage =
   | MemberRemovedEvent
   | InvitationAcceptedEvent
   | InvitationRejectedEvent
+  | RoomManagerTransferredEvent
