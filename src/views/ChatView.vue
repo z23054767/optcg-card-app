@@ -3,7 +3,7 @@
     <ChatSidebar :open="sidebarOpen" :rooms="chat.rooms" :current-room-id="chat.currentRoomId"
       @close="sidebarOpen = false" @switch-room="switchRoom" />
 
-    <div class="flex flex-col flex-1 min-w-0 bg-white shadow-lg">
+    <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId"
         :online-count="chat.currentRoomOnlineCount" :has-unread-invitations="chat.hasUnreadInvitationNotice"
         :show-create-button="canCreateRoom" :show-invite-members-button="canInviteMembers"
@@ -33,8 +33,17 @@
       <RoomMembersModal v-if="showRoomMembers" :members="roomMembers" :loading="loadingRoomMembers"
         @close="showRoomMembers = false" />
 
-      <main ref="messagesEl" class="relative flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3 bg-gray-50"
-        @scroll="onScroll">
+      <main ref="messagesEl" class="relative min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50 sm:px-4"
+        @scroll="handleMessageScroll">
+
+        <div v-if="loadingOlderMessages" class="sticky top-2 z-20 flex justify-center py-2">
+          <div
+            class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-lg">
+            <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></span>
+
+            <span>載入舊訊息中...</span>
+          </div>
+        </div>
         <template v-for="item in messageTimelineItems" :key="item.key">
           <div v-if="item.type === 'separator'" class="my-3 flex items-center gap-3">
             <div class="h-px flex-1 bg-gray-200"></div>
@@ -45,18 +54,15 @@
           </div>
           <ChatMessage v-else :message="item.message" />
         </template>
-
-        <button v-show="showScrollTop" type="button" aria-label="回到最上層"
-          class="fixed z-20 rounded-full shadow-lg border bg-white/90 backdrop-blur hover:bg-white active:scale-95 transition right-4 bottom-20 sm:right-6 sm:bottom-6 w-11 h-11 flex items-center justify-center"
-          @click="scrollToTop">
-          <span class="text-lg">⬆️</span>
+        <button v-show="showScrollButton" type="button" aria-label="回到最新訊息"
+          class="fixed right-4 bottom-20 z-20 flex h-11 w-11 items-center justify-center rounded-full border bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95 sm:right-6 sm:bottom-6"
+          @click="handleScrollButtonClick">
+          <span class="text-lg">⬇️</span>
         </button>
-
-        <div ref="bottomAnchor"></div>
       </main>
 
       <footer class="border-t bg-white px-3 py-2">
-        <ChatInput @sent="scrollToBottom" />
+        <ChatInput />
       </footer>
 
       <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
@@ -66,7 +72,7 @@
         enter-to-class="opacity-100 translate-y-0" leave-active-class="transition-all duration-200"
         leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-2">
         <div v-if="toast"
-          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white pointer-events-none"
+          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-100 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white pointer-events-none"
           :class="toast.type === 'success' ? 'bg-gray-800' : 'bg-red-600'">
           {{ toast.type === 'success' ? '✓ ' : '✕ ' }}{{ toast.message }}
         </div>
@@ -76,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
 import { useRoute, useRouter } from 'vue-router'
 import {
   acceptChatInvitationApi,
@@ -159,13 +165,28 @@ const roomMembers = ref<ChatRoomMemberType[]>([])
 const roomInvitations = ref<ChatInvitationType[]>([])
 
 const messagesEl = ref<HTMLElement | null>(null)
-const bottomAnchor = ref<HTMLElement | null>(null)
-const showScrollTop = ref(false)
+const lastRequestedCursorKey = ref<string | null>(null)
+
+const showScrollButton = ref(false)
+const initializingRoom = ref(false)
+
 const MESSAGE_PAGE_SIZE = 30
 
 const filteredMessages = computed(() =>
-  chat.messages.filter((m) => m && m.roomId === chat.currentRoomId),
+  chat.messages.filter(
+    (message) =>
+      message &&
+      String(message.roomId) === String(chat.currentRoomId),
+  ),
 )
+
+const lastMessageId = computed<string | null>(() => {
+  const messages = filteredMessages.value
+  const lastMessage = messages[messages.length - 1]
+
+  return lastMessage?.id ?? null
+})
+
 type MessageTimelineItem =
   | {
     type: 'separator'
@@ -224,15 +245,31 @@ const canCreateRoom = computed(() => chat.currentRoomId === 'lobby')
 const canInviteMembers = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
 const canManageGroup = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
 
-function onScroll(): void {
-  const el = messagesEl.value
-  if (!el) return
+function handleMessageScroll(event: Event): void {
+  const el = event.currentTarget
 
-  showScrollTop.value = el.scrollTop > 240
+  if (!(el instanceof HTMLElement)) return
 
-  if (el.scrollTop <= 100) {
-    void loadOlderMessages()
-  }
+  const distanceFromBottom =
+    el.scrollHeight - el.scrollTop - el.clientHeight
+
+  const isNearTop = el.scrollTop <= 50
+  const isNearBottom = distanceFromBottom <= 50
+
+  // 只要不在最底，就顯示按鈕
+  showScrollButton.value = !isNearBottom
+
+  if (initializingRoom.value) return
+
+  if (!isNearTop) return
+
+  void loadOlderMessages()
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds)
+  })
 }
 
 function getDateKey(input: string | Date): string {
@@ -302,22 +339,26 @@ function stopMidnightRefresh(): void {
   midnightRefreshTimer.value = null
 }
 
-function scrollToTop(): void {
-  const el = messagesEl.value
-  if (!el) return
-
-  el.scrollTo({
-    top: 0,
-    behavior: 'smooth',
-  })
+async function handleScrollButtonClick(): Promise<void> {
+  await scrollToBottom(true)
 }
 
-async function scrollToBottom(): Promise<void> {
+async function scrollToBottom(smooth = false): Promise<void> {
   await nextTick()
 
-  bottomAnchor.value?.scrollIntoView({
-    behavior: 'smooth',
-    block: 'end',
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      const el = messagesEl.value
+
+      if (el) {
+        el.scrollTo({
+          top: el.scrollHeight,
+          behavior: smooth ? "smooth" : "auto",
+        })
+      }
+
+      resolve()
+    })
   })
 }
 
@@ -348,26 +389,36 @@ async function createRoom(payload: { roomName: string }): Promise<void> {
 }
 
 async function switchRoom(roomId: string): Promise<void> {
-  chat.setCurrentRoom(roomId)
-  historyCursor.value = null
-  hasMoreMessages.value = true
-  showRoomMembers.value = false
-  showInviteMembers.value = false
-  showGroupManage.value = false
-  joinRoom(roomId)
+  initializingRoom.value = true
 
-  sidebarOpen.value = false
-  showUserMenu.value = false
+  try {
+    chat.setCurrentRoom(roomId)
+    historyCursor.value = null
+    lastRequestedCursorKey.value = null
+    hasMoreMessages.value = true
 
-  await loadLatestMessages(roomId)
+    showRoomMembers.value = false
+    showInviteMembers.value = false
+    showGroupManage.value = false
 
-  if (isCurrentGroupRoom.value) {
-    await loadRoomMembers(roomId)
-  } else {
-    roomMembers.value = []
+    sidebarOpen.value = false
+    showUserMenu.value = false
+
+    joinRoom(roomId)
+
+    await loadLatestMessages(roomId)
+
+    if (isCurrentGroupRoom.value) {
+      await loadRoomMembers(roomId)
+    } else {
+      roomMembers.value = []
+    }
+
+    // 初始直接定位最新訊息
+    await scrollToBottom(false)
+  } finally {
+    initializingRoom.value = false
   }
-
-  await scrollToBottom()
 }
 
 async function loadLatestMessages(roomId: string): Promise<void> {
@@ -379,7 +430,7 @@ async function loadLatestMessages(roomId: string): Promise<void> {
     })
 
     chat.setMessages(response.messages ?? [])
-    hasMoreMessages.value = response.hasMore
+    hasMoreMessages.value = response.hasMore === true
     historyCursor.value = response.nextCursor ?? null
   } finally {
     loadingLatestMessages.value = false
@@ -387,32 +438,71 @@ async function loadLatestMessages(roomId: string): Promise<void> {
 }
 
 async function loadOlderMessages(): Promise<void> {
-  if (loadingLatestMessages.value || loadingOlderMessages.value || !hasMoreMessages.value) return
-  if (!historyCursor.value) return
+  if (initializingRoom.value) return
+  if (loadingLatestMessages.value) return
+  if (loadingOlderMessages.value) return
+  if (!hasMoreMessages.value) return
 
+  const cursor = historyCursor.value
   const el = messagesEl.value
-  const oldScrollHeight = el?.scrollHeight ?? 0
 
+  if (!cursor || !el) return
+
+  const cursorKey = `${cursor.beforeCreatedAt}_${cursor.beforeId}`
+
+  if (lastRequestedCursorKey.value === cursorKey) return
+
+  const roomId = chat.currentRoomId
+  const previousScrollHeight = el.scrollHeight
+  const previousScrollTop = el.scrollTop
+
+  lastRequestedCursorKey.value = cursorKey
   loadingOlderMessages.value = true
 
   try {
-    const response = await getChatRoomMessagesApi(chat.currentRoomId, {
-      limit: MESSAGE_PAGE_SIZE,
-      beforeCreatedAt: historyCursor.value.beforeCreatedAt,
-      beforeId: historyCursor.value.beforeId,
+    // 先讓 Vue 顯示「載入舊訊息中...」
+    await nextTick()
+
+    // 確保瀏覽器已經繪製畫面
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        resolve()
+      })
     })
 
-    chat.prependMessages(response.messages ?? [])
-    hasMoreMessages.value = response.hasMore
+    // 讓載入提示固定顯示 800 毫秒後，再呼叫 API
+    await delay(800)
+
+    const response = await getChatRoomMessagesApi(roomId, {
+      limit: MESSAGE_PAGE_SIZE,
+      beforeCreatedAt: cursor.beforeCreatedAt,
+      beforeId: cursor.beforeId,
+    })
+
+    if (chat.currentRoomId !== roomId) return
+
+    const olderMessages = response.messages ?? []
+
+    if (olderMessages.length === 0) {
+      hasMoreMessages.value = false
+      historyCursor.value = null
+      return
+    }
+
+    chat.prependMessages(olderMessages)
+
+    hasMoreMessages.value = response.hasMore === true
     historyCursor.value = response.nextCursor ?? null
 
     await nextTick()
 
-    if (el) {
-      const newScrollHeight = el.scrollHeight
-      const delta = newScrollHeight - oldScrollHeight
-      el.scrollTop = el.scrollTop + delta
-    }
+    const addedHeight = el.scrollHeight - previousScrollHeight
+
+    // 維持載入前的閱讀位置
+    el.scrollTop = previousScrollTop + addedHeight
+  } catch (error) {
+    lastRequestedCursorKey.value = null
+    throw error
   } finally {
     loadingOlderMessages.value = false
   }
@@ -669,6 +759,22 @@ function toggleUserMenu(): void {
   }
 }
 
+watch(
+  lastMessageId,
+  async (newMessageId, oldMessageId) => {
+    if (initializingRoom.value) return
+    if (loadingLatestMessages.value) return
+    if (loadingOlderMessages.value) return
+    if (!oldMessageId) return
+    if (!newMessageId || newMessageId === oldMessageId) return
+
+    await scrollToBottom(true)
+  },
+  {
+    flush: "post",
+  },
+)
+
 onMounted(async () => {
   if (!auth.isAuthenticated) return
 
@@ -786,8 +892,8 @@ onMounted(async () => {
 onUnmounted(() => {
   stopInvitationSync()
   stopMidnightRefresh()
-  window.removeEventListener('focus', handleWindowFocus)
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener("focus", handleWindowFocus)
+  document.removeEventListener("visibilitychange", handleVisibilityChange)
   disconnectChatSocket()
 })
 </script>
