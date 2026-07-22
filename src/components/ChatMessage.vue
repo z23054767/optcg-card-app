@@ -9,10 +9,7 @@
         <div v-if="!isMine" class="mb-1 px-1 text-[11px] leading-none text-gray-500">
           {{ displayName }}
         </div>
-        <div
-          class="w-fit rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm sm:text-[15px]"
-          :class="bubbleClass"
-        >
+        <div class="w-fit rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm sm:text-[15px]" :class="bubbleClass">
           <div class="whitespace-pre-wrap break-words">
             {{ message.content }}
           </div>

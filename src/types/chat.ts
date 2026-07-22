@@ -215,6 +215,9 @@ export interface ChatInvitation {
   /** 聊天室名稱 */
   roomName: string | null
 
+  /** 聊天室類型 */
+  roomType: "group" | "private"
+
   /** 邀請者 ID */
   inviterId: string
 
@@ -321,3 +324,9 @@ export type ServerWsMessage =
   | InvitationAcceptedEvent
   | InvitationRejectedEvent
   | RoomManagerTransferredEvent
+
+export interface ChatUserSearchItem {
+  userId: string
+  name: string
+  account: string
+}

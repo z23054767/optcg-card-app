@@ -44,6 +44,12 @@
           邀請成員
         </button>
 
+        <button v-if="showPrivateChatButton" type="button"
+          class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+          @click="$emit('start-private-chat')">
+          開始私聊
+        </button>
+
         <button v-if="showManageGroupButton" type="button"
           class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
           @click="$emit('open-manage-group')">
@@ -71,6 +77,7 @@
 
     <div v-if="
       showCreateButton ||
+      showPrivateChatButton ||
       showInviteMembersButton ||
       showManageGroupButton ||
       showMembersButton
@@ -85,6 +92,12 @@
         class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
         @click="$emit('invite-members')">
         邀請成員
+      </button>
+
+      <button v-if="showPrivateChatButton" type="button"
+        class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+        @click="$emit('start-private-chat')">
+        開始私聊
       </button>
 
       <button v-if="showManageGroupButton" type="button"
@@ -109,18 +122,20 @@ defineProps<{
   onlineCount: number
   hasUnreadInvitations: boolean
   showCreateButton: boolean
+  showPrivateChatButton: boolean
   showInviteMembersButton: boolean
   showManageGroupButton: boolean
   showMembersButton: boolean
 }>()
 
 defineEmits<{
-  'toggle-sidebar': []
-  'create-room': []
-  'invite-members': []
-  'open-manage-group': []
-  'back-to-lobby': []
-  'toggle-user-menu': []
-  'open-members': []
+  "toggle-sidebar": []
+  "create-room": []
+  "start-private-chat": []
+  "invite-members": []
+  "open-manage-group": []
+  "back-to-lobby": []
+  "toggle-user-menu": []
+  "open-members": []
 }>()
 </script>

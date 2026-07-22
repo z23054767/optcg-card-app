@@ -5,6 +5,7 @@ import type {
   ChatRoomId,
   ChatRoomListItem,
   ChatRoomMember,
+  ChatUserSearchItem,
 } from '@/types/chat'
 
 /**
@@ -309,9 +310,27 @@ export async function getRoomInvitationsApi(roomId: string): Promise<RoomInvitat
  * 依 email 查詢使用者是否存在
  */
 export async function searchUserByEmailApi(email: string): Promise<SearchUserByEmailResponse> {
-  const { data } = await http.get<SearchUserByEmailResponse>('/chat/users/search', {
+  const { data } = await http.get<SearchUserByEmailResponse>('/chat/users/search/email', {
     params: { email },
   })
 
+  return data
+}
+
+/**
+ * 依關鍵字搜尋使用者
+ */
+export async function searchChatUsersApi(keyword: string): Promise<{ users: ChatUserSearchItem[] }> {
+  const { data } = await http.get<{ users: ChatUserSearchItem[] }>("/chat/users/search", {
+    params: { keyword },
+  })
+  return data
+}
+
+/**
+ * 建立私人聊天室邀請
+ */
+export async function createPrivateChatInvitationApi(inviteeId: string): Promise<ChatRoomResponse> {
+  const { data } = await http.post<ChatRoomResponse>("/chat/private-invitations", { inviteeId })
   return data
 }

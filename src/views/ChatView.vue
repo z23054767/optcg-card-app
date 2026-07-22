@@ -6,9 +6,10 @@
     <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId"
         :online-count="chat.currentRoomOnlineCount" :has-unread-invitations="chat.hasUnreadInvitationNotice"
-        :show-create-button="canCreateRoom" :show-invite-members-button="canInviteMembers"
-        :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
-        @open-sidebar="sidebarOpen = true" @create-room="showCreateRoom = true" @back-to-lobby="backToLobby"
+        :show-create-button="canCreateRoom" :show-private-chat-button="canStartPrivateChat"
+        :show-invite-members-button="canInviteMembers" :show-manage-group-button="canManageGroup"
+        :show-members-button="isCurrentGroupRoom" @open-sidebar="sidebarOpen = true"
+        @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
         @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
         @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
 
@@ -18,6 +19,11 @@
 
       <CreateRoomModal v-if="showCreateRoom" :loading="creatingRoom" @close="showCreateRoom = false"
         @create="createRoom" />
+      <PrivateChatModal v-if="showPrivateChat" :users="privateChatUsers" :searching="searchingPrivateUsers"
+        :inviting="creatingPrivateChat" :inviting-user-id="invitingPrivateUserId" :searched="privateUserSearched"
+        @close="closePrivateChatModal" @search="searchPrivateUsers" @clear="clearPrivateUserSearch"
+        @invite="createPrivateChat" />
+
       <InviteMembersModal v-if="showInviteMembers" :loading="invitingMembers" @close="showInviteMembers = false"
         @invite="inviteMembers" />
       <GroupManageModal v-if="showGroupManage && currentRoom" :room="currentRoom" :members="roomMembers"
@@ -98,6 +104,8 @@ import {
   transferChatRoomManagerApi,
   updateGroupChatRoomApi,
   rejectChatInvitationApi,
+  searchChatUsersApi,
+  createPrivateChatInvitationApi,
 } from '@/api/chatApi'
 import { connectChatSocket, disconnectChatSocket, joinRoom } from '@/websocket/chatSocket'
 import { useAuthStore } from '@/stores/authStore'
@@ -107,6 +115,7 @@ import type {
   ChatMessage as ChatMessageType,
   ChatRoomMember as ChatRoomMemberType,
   ServerWsMessage,
+  ChatUserSearchItem,
 } from '@/types/chat'
 
 import UserMenu from '@/components/UserMenu.vue'
@@ -118,6 +127,7 @@ import WelcomePopup from '@/components/WelcomePopup.vue'
 import InvitationModal from '@/components/InvitationModal.vue'
 import CreateRoomModal from '@/components/CreateRoomModal.vue'
 import InviteMembersModal from '@/components/InviteMembersModal.vue'
+import PrivateChatModal from '@/components/PrivateChatModal.vue'
 import RoomMembersModal from '@/components/RoomMembersModal.vue'
 import GroupManageModal from '@/components/GroupManageModal.vue'
 
@@ -141,6 +151,13 @@ function showToast(message: string, type: 'success' | 'error' = 'success'): void
 const sidebarOpen = ref(false)
 const showCreateRoom = ref(false)
 const creatingRoom = ref(false)
+const showPrivateChat = ref(false)
+const creatingPrivateChat = ref(false)
+const searchingPrivateUsers = ref(false)
+const privateUserSearched = ref(false)
+const invitingPrivateUserId = ref<string | null>(null)
+const privateChatUsers = ref<ChatUserSearchItem[]>([])
+let privateUserSearchRequestId = 0
 const invitingMembers = ref(false)
 const updatingGroupInfo = ref(false)
 const deletingGroupRoom = ref(false)
@@ -242,6 +259,7 @@ const isCurrentRoomManager = computed(
   () => Boolean(currentRoom.value) && String(currentRoom.value?.ownerId) === String(auth.userId),
 )
 const canCreateRoom = computed(() => chat.currentRoomId === 'lobby')
+const canStartPrivateChat = computed(() => chat.currentRoomId === 'lobby')
 const canInviteMembers = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
 const canManageGroup = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
 
@@ -388,6 +406,82 @@ async function createRoom(payload: { roomName: string }): Promise<void> {
   }
 }
 
+async function searchPrivateUsers(keyword: string): Promise<void> {
+  const trimmedKeyword = keyword.trim()
+
+  if (!trimmedKeyword) {
+    clearPrivateUserSearch()
+    return
+  }
+
+  const requestId = ++privateUserSearchRequestId
+
+  searchingPrivateUsers.value = true
+  privateUserSearched.value = true
+
+  try {
+    const response = await searchChatUsersApi(trimmedKeyword)
+
+    /**
+     * 使用者可能已輸入新的搜尋條件。
+     * 舊 Request 較晚回傳時，不允許覆蓋新的搜尋結果。
+     */
+    if (requestId !== privateUserSearchRequestId) {
+      return
+    }
+
+    privateChatUsers.value = response.users ?? []
+  } catch {
+    if (requestId !== privateUserSearchRequestId) {
+      return
+    }
+
+    privateChatUsers.value = []
+    showToast("搜尋使用者失敗，請稍後再試", "error")
+  } finally {
+    if (requestId === privateUserSearchRequestId) {
+      searchingPrivateUsers.value = false
+    }
+  }
+}
+
+function clearPrivateUserSearch(): void {
+  /**
+   * 讓目前尚未完成的舊搜尋 Request 失效。
+   */
+  privateUserSearchRequestId += 1
+
+  privateChatUsers.value = []
+  privateUserSearched.value = false
+  searchingPrivateUsers.value = false
+}
+
+function closePrivateChatModal(): void {
+  showPrivateChat.value = false
+  clearPrivateUserSearch()
+  invitingPrivateUserId.value = null
+}
+
+async function createPrivateChat(user: ChatUserSearchItem): Promise<void> {
+  if (creatingPrivateChat.value) return
+
+  creatingPrivateChat.value = true
+  invitingPrivateUserId.value = user.userId
+
+  try {
+    const response = await createPrivateChatInvitationApi(user.userId)
+    await loadMyRooms()
+    closePrivateChatModal()
+    await switchRoom(response.roomId)
+    showToast(`已送出給 ${user.name} 的私人聊天邀請`)
+  } catch {
+    showToast("私人聊天邀請發送失敗", "error")
+  } finally {
+    creatingPrivateChat.value = false
+    invitingPrivateUserId.value = null
+  }
+}
+
 async function switchRoom(roomId: string): Promise<void> {
   initializingRoom.value = true
 
@@ -399,6 +493,7 @@ async function switchRoom(roomId: string): Promise<void> {
 
     showRoomMembers.value = false
     showInviteMembers.value = false
+    showPrivateChat.value = false
     showGroupManage.value = false
 
     sidebarOpen.value = false

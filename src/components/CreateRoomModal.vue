@@ -9,7 +9,6 @@
           <input v-model="roomName" type="text" class="w-full border rounded px-3 py-2 text-sm"
             placeholder="例如：OPTCG 交流群組" :disabled="props.loading" />
         </div>
-
       </div>
 
       <div class="flex justify-end gap-2 mt-4">
