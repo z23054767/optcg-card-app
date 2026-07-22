@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { ChatInvitation, ChatMessage, ChatRoomListItem } from '@/types/chat'
+import type { ChatFriendRequest, ChatInvitation, ChatMessage, ChatRoomListItem } from '@/types/chat'
 import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 interface WelcomePopup {
@@ -16,7 +16,9 @@ interface ChatState {
   currentRoomId: string
   rooms: ChatRoomListItem[]
   invitations: ChatInvitation[]
+  friendRequests: ChatFriendRequest[]
   hasUnreadInvitationNotice: boolean
+  hasUnreadFriendRequestNotice: boolean
 }
 
 export const useChatStore = defineStore('chat', {
@@ -29,7 +31,9 @@ export const useChatStore = defineStore('chat', {
     currentRoomId: 'lobby',
     rooms: [],
     invitations: [],
+    friendRequests: [],
     hasUnreadInvitationNotice: false,
+    hasUnreadFriendRequestNotice: false,
   }),
 
   actions: {
@@ -75,12 +79,20 @@ export const useChatStore = defineStore('chat', {
         case 'INVITATION_RECEIVED':
           this.addInvitation(event.payload)
           break
+        case 'FRIEND_REQUEST_RECEIVED':
+          this.addFriendRequest(event.payload)
+          break
+
+        case 'FRIEND_REQUEST_ACCEPTED':
+          this.removeFriendRequest(event.payload.requestId)
+          break
+
+        case 'FRIEND_REQUEST_REJECTED':
+          this.removeFriendRequest(event.payload.requestId)
+          break
 
         case 'ROOM_SNAPSHOT':
-          this.setRoomSnapshot(
-            event.payload.roomId,
-            event.payload.userIds,
-          )
+          this.setRoomSnapshot(event.payload.roomId, event.payload.userIds)
           break
 
         case 'ROOM_DELETED':
@@ -94,7 +106,7 @@ export const useChatStore = defineStore('chat', {
         case 'ROOM_MANAGER_TRANSFERRED':
           this.updateRoomOwner(event.payload.roomId, event.payload.ownerId)
           break
-        case "INVITATION_ACCEPTED":
+        case 'INVITATION_ACCEPTED':
           // 管理員側在 ChatView 重新取得成員與邀請資料
           break
         case 'INVITATION_REJECTED':
@@ -108,10 +120,7 @@ export const useChatStore = defineStore('chat', {
     // #endregion
 
     //# region 狀態處理
-    setInvitations(
-      invitations: ChatInvitation[],
-      options?: { markUnreadOnNew?: boolean },
-    ): void {
+    setInvitations(invitations: ChatInvitation[], options?: { markUnreadOnNew?: boolean }): void {
       const markUnreadOnNew = options?.markUnreadOnNew ?? true
       const existingIds = new Set(this.invitations.map((item) => item.invitationId))
       const hasNewInvitation = invitations.some((item) => !existingIds.has(item.invitationId))
@@ -140,13 +149,50 @@ export const useChatStore = defineStore('chat', {
       this.hasUnreadInvitationNotice = false
     },
 
+    setFriendRequests(
+      friendRequests: ChatFriendRequest[],
+      options?: { markUnreadOnNew?: boolean },
+    ): void {
+      const markUnreadOnNew = options?.markUnreadOnNew ?? true
+
+      const existingIds = new Set(this.friendRequests.map((item) => item.requestId))
+
+      const hasNewFriendRequest = friendRequests.some((item) => !existingIds.has(item.requestId))
+
+      this.friendRequests = friendRequests
+
+      if (markUnreadOnNew && hasNewFriendRequest) {
+        this.hasUnreadFriendRequestNotice = true
+      }
+    },
+
+    addFriendRequest(friendRequest: ChatFriendRequest): void {
+      const exists = this.friendRequests.some((item) => item.requestId === friendRequest.requestId)
+
+      if (exists) return
+
+      this.friendRequests = [friendRequest, ...this.friendRequests]
+
+      this.hasUnreadFriendRequestNotice = true
+    },
+
+    removeFriendRequest(requestId: string): void {
+      this.friendRequests = this.friendRequests.filter((item) => item.requestId !== requestId)
+    },
+
+    markFriendRequestsAsSeen(): void {
+      this.hasUnreadFriendRequestNotice = false
+    },
+
+    markNotificationsAsSeen(): void {
+      this.hasUnreadInvitationNotice = false
+      this.hasUnreadFriendRequestNotice = false
+    },
+
     setRoomSnapshot(roomId: string, userIds: string[]): void {
       const map = new Map(this.roomMembers)
 
-      map.set(
-        roomId,
-        new Set(userIds.map((userId) => String(userId))),
-      )
+      map.set(roomId, new Set(userIds.map((userId) => String(userId))))
 
       this.roomMembers = map
     },
@@ -210,9 +256,9 @@ export const useChatStore = defineStore('chat', {
       this.rooms = this.rooms.map((room) =>
         room.id === roomId
           ? {
-            ...room,
-            ownerId,
-          }
+              ...room,
+              ownerId,
+            }
           : room,
       )
     },
@@ -282,13 +328,17 @@ export const useChatStore = defineStore('chat', {
 
     setLobbySnapshot(userIds: string[]): void {
       this.setRoomSnapshot('lobby', userIds)
-    }
+    },
     //# endregion
   },
 
   getters: {
     currentRoomOnlineCount(state): number {
       return state.roomMembers.get(state.currentRoomId)?.size ?? 0
+    },
+
+    hasUnreadNotifications(state): boolean {
+      return state.hasUnreadInvitationNotice || state.hasUnreadFriendRequestNotice
     },
   },
 })

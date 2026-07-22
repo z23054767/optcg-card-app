@@ -5,7 +5,7 @@
 
     <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId"
-        :online-count="chat.currentRoomOnlineCount" :has-unread-invitations="chat.hasUnreadInvitationNotice"
+        :online-count="chat.currentRoomOnlineCount" :has-unread-notifications="chat.hasUnreadNotifications"
         :show-create-button="canCreateRoom" :show-private-chat-button="canStartPrivateChat"
         :show-invite-members-button="canInviteMembers" :show-manage-group-button="canManageGroup"
         :show-members-button="isCurrentGroupRoom" @open-sidebar="sidebarOpen = true"
@@ -14,8 +14,8 @@
         @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
 
       <UserMenu :open="showUserMenu" :name="auth.user?.name || auth.user?.account || '使用者'"
-        :account="auth.user?.account || ''" :invitation-count="chat.invitations.length" @close="showUserMenu = false"
-        @logout="logout" @open-invitations="openInvitations" />
+        :account="auth.user?.account || ''" :invitation-count="chat.invitations.length + friendRequests.length"
+        @close="showUserMenu = false" @logout="logout" @open-invitations="openInvitations" />
 
       <CreateRoomModal v-if="showCreateRoom" :loading="creatingRoom" @close="showCreateRoom = false"
         @create="createRoom" />
@@ -23,9 +23,8 @@
         :inviting="creatingPrivateChat" :inviting-user-id="invitingPrivateUserId" :searched="privateUserSearched"
         @close="closePrivateChatModal" @search="searchPrivateUsers" @clear="clearPrivateUserSearch"
         @invite="createPrivateChat" />
-
-      <InviteMembersModal v-if="showInviteMembers" :loading="invitingMembers" @close="showInviteMembers = false"
-        @invite="inviteMembers" />
+      <InviteMembersModal v-if="showInviteMembers" :room-id="chat.currentRoomId" :loading="invitingMembers"
+        @close="showInviteMembers = false" @invite="inviteMembers" />
       <GroupManageModal v-if="showGroupManage && currentRoom" :room="currentRoom" :members="roomMembers"
         :loading-members="loadingRoomMembers" :updating-info="updatingGroupInfo" :deleting-room="deletingGroupRoom"
         :removing-user-id="removingMemberUserId" :transferring-user-id="transferringManagerUserId"
@@ -34,14 +33,15 @@
         @remove-member="removeMember" @transfer-manager="transferManager" @delete-room="deleteGroupRoom"
         @re-invite="reInvite" />
 
-      <InvitationModal v-if="showInvitations" :invitations="chat.invitations" @close="showInvitations = false"
-        @accept="acceptInvitation" @reject="rejectInvitation" />
+      <InvitationModal v-if="showInvitations" :invitations="chat.invitations" :friend-requests="friendRequests"
+        :processing-friend-request-id="processingFriendRequestId" @close="showInvitations = false"
+        @accept-invitation="acceptInvitation" @reject-invitation="rejectInvitation"
+        @accept-friend-request="acceptFriendRequest" @reject-friend-request="rejectFriendRequest" />
       <RoomMembersModal v-if="showRoomMembers" :members="roomMembers" :loading="loadingRoomMembers"
         @close="showRoomMembers = false" />
 
       <main ref="messagesEl" class="relative min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50 sm:px-4"
         @scroll="handleMessageScroll">
-
         <div v-if="loadingOlderMessages" class="sticky top-2 z-20 flex justify-center py-2">
           <div
             class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-lg">
@@ -88,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   acceptChatInvitationApi,
@@ -105,18 +105,23 @@ import {
   updateGroupChatRoomApi,
   rejectChatInvitationApi,
   searchChatUsersApi,
-  createPrivateChatInvitationApi,
+  createFriendRequestApi,
+  getMyFriendRequestsApi,
+  acceptFriendRequestApi,
+  rejectFriendRequestApi,
 } from '@/api/chatApi'
 import { connectChatSocket, disconnectChatSocket, joinRoom } from '@/websocket/chatSocket'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
 import type {
   ChatInvitation as ChatInvitationType,
+  ChatFriendRequest,
   ChatMessage as ChatMessageType,
   ChatRoomMember as ChatRoomMemberType,
-  ServerWsMessage,
   ChatUserSearchItem,
 } from '@/types/chat'
+
+import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 import UserMenu from '@/components/UserMenu.vue'
 import ChatSidebar from '@/components/ChatSidebar.vue'
@@ -180,6 +185,8 @@ const historyCursor = ref<{ beforeCreatedAt: string; beforeId: string } | null>(
 const dateLabelAnchor = ref(Date.now())
 const roomMembers = ref<ChatRoomMemberType[]>([])
 const roomInvitations = ref<ChatInvitationType[]>([])
+const friendRequests = ref<ChatFriendRequest[]>([])
+const processingFriendRequestId = ref<string | null>(null)
 
 const messagesEl = ref<HTMLElement | null>(null)
 const lastRequestedCursorKey = ref<string | null>(null)
@@ -191,9 +198,7 @@ const MESSAGE_PAGE_SIZE = 30
 
 const filteredMessages = computed(() =>
   chat.messages.filter(
-    (message) =>
-      message &&
-      String(message.roomId) === String(chat.currentRoomId),
+    (message) => message && String(message.roomId) === String(chat.currentRoomId),
   ),
 )
 
@@ -250,9 +255,7 @@ const currentRoomTitle = computed(() => {
   return `💬 ${room?.name || '聊天室'}`
 })
 
-const currentRoom = computed(() =>
-  chat.rooms.find((room) => room.id === chat.currentRoomId),
-)
+const currentRoom = computed(() => chat.rooms.find((room) => room.id === chat.currentRoomId))
 
 const isCurrentGroupRoom = computed(() => currentRoom.value?.type === 'group')
 const isCurrentRoomManager = computed(
@@ -268,8 +271,7 @@ function handleMessageScroll(event: Event): void {
 
   if (!(el instanceof HTMLElement)) return
 
-  const distanceFromBottom =
-    el.scrollHeight - el.scrollTop - el.clientHeight
+  const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
 
   const isNearTop = el.scrollTop <= 50
   const isNearBottom = distanceFromBottom <= 50
@@ -371,7 +373,7 @@ async function scrollToBottom(smooth = false): Promise<void> {
       if (el) {
         el.scrollTo({
           top: el.scrollHeight,
-          behavior: smooth ? "smooth" : "auto",
+          behavior: smooth ? 'smooth' : 'auto',
         })
       }
 
@@ -437,7 +439,7 @@ async function searchPrivateUsers(keyword: string): Promise<void> {
     }
 
     privateChatUsers.value = []
-    showToast("搜尋使用者失敗，請稍後再試", "error")
+    showToast('搜尋使用者失敗，請稍後再試', 'error')
   } finally {
     if (requestId === privateUserSearchRequestId) {
       searchingPrivateUsers.value = false
@@ -459,23 +461,36 @@ function clearPrivateUserSearch(): void {
 function closePrivateChatModal(): void {
   showPrivateChat.value = false
   clearPrivateUserSearch()
-  invitingPrivateUserId.value = null
 }
 
-async function createPrivateChat(user: ChatUserSearchItem): Promise<void> {
-  if (creatingPrivateChat.value) return
+async function createPrivateChat(
+  user: ChatUserSearchItem,
+): Promise<void> {
+  if (
+    user.friendshipStatus !== "none" ||
+    creatingPrivateChat.value
+  ) {
+    return
+  }
 
+  invitingPrivateUserId.value = String(user.userId)
   creatingPrivateChat.value = true
-  invitingPrivateUserId.value = user.userId
 
   try {
-    const response = await createPrivateChatInvitationApi(user.userId)
-    await loadMyRooms()
-    closePrivateChatModal()
-    await switchRoom(response.roomId)
-    showToast(`已送出給 ${user.name} 的私人聊天邀請`)
+    await createFriendRequestApi(user.userId)
+
+    privateChatUsers.value = privateChatUsers.value.map((item) =>
+      item.userId === user.userId
+        ? {
+          ...item,
+          friendshipStatus: "outgoing_pending",
+        }
+        : item,
+    )
+
+    showToast(`已向 ${user.name} 發送好友邀請`)
   } catch {
-    showToast("私人聊天邀請發送失敗", "error")
+    showToast("好友邀請發送失敗", "error")
   } finally {
     creatingPrivateChat.value = false
     invitingPrivateUserId.value = null
@@ -614,9 +629,12 @@ async function loadMyRooms(): Promise<void> {
 }
 
 async function loadMyInvitations(markUnreadOnNew = true): Promise<void> {
-  const response = await getMyChatInvitationsApi()
-
-  chat.setInvitations(response.invitations ?? [], { markUnreadOnNew })
+  const [invitationResponse, friendResponse] = await Promise.all([
+    getMyChatInvitationsApi(),
+    getMyFriendRequestsApi(),
+  ])
+  chat.setInvitations(invitationResponse.invitations ?? [], { markUnreadOnNew })
+  friendRequests.value = friendResponse.requests ?? []
 }
 
 function startInvitationSync(): void {
@@ -645,14 +663,63 @@ function handleVisibilityChange(): void {
 }
 
 async function acceptInvitation(invitationId: string): Promise<void> {
-  const response = await acceptChatInvitationApi(invitationId)
+  try {
+    const response = await acceptChatInvitationApi(invitationId)
 
-  chat.removeInvitation(invitationId)
+    chat.removeInvitation(invitationId)
 
-  await loadMyRooms()
-  await switchRoom(response.roomId)
+    await loadMyRooms()
+    await switchRoom(response.roomId)
 
-  showInvitations.value = false
+    showInvitations.value = false
+    showToast('已接受聊天室邀請')
+  } catch {
+    showToast('接受聊天室邀請失敗，請稍後再試', 'error')
+  }
+}
+
+async function acceptFriendRequest(requestId: string): Promise<void> {
+  if (processingFriendRequestId.value) return
+
+  processingFriendRequestId.value = requestId
+
+  try {
+    const response = await acceptFriendRequestApi(requestId)
+
+    friendRequests.value = friendRequests.value.filter((item) => item.requestId !== requestId)
+
+    await loadMyRooms()
+    await switchRoom(response.roomId)
+
+    showInvitations.value = false
+    showToast('已接受好友申請')
+  } catch {
+    showToast('接受好友申請失敗，請稍後再試', 'error')
+  } finally {
+    processingFriendRequestId.value = null
+  }
+}
+
+async function rejectFriendRequest(requestId: string): Promise<void> {
+  if (processingFriendRequestId.value) return
+
+  processingFriendRequestId.value = requestId
+
+  try {
+    await rejectFriendRequestApi(requestId)
+
+    friendRequests.value = friendRequests.value.filter((item) => item.requestId !== requestId)
+
+    if (friendRequests.value.length === 0) {
+      showInvitations.value = false
+    }
+
+    showToast('已拒絕好友申請')
+  } catch {
+    showToast('拒絕好友申請失敗，請稍後再試', 'error')
+  } finally {
+    processingFriendRequestId.value = null
+  }
 }
 
 async function rejectInvitation(invitationId: string): Promise<void> {
@@ -661,10 +728,7 @@ async function rejectInvitation(invitationId: string): Promise<void> {
 
     chat.removeInvitation(invitationId)
 
-    /**
-     * 關閉邀請視窗，避免列表清空後仍停留在 Modal。
-     */
-    if (chat.invitations.length === 0) {
+    if (chat.invitations.length === 0 && friendRequests.value.length === 0) {
       showInvitations.value = false
     }
 
@@ -673,7 +737,6 @@ async function rejectInvitation(invitationId: string): Promise<void> {
     showToast('拒絕邀請失敗，請稍後再試', 'error')
   }
 }
-
 async function loadRoomMembers(roomId: string): Promise<void> {
   loadingRoomMembers.value = true
 
@@ -711,10 +774,7 @@ async function openGroupManage(): Promise<void> {
   if (!canManageGroup.value) return
 
   showGroupManage.value = true
-  await Promise.all([
-    loadRoomMembers(chat.currentRoomId),
-    loadRoomInvitations(chat.currentRoomId),
-  ])
+  await Promise.all([loadRoomMembers(chat.currentRoomId), loadRoomInvitations(chat.currentRoomId)])
 }
 
 async function loadRoomInvitations(roomId: string): Promise<void> {
@@ -735,9 +795,7 @@ async function reInvite(inviteeAccount: string): Promise<void> {
   if (!canManageGroup.value) return
 
   // 從邀請列表找到 inviteeId 以顯示 loading
-  const inv = roomInvitations.value.find(
-    (item) => item.inviteeAccount === inviteeAccount,
-  )
+  const inv = roomInvitations.value.find((item) => item.inviteeAccount === inviteeAccount)
 
   if (inv) {
     reInvitingInviteeId.value = String(inv.inviteeId)
@@ -754,7 +812,10 @@ async function reInvite(inviteeAccount: string): Promise<void> {
   }
 }
 
-async function saveGroupInfo(payload: { roomName: string; avatarUrl: string | null }): Promise<void> {
+async function saveGroupInfo(payload: {
+  roomName: string
+  avatarUrl: string | null
+}): Promise<void> {
   if (!canManageGroup.value || updatingGroupInfo.value) return
 
   updatingGroupInfo.value = true
@@ -804,9 +865,9 @@ async function transferManager(userId: string): Promise<void> {
     await loadMyRooms()
     await loadRoomMembers(chat.currentRoomId)
 
-    showToast("已成功轉讓管理員")
+    showToast('已成功轉讓管理員')
   } catch {
-    showToast("轉讓失敗，請稍後再試", "error")
+    showToast('轉讓失敗，請稍後再試', 'error')
   } finally {
     transferringManagerUserId.value = null
   }
@@ -833,7 +894,7 @@ async function deleteGroupRoom(): Promise<void> {
 function openInvitations(): void {
   showUserMenu.value = false
   showInvitations.value = true
-  chat.markInvitationsAsSeen()
+  chat.markNotificationsAsSeen()
 }
 
 function logout(): void {
@@ -870,7 +931,7 @@ watch(
     await scrollToBottom(true)
   },
   {
-    flush: "post",
+    flush: 'post',
   },
 )
 
@@ -885,35 +946,35 @@ onMounted(async () => {
 
   connectChatSocket(
     auth.token,
-    (message: ServerWsMessage) => {
+    (message: ChatWsEvent) => {
       switch (message.type) {
-        case "ROOM_DELETED": {
+        case 'ROOM_DELETED': {
           const { roomId } = message.payload
 
           chat.applyEvent(message)
 
           if (chat.currentRoomId === roomId) {
             showGroupManage.value = false
-            void switchRoom("lobby")
+            void switchRoom('lobby')
           }
 
           break
         }
 
-        case "MEMBER_REMOVED": {
+        case 'MEMBER_REMOVED': {
           const { roomId } = message.payload
 
           chat.applyEvent(message)
 
           if (chat.currentRoomId === roomId) {
-            void switchRoom("lobby")
-            showToast("你已被移出此聊天室", "error")
+            void switchRoom('lobby')
+            showToast('你已被移出此聊天室', 'error')
           }
 
           break
         }
 
-        case "ROOM_MANAGER_TRANSFERRED": {
+        case 'ROOM_MANAGER_TRANSFERRED': {
           const { roomId, ownerId } = message.payload
 
           chat.applyEvent(message)
@@ -922,52 +983,43 @@ onMounted(async () => {
             void loadRoomMembers(roomId)
 
             if (String(ownerId) === String(auth.userId)) {
-              showToast("你已成為聊天室管理員")
+              showToast('你已成為聊天室管理員')
             } else {
               showGroupManage.value = false
-              showToast("聊天室管理員已變更")
+              showToast('聊天室管理員已變更')
             }
           }
 
           break
         }
 
-        case "INVITATION_ACCEPTED": {
+        case 'INVITATION_ACCEPTED': {
           const { roomId } = message.payload
 
-          console.log("[ChatView] 收到邀請接受事件", message.payload)
+          console.log('[ChatView] 收到邀請接受事件', message.payload)
 
-          if (
-            showGroupManage.value &&
-            chat.currentRoomId === roomId
-          ) {
-            void Promise.all([
-              loadRoomMembers(roomId),
-              loadRoomInvitations(roomId),
-            ])
+          if (showGroupManage.value && chat.currentRoomId === roomId) {
+            void Promise.all([loadRoomMembers(roomId), loadRoomInvitations(roomId)])
           }
 
           break
         }
 
-        case "INVITATION_REJECTED": {
+        case 'INVITATION_REJECTED': {
           const { roomId, invitationId } = message.payload
 
-          console.log("[ChatView] 收到邀請拒絕事件", message.payload)
+          console.log('[ChatView] 收到邀請拒絕事件', message.payload)
 
           roomInvitations.value = roomInvitations.value.map((invitation) =>
             invitation.invitationId === invitationId
               ? {
                 ...invitation,
-                status: "rejected",
+                status: 'rejected',
               }
               : invitation,
           )
 
-          if (
-            showGroupManage.value &&
-            chat.currentRoomId === roomId
-          ) {
+          if (showGroupManage.value && chat.currentRoomId === roomId) {
             void loadRoomInvitations(roomId)
           }
 
@@ -990,10 +1042,10 @@ onMounted(async () => {
       auth.logout()
 
       await router.replace({
-        path: "/login",
+        path: '/login',
         query: {
           redirect: currentRoute.fullPath,
-          reason: "expired",
+          reason: 'expired',
         },
       })
     },
@@ -1010,8 +1062,8 @@ onMounted(async () => {
 onUnmounted(() => {
   stopInvitationSync()
   stopMidnightRefresh()
-  window.removeEventListener("focus", handleWindowFocus)
-  document.removeEventListener("visibilitychange", handleVisibilityChange)
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   disconnectChatSocket()
 })
 </script>

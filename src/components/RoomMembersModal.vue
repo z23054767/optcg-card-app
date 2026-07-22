@@ -14,17 +14,26 @@
       </div>
 
       <div v-else class="space-y-2">
-        <div v-for="member in members" :key="member.userId"
-          class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2">
-          <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-sm">👤</div>
+        <div
+          v-for="member in members"
+          :key="member.userId"
+          class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2"
+        >
+          <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-sm">
+            👤
+          </div>
           <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-medium text-gray-800">{{ member.name }}</div>
             <div class="truncate text-xs text-gray-500">{{ member.account }}</div>
           </div>
-          <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium" :class="member.role === 'manager'
-            ? 'bg-amber-100 text-amber-700'
-            : 'bg-gray-100 text-gray-600'
-            ">
+          <span
+            class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium"
+            :class="
+              member.role === 'manager'
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-gray-100 text-gray-600'
+            "
+          >
             {{ member.role === 'manager' ? '管理員' : '成員' }}
           </span>
         </div>

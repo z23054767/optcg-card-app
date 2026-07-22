@@ -6,6 +6,7 @@ import type {
   ChatRoomListItem,
   ChatRoomMember,
   ChatUserSearchItem,
+  ChatFriendRequestListResponse,
 } from '@/types/chat'
 
 /**
@@ -281,16 +282,14 @@ export interface RoomInvitationsResponse {
  * 依 email 查詢使用者結果
  */
 export type SearchUserByEmailResponse =
-  | { found: true; userId: string; name: string; account: string }
+  | { found: true; userId: string; name: string; account: string; isMember: boolean }
   | { found: false }
 
 /**
  * 刪除聊天室
  */
 export async function deleteChatRoomApi(roomId: string): Promise<{ success: true }> {
-  const { data } = await http.delete<{ success: true }>(
-    `/chat/rooms/${encodeURIComponent(roomId)}`,
-  )
+  const { data } = await http.delete<{ success: true }>(`/chat/rooms/${encodeURIComponent(roomId)}`)
 
   return data
 }
@@ -309,9 +308,12 @@ export async function getRoomInvitationsApi(roomId: string): Promise<RoomInvitat
 /**
  * 依 email 查詢使用者是否存在
  */
-export async function searchUserByEmailApi(email: string): Promise<SearchUserByEmailResponse> {
+export async function searchUserByEmailApi(
+  email: string,
+  roomId: string,
+): Promise<SearchUserByEmailResponse> {
   const { data } = await http.get<SearchUserByEmailResponse>('/chat/users/search/email', {
-    params: { email },
+    params: { email, roomId },
   })
 
   return data
@@ -320,8 +322,10 @@ export async function searchUserByEmailApi(email: string): Promise<SearchUserByE
 /**
  * 依關鍵字搜尋使用者
  */
-export async function searchChatUsersApi(keyword: string): Promise<{ users: ChatUserSearchItem[] }> {
-  const { data } = await http.get<{ users: ChatUserSearchItem[] }>("/chat/users/search", {
+export async function searchChatUsersApi(
+  keyword: string,
+): Promise<{ users: ChatUserSearchItem[] }> {
+  const { data } = await http.get<{ users: ChatUserSearchItem[] }>('/chat/users/search', {
     params: { keyword },
   })
   return data
@@ -330,7 +334,37 @@ export async function searchChatUsersApi(keyword: string): Promise<{ users: Chat
 /**
  * 建立私人聊天室邀請
  */
-export async function createPrivateChatInvitationApi(inviteeId: string): Promise<ChatRoomResponse> {
-  const { data } = await http.post<ChatRoomResponse>("/chat/private-invitations", { inviteeId })
+export async function createFriendRequestApi(receiverId: string): Promise<{ requestId: string }> {
+  const { data } = await http.post<{ requestId: string }>('/chat/friend-requests', { receiverId })
+  return data
+}
+/**
+ * @summary 取得目前使用者收到的好友申請
+ */
+export async function getMyFriendRequestsApi(): Promise<ChatFriendRequestListResponse> {
+  const { data } = await http.get<ChatFriendRequestListResponse>('/chat/friend-requests/received')
+
+  return data
+}
+
+/**
+ * @summary 接受好友申請
+ */
+export async function acceptFriendRequestApi(requestId: string): Promise<{ roomId: string }> {
+  const { data } = await http.post<{ roomId: string }>(
+    `/chat/friend-requests/${encodeURIComponent(requestId)}/accept`,
+  )
+
+  return data
+}
+
+/**
+ * @summary 拒絕好友申請
+ */
+export async function rejectFriendRequestApi(requestId: string): Promise<{ success: boolean }> {
+  const { data } = await http.post<{ success: boolean }>(
+    `/chat/friend-requests/${encodeURIComponent(requestId)}/reject`,
+  )
+
   return data
 }

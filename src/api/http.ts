@@ -1,14 +1,14 @@
-import axios from "axios"
-import router from "@/router"
+import axios from 'axios'
+import router from '@/router'
 
-import { useAuthStore } from "@/stores/authStore"
+import { useAuthStore } from '@/stores/authStore'
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
-    "Content-Type": "application/json"
+    'Content-Type': 'application/json',
   },
-  timeout: 10000
+  timeout: 10000,
 })
 
 http.interceptors.request.use((config) => {
@@ -33,16 +33,16 @@ http.interceptors.response.use(
 
     auth.logout()
 
-    if (currentRoute.path !== "/login") {
+    if (currentRoute.path !== '/login') {
       await router.replace({
-        path: "/login",
+        path: '/login',
         query: {
           redirect: currentRoute.fullPath,
-          reason: "expired"
-        }
+          reason: 'expired',
+        },
       })
     }
 
     return Promise.reject(error)
-  }
+  },
 )

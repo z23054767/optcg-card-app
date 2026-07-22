@@ -61,116 +61,17 @@ export interface LeaveRoomPayload {
  */
 export type ClientWsMessage =
   | {
-    /** 傳送聊天訊息 */
     type: 'SEND_MESSAGE'
     payload: SendMessagePayload
   }
   | {
-    /** 加入聊天室 */
     type: 'JOIN_ROOM'
     payload: JoinRoomPayload
   }
   | {
-    /** 離開聊天室 */
     type: 'LEAVE_ROOM'
     payload: LeaveRoomPayload
   }
-
-/**
- * 使用者在線資訊
- */
-export interface UserPresencePayload {
-  /** 使用者 ID */
-  userId: string
-
-  /** 使用者帳號 */
-  account: string
-
-  /** 使用者名稱 */
-  name: string
-}
-
-/**
- * 使用者上線事件
- */
-export interface UserOnlineEvent {
-  type: 'USER_ONLINE'
-  payload: UserPresencePayload
-}
-
-/**
- * 使用者離線事件
- */
-export interface UserOfflineEvent {
-  type: 'USER_OFFLINE'
-  payload: UserPresencePayload
-}
-
-/**
- * 聊天室事件 Payload
- */
-export interface RoomEventPayload {
-  /** 使用者 ID */
-  userId: string
-
-  /** 聊天室 ID */
-  roomId: ChatRoomId
-}
-
-/**
- * 加入聊天室事件
- */
-export interface RoomJoinedEvent {
-  type: 'ROOM_JOINED'
-  payload: RoomEventPayload
-}
-
-/**
- * 離開聊天室事件
- */
-export interface RoomLeftEvent {
-  type: 'ROOM_LEFT'
-  payload: RoomEventPayload
-}
-
-/**
- * 新訊息事件
- */
-export interface NewMessageEvent {
-  type: 'NEW_MESSAGE'
-  payload: {
-    roomId: ChatRoomId
-    message: ChatMessage
-  }
-}
-
-/**
- * 大廳快照事件
- */
-export type LobbySnapshotEvent = {
-  type: 'LOBBY_SNAPSHOT'
-  payload: {
-    /** 目前在線使用者 ID */
-    userIds: string[]
-  }
-}
-
-/**
- * 聊天室在線成員快照事件
- */
-export interface RoomSnapshotEvent {
-  /** 事件類型 */
-  type: 'ROOM_SNAPSHOT'
-
-  /** 事件資料 */
-  payload: {
-    /** 聊天室 ID */
-    roomId: ChatRoomId
-
-    /** 目前位於聊天室內的使用者 ID 清單 */
-    userIds: string[]
-  }
-}
 
 /**
  * 聊天室資訊
@@ -196,14 +97,21 @@ export interface ChatRoomListItem {
  * 聊天室成員
  */
 export interface ChatRoomMember {
+  /** 使用者 ID */
   userId: string
+
+  /** 使用者帳號 */
   account: string
+
+  /** 使用者名稱 */
   name: string
+
+  /** 聊天室角色 */
   role: 'manager' | 'member'
 }
 
 /**
- * 聊天室邀請資訊
+ * 群組聊天室邀請資訊
  */
 export interface ChatInvitation {
   /** 邀請 ID */
@@ -216,7 +124,7 @@ export interface ChatInvitation {
   roomName: string | null
 
   /** 聊天室類型 */
-  roomType: "group" | "private"
+  roomType: 'group'
 
   /** 邀請者 ID */
   inviterId: string
@@ -241,92 +149,62 @@ export interface ChatInvitation {
 }
 
 /**
- * 收到聊天室邀請事件
+ * 好友申請狀態
  */
-export interface InvitationReceivedEvent {
-  type: 'INVITATION_RECEIVED'
-  payload: ChatInvitation
+export type ChatFriendRequestStatus = 'pending' | 'accepted' | 'rejected'
+
+/**
+ * 好友申請資訊
+ */
+export interface ChatFriendRequest {
+  /** 好友申請 ID */
+  requestId: string
+
+  /** 發起者 ID */
+  requesterId: string
+
+  /** 發起者名稱 */
+  requesterName: string
+
+  /** 發起者帳號 */
+  requesterAccount: string
+
+  /** 接收者 ID */
+  receiverId: string
+
+  /** 好友申請狀態 */
+  status: ChatFriendRequestStatus
+
+  /** 建立時間（ISO 8601） */
+  createdAt: string
 }
 
 /**
- * 聊天室被刪除事件
+ * 好友申請列表 API 回應
  */
-export interface RoomDeletedEvent {
-  type: 'ROOM_DELETED'
-  payload: {
-    roomId: ChatRoomId
-  }
+export interface ChatFriendRequestListResponse {
+  requests: ChatFriendRequest[]
 }
 
 /**
- * 成員被移除事件
+ * 使用者搜尋結果
  */
-export interface MemberRemovedEvent {
-  type: 'MEMBER_REMOVED'
-  payload: {
-    roomId: ChatRoomId
-  }
-}
-
-/**
- * 邀請被接受事件（推播給管理員）
- */
-export type InvitationAcceptedEvent = {
-  type: "INVITATION_ACCEPTED"
-  payload: {
-    roomId: string
-    invitationId: string
-    inviteeId: string
-    inviteeAccount: string
-  }
-}
-
-/**
- * 邀請被拒絕事件（推播給管理員）
- */
-export interface InvitationRejectedEvent {
-  type: 'INVITATION_REJECTED'
-  payload: {
-    roomId: ChatRoomId
-    invitationId: string
-    inviteeId: string
-    inviteeAccount: string
-  }
-}
-
-
-/**
- * 聊天室管理員已轉讓事件
- */
-export interface RoomManagerTransferredEvent {
-  type: 'ROOM_MANAGER_TRANSFERRED'
-  payload: {
-    roomId: ChatRoomId
-    previousOwnerId: string
-    ownerId: string
-  }
-}
-
-/**
- * Server → Client WebSocket 訊息格式
- */
-export type ServerWsMessage =
-  | UserOnlineEvent
-  | UserOfflineEvent
-  | RoomJoinedEvent
-  | RoomLeftEvent
-  | NewMessageEvent
-  | LobbySnapshotEvent
-  | RoomSnapshotEvent
-  | InvitationReceivedEvent
-  | RoomDeletedEvent
-  | MemberRemovedEvent
-  | InvitationAcceptedEvent
-  | InvitationRejectedEvent
-  | RoomManagerTransferredEvent
+export type ChatFriendshipStatus =
+  | "none"
+  | "outgoing_pending"
+  | "incoming_pending"
+  | "friend"
 
 export interface ChatUserSearchItem {
+  /** 使用者 ID */
   userId: string
+
+  /** 使用者名稱 */
   name: string
+
+  /** 使用者帳號 */
   account: string
+
+  /** 與目前登入使用者的好友關係狀態 */
+  friendshipStatus: ChatFriendshipStatus
 }

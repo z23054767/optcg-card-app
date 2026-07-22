@@ -1,10 +1,16 @@
-import type { ChatMessage } from '@/types/chat'
+import type { ChatFriendRequest, ChatInvitation, ChatMessage, ChatRoomId } from '@/types/chat'
 
-export type BaseChatEvent<T extends string, P> = {
+/**
+ * WebSocket 事件基底格式
+ */
+export interface BaseChatEvent<T extends string, P> {
   type: T
   payload: P
 }
 
+/**
+ * 使用者上線事件
+ */
 export type UserOnlineEvent = BaseChatEvent<
   'USER_ONLINE',
   {
@@ -14,6 +20,9 @@ export type UserOnlineEvent = BaseChatEvent<
   }
 >
 
+/**
+ * 使用者離線事件
+ */
 export type UserOfflineEvent = BaseChatEvent<
   'USER_OFFLINE',
   {
@@ -21,30 +30,42 @@ export type UserOfflineEvent = BaseChatEvent<
   }
 >
 
+/**
+ * 使用者加入聊天室事件
+ */
 export type RoomJoinedEvent = BaseChatEvent<
   'ROOM_JOINED',
   {
     userId: string
-    roomId: string
+    roomId: ChatRoomId
   }
 >
 
+/**
+ * 使用者離開聊天室事件
+ */
 export type RoomLeftEvent = BaseChatEvent<
   'ROOM_LEFT',
   {
     userId: string
-    roomId: string
+    roomId: ChatRoomId
   }
 >
 
+/**
+ * 新訊息事件
+ */
 export type NewMessageEvent = BaseChatEvent<
   'NEW_MESSAGE',
   {
-    roomId: string
+    roomId: ChatRoomId
     message: ChatMessage
   }
 >
 
+/**
+ * 大廳在線使用者快照事件
+ */
 export type LobbySnapshotEvent = BaseChatEvent<
   'LOBBY_SNAPSHOT',
   {
@@ -52,79 +73,112 @@ export type LobbySnapshotEvent = BaseChatEvent<
   }
 >
 
-export type InvitationReceivedEvent = BaseChatEvent<
-  'INVITATION_RECEIVED',
-  {
-    invitationId: string
-
-    roomId: string
-    roomName: string | null
-
-    inviterId: string
-    inviterName: string
-    inviterAccount: string
-
-    inviteeId: string
-    inviteeAccount: string
-
-    status: 'pending' | 'accepted' | 'rejected'
-
-    createdAt: string
-  }
->
-
+/**
+ * 聊天室在線成員快照事件
+ */
 export type RoomSnapshotEvent = BaseChatEvent<
   'ROOM_SNAPSHOT',
   {
-    roomId: string
+    roomId: ChatRoomId
     userIds: string[]
   }
 >
 
-export type RoomDeletedEvent = BaseChatEvent<
-  'ROOM_DELETED',
-  {
-    roomId: string
-  }
->
+/**
+ * 收到群組聊天室邀請事件
+ */
+export type InvitationReceivedEvent = BaseChatEvent<'INVITATION_RECEIVED', ChatInvitation>
 
-export type MemberRemovedEvent = BaseChatEvent<
-  'MEMBER_REMOVED',
-  {
-    roomId: string
-  }
->
-
+/**
+ * 群組聊天室邀請被接受事件
+ */
 export type InvitationAcceptedEvent = BaseChatEvent<
-  "INVITATION_ACCEPTED",
+  'INVITATION_ACCEPTED',
   {
-    roomId: string
+    roomId: ChatRoomId
     invitationId: string
     inviteeId: string
     inviteeAccount: string
   }
 >
 
+/**
+ * 群組聊天室邀請被拒絕事件
+ */
 export type InvitationRejectedEvent = BaseChatEvent<
   'INVITATION_REJECTED',
   {
-    roomId: string
+    roomId: ChatRoomId
     invitationId: string
     inviteeId: string
     inviteeAccount: string
   }
 >
 
+/**
+ * 聊天室被刪除事件
+ */
+export type RoomDeletedEvent = BaseChatEvent<
+  'ROOM_DELETED',
+  {
+    roomId: ChatRoomId
+  }
+>
 
+/**
+ * 成員被移除事件
+ */
+export type MemberRemovedEvent = BaseChatEvent<
+  'MEMBER_REMOVED',
+  {
+    roomId: ChatRoomId
+  }
+>
+
+/**
+ * 聊天室管理員轉讓事件
+ */
 export type RoomManagerTransferredEvent = BaseChatEvent<
   'ROOM_MANAGER_TRANSFERRED',
   {
-    roomId: string
+    roomId: ChatRoomId
     previousOwnerId: string
     ownerId: string
   }
 >
 
+/**
+ * 收到好友申請事件
+ */
+export type FriendRequestReceivedEvent = BaseChatEvent<'FRIEND_REQUEST_RECEIVED', ChatFriendRequest>
+
+/**
+ * 好友申請被接受事件
+ */
+export type FriendRequestAcceptedEvent = BaseChatEvent<
+  'FRIEND_REQUEST_ACCEPTED',
+  {
+    requestId: string
+    roomId: ChatRoomId
+    requesterId: string
+    receiverId: string
+  }
+>
+
+/**
+ * 好友申請被拒絕事件
+ */
+export type FriendRequestRejectedEvent = BaseChatEvent<
+  'FRIEND_REQUEST_REJECTED',
+  {
+    requestId: string
+    receiverId: string
+  }
+>
+
+/**
+ * Server → Client WebSocket 訊息格式
+ */
 export type ChatWsEvent =
   | UserOnlineEvent
   | UserOfflineEvent
@@ -132,10 +186,13 @@ export type ChatWsEvent =
   | RoomLeftEvent
   | NewMessageEvent
   | LobbySnapshotEvent
-  | InvitationReceivedEvent
   | RoomSnapshotEvent
-  | RoomDeletedEvent
-  | MemberRemovedEvent
+  | InvitationReceivedEvent
   | InvitationAcceptedEvent
   | InvitationRejectedEvent
+  | RoomDeletedEvent
+  | MemberRemovedEvent
   | RoomManagerTransferredEvent
+  | FriendRequestReceivedEvent
+  | FriendRequestAcceptedEvent
+  | FriendRequestRejectedEvent

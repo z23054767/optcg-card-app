@@ -1,16 +1,17 @@
-import type { ClientWsMessage, ServerWsMessage } from "@/types/chat";
+import type { ClientWsMessage } from '@/types/chat'
+import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 /**
  * WebSocket 實例（Singleton）
  */
-let socket: WebSocket | null = null;
+let socket: WebSocket | null = null
 
 /**
  * 是否正在建立連線
  *
  * 避免同時間重複建立多條 WebSocket。
  */
-let isConnecting = false;
+let isConnecting = false
 
 /**
  * 尚未連線完成前欲加入的聊天室
@@ -18,62 +19,62 @@ let isConnecting = false;
  * 若 joinRoom() 時 WebSocket 尚未建立完成，
  * 則暫存 RoomId，待連線成功後自動加入。
  */
-let pendingJoinRoomId: string | null = null;
+let pendingJoinRoomId: string | null = null
 
 /**
  * 是否允許自動重連
  *
  * 登出時會設為 false，避免持續重新連線。
  */
-let shouldReconnect = false;
+let shouldReconnect = false
 
 /**
  * 已重連次數
  *
  * 用於計算 Exponential Backoff 延遲時間。
  */
-let reconnectAttempts = 0;
+let reconnectAttempts = 0
 
 /**
  * 重連 Timer
  */
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
  * 建立 WebSocket 所使用的 JWT Token
  */
-let connectionToken = "";
+let connectionToken = ''
 
 /**
  * 收到 Server 訊息後的 Callback
  */
-let onMessageHandler: ((message: ServerWsMessage) => void) | null = null;
+let onMessageHandler: ((message: ChatWsEvent) => void) | null = null
 
 /**
  * WebSocket 成功建立後的 Callback
  */
-let onOpenHandler: (() => void) | null = null;
-let onAuthFailedHandler: (() => void) | null = null;
+let onOpenHandler: (() => void) | null = null
+let onAuthFailedHandler: (() => void) | null = null
 
 /**
  * 重連最小等待時間
  */
-const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_BASE_DELAY_MS = 1000
 
 /**
  * 重連最大等待時間
  */
-const RECONNECT_MAX_DELAY_MS = 10000;
-const WS_CLOSE_AUTH_TOKEN_EXPIRED = 4001;
-const WS_CLOSE_AUTH_TOKEN_INVALID = 4002;
+const RECONNECT_MAX_DELAY_MS = 10000
+const WS_CLOSE_AUTH_TOKEN_EXPIRED = 4001
+const WS_CLOSE_AUTH_TOKEN_INVALID = 4002
 
 /**
  * 清除重連 Timer
  */
 function clearReconnectTimer(): void {
   if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
   }
 }
 
@@ -89,22 +90,19 @@ function clearReconnectTimer(): void {
  * 第五次以上：10 秒
  */
 function scheduleReconnect(): void {
-  if (!shouldReconnect || reconnectTimer) return;
+  if (!shouldReconnect || reconnectTimer) return
 
-  const delay = Math.min(
-    RECONNECT_BASE_DELAY_MS * 2 ** reconnectAttempts,
-    RECONNECT_MAX_DELAY_MS,
-  );
+  const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** reconnectAttempts, RECONNECT_MAX_DELAY_MS)
 
-  reconnectAttempts += 1;
+  reconnectAttempts += 1
 
   reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
+    reconnectTimer = null
 
-    if (!shouldReconnect) return;
+    if (!shouldReconnect) return
 
-    createSocket();
-  }, delay);
+    createSocket()
+  }, delay)
 }
 
 /**
@@ -115,14 +113,13 @@ function scheduleReconnect(): void {
  * - 斷線後可自動重連
  */
 function createSocket(): void {
-  if (isConnecting || !connectionToken) return;
+  if (isConnecting || !connectionToken) return
 
   if (
     socket &&
-    (socket.readyState === WebSocket.OPEN ||
-      socket.readyState === WebSocket.CONNECTING)
+    (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)
   ) {
-    return;
+    return
   }
 
   /**
@@ -131,69 +128,69 @@ function createSocket(): void {
    * http  -> ws
    * https -> wss
    */
-  const protocol = location.protocol === "https:" ? "wss" : "ws";
+  const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
 
   /**
    * 建立 WebSocket URL
    */
-  const webSocketURL = `${protocol}://localhost:3000/chat?token=${encodeURIComponent(connectionToken)}`;
+  const webSocketURL = `${protocol}://localhost:3000/chat?token=${encodeURIComponent(connectionToken)}`
 
-  isConnecting = true;
-  socket = new WebSocket(webSocketURL);
+  isConnecting = true
+  socket = new WebSocket(webSocketURL)
 
-  console.log("[WS] connect to", `${protocol}://localhost:3000/chat`);
+  console.log('[WS] connect to', `${protocol}://localhost:3000/chat`)
 
   /**
    * WebSocket 建立成功
    */
   socket.onopen = () => {
-    isConnecting = false;
+    isConnecting = false
 
     /**
      * 重置重連次數
      */
-    reconnectAttempts = 0;
+    reconnectAttempts = 0
 
-    clearReconnectTimer();
+    clearReconnectTimer()
 
-    console.log("[WS] connected");
+    console.log('[WS] connected')
 
     /**
      * 若建立連線前已有指定聊天室，
      * 則於連線成功後自動加入。
      */
     if (pendingJoinRoomId) {
-      const roomId = pendingJoinRoomId;
-      pendingJoinRoomId = null;
+      const roomId = pendingJoinRoomId
+      pendingJoinRoomId = null
 
-      joinRoom(roomId);
+      joinRoom(roomId)
     }
 
     /**
      * 通知外部已成功建立連線
      */
-    onOpenHandler?.();
-  };
+    onOpenHandler?.()
+  }
 
   /**
    * 收到 Server 推播訊息
    */
   socket.onmessage = (event) => {
     try {
-      const data = JSON.parse(event.data) as ServerWsMessage;
+      const data = JSON.parse(event.data) as ChatWsEvent
 
-      onMessageHandler?.(data);
+      onMessageHandler?.(data)
     } catch (err) {
-      console.error("[WS] invalid message format", err);
+      console.error('[WS] invalid message format', err)
     }
-  };
+  }
 
   /**
    * WebSocket 發生錯誤
    */
   socket.onerror = (event) => {
-    console.error("[WS] error", event);
-  };
+    console.error('[WS] error', event)
+  }
 
   /**
    * WebSocket 關閉
@@ -201,26 +198,25 @@ function createSocket(): void {
    * 若允許重連則自動安排重新建立連線。
    */
   socket.onclose = (event) => {
-    console.warn("[WS] closed", event.code, event.reason);
+    console.warn('[WS] closed', event.code, event.reason)
 
-    socket = null;
-    isConnecting = false;
+    socket = null
+    isConnecting = false
 
     const isAuthErrorClose =
-      event.code === WS_CLOSE_AUTH_TOKEN_EXPIRED ||
-      event.code === WS_CLOSE_AUTH_TOKEN_INVALID;
+      event.code === WS_CLOSE_AUTH_TOKEN_EXPIRED || event.code === WS_CLOSE_AUTH_TOKEN_INVALID
 
     if (isAuthErrorClose) {
-      shouldReconnect = false;
-      clearReconnectTimer();
-      onAuthFailedHandler?.();
-      return;
+      shouldReconnect = false
+      clearReconnectTimer()
+      onAuthFailedHandler?.()
+      return
     }
 
     if (shouldReconnect) {
-      scheduleReconnect();
+      scheduleReconnect()
     }
-  };
+  }
 }
 
 /**
@@ -232,33 +228,32 @@ function createSocket(): void {
  */
 export function connectChatSocket(
   token: string,
-  onMessage: (message: ServerWsMessage) => void,
+  onMessage: (message: ChatWsEvent) => void,
   onOpen?: () => void,
   onAuthFailed?: () => void,
 ): void {
-  connectionToken = token;
-  onMessageHandler = onMessage;
-  onOpenHandler = onOpen ?? null;
-  onAuthFailedHandler = onAuthFailed ?? null;
+  connectionToken = token
+  onMessageHandler = onMessage
+  onOpenHandler = onOpen ?? null
+  onAuthFailedHandler = onAuthFailed ?? null
 
   /**
    * 開啟自動重連
    */
-  shouldReconnect = true;
+  shouldReconnect = true
 
   /**
    * 已存在可用連線則直接通知成功
    */
   if (
     socket &&
-    (socket.readyState === WebSocket.OPEN ||
-      socket.readyState === WebSocket.CONNECTING)
+    (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)
   ) {
-    onOpen?.();
-    return;
+    onOpen?.()
+    return
   }
 
-  createSocket();
+  createSocket()
 }
 
 /**
@@ -269,19 +264,19 @@ export function connectChatSocket(
  */
 export function sendChatMessage(roomId: string, content: string): void {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    console.warn("[WS] not connected");
-    return;
+    console.warn('[WS] not connected')
+    return
   }
 
   const message: ClientWsMessage = {
-    type: "SEND_MESSAGE",
+    type: 'SEND_MESSAGE',
     payload: {
       roomId,
       content,
     },
-  };
+  }
 
-  socket.send(JSON.stringify(message));
+  socket.send(JSON.stringify(message))
 }
 
 /**
@@ -295,22 +290,22 @@ export function sendChatMessage(roomId: string, content: string): void {
  * 同時停止所有自動重連。
  */
 export function disconnectChatSocket(): void {
-  shouldReconnect = false;
+  shouldReconnect = false
 
-  clearReconnectTimer();
+  clearReconnectTimer()
 
   if (socket && socket.readyState !== WebSocket.CLOSED) {
-    socket.close();
+    socket.close()
   }
 
-  socket = null;
-  isConnecting = false;
-  pendingJoinRoomId = null;
-  reconnectAttempts = 0;
-  connectionToken = "";
-  onMessageHandler = null;
-  onOpenHandler = null;
-  onAuthFailedHandler = null;
+  socket = null
+  isConnecting = false
+  pendingJoinRoomId = null
+  reconnectAttempts = 0
+  connectionToken = ''
+  onMessageHandler = null
+  onOpenHandler = null
+  onAuthFailedHandler = null
 }
 
 /**
@@ -322,24 +317,24 @@ export function disconnectChatSocket(): void {
  * @param roomId 聊天室 Id
  */
 export function joinRoom(roomId: string): void {
-  console.log("[WS] joinRoom call:", roomId);
+  console.log('[WS] joinRoom call:', roomId)
 
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    console.warn("[WS] not ready, pending join:", roomId);
+    console.warn('[WS] not ready, pending join:', roomId)
 
-    pendingJoinRoomId = roomId;
+    pendingJoinRoomId = roomId
 
-    return;
+    return
   }
 
-  console.log("[WS] send JOIN_ROOM:", roomId);
+  console.log('[WS] send JOIN_ROOM:', roomId)
 
   socket.send(
     JSON.stringify({
-      type: "JOIN_ROOM",
+      type: 'JOIN_ROOM',
       payload: {
         roomId,
       },
     }),
-  );
+  )
 }
