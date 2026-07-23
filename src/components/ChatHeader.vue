@@ -10,7 +10,21 @@
         ☰
       </button>
 
-      <div class="min-w-0 flex-1">
+      <div class="flex min-w-0 flex-1 items-center gap-3">
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
+          :class="avatarBackgroundClass"
+        >
+          <img
+            v-if="resolvedAvatarUrl && !avatarLoadFailed"
+            :src="resolvedAvatarUrl"
+            :alt="`${title} 頭像`"
+            class="h-full w-full object-cover"
+            @error="avatarLoadFailed = true"
+          />
+          <span v-else>{{ defaultAvatar }}</span>
+        </span>
+
         <div class="min-w-0">
           <h1 class="truncate text-base font-semibold text-gray-800 sm:text-lg">
             {{ title }}
@@ -159,9 +173,14 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed, ref, watch } from 'vue'
+import { resolveChatRoomAvatarUrl } from '@/utils/chatRoomAvatar'
+
+const props = defineProps<{
   title: string
   currentRoomId: string
+  roomType: 'group' | 'private' | 'lobby'
+  avatarUrl?: string | null
   onlineCount: number
   hasUnreadNotifications: boolean
   showCreateButton: boolean
@@ -170,6 +189,45 @@ defineProps<{
   showManageGroupButton: boolean
   showMembersButton: boolean
 }>()
+
+const avatarLoadFailed = ref(false)
+
+const resolvedAvatarUrl = computed(() => {
+  if (props.roomType !== 'group') return null
+
+  return resolveChatRoomAvatarUrl(props.avatarUrl)
+})
+
+const defaultAvatar = computed(() => {
+  switch (props.roomType) {
+    case 'group':
+      return '👥'
+    case 'private':
+      return '👤'
+    case 'lobby':
+    default:
+      return '🏠'
+  }
+})
+
+const avatarBackgroundClass = computed(() => {
+  switch (props.roomType) {
+    case 'group':
+      return 'bg-green-100'
+    case 'private':
+      return 'bg-purple-100'
+    case 'lobby':
+    default:
+      return 'bg-blue-100'
+  }
+})
+
+watch(
+  () => [props.roomType, props.avatarUrl],
+  () => {
+    avatarLoadFailed.value = false
+  },
+)
 
 defineEmits<{
   'toggle-sidebar': []

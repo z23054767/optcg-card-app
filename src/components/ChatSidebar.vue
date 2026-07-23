@@ -110,10 +110,11 @@
                 class="w-7 h-7 rounded-full flex items-center justify-center bg-green-100 overflow-hidden"
               >
                 <img
-                  v-if="room.avatarUrl"
-                  :src="room.avatarUrl"
+                  v-if="getRoomAvatarUrl(room) && !failedAvatarRoomIds.has(room.id)"
+                  :src="getRoomAvatarUrl(room) ?? undefined"
                   alt="群組頭像"
                   class="w-full h-full object-cover"
+                  @error="markAvatarLoadFailed(room.id)"
                 />
                 <span v-else>👥</span>
               </span>
@@ -131,6 +132,7 @@
   <div v-if="open" class="fixed inset-0 z-30 bg-black/40 sm:hidden" @click="$emit('close')"></div>
 </template>
 <script setup lang="ts">
+import { resolveChatRoomAvatarUrl } from '@/utils/chatRoomAvatar'
 import { computed, ref } from 'vue'
 import type { ChatRoomListItem } from '@/types/chat'
 
@@ -142,6 +144,7 @@ const props = defineProps<{
 
 const privateCollapsed = ref(false)
 const groupCollapsed = ref(false)
+const failedAvatarRoomIds = ref<Set<string>>(new Set())
 
 defineEmits<{
   close: []
@@ -150,6 +153,14 @@ defineEmits<{
 
 function getRoomName(room: ChatRoomListItem): string {
   return room.name?.trim() || room.id
+}
+
+function getRoomAvatarUrl(room: ChatRoomListItem): string | null {
+  return resolveChatRoomAvatarUrl(room.avatarUrl)
+}
+
+function markAvatarLoadFailed(roomId: string): void {
+  failedAvatarRoomIds.value = new Set([...failedAvatarRoomIds.value, roomId])
 }
 
 const privateRooms = computed(() => props.rooms.filter((room) => room.type === 'private'))

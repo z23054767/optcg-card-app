@@ -14,6 +14,10 @@ export const http = axios.create({
 http.interceptors.request.use((config) => {
   const auth = useAuthStore()
 
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
+
   if (auth.token) {
     config.headers.Authorization = `Bearer ${auth.token}`
   }

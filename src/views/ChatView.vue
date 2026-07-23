@@ -4,14 +4,15 @@
       @close="sidebarOpen = false" @switch-room="switchRoom" />
 
     <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
-      <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId"
-        :online-count="chat.currentRoomOnlineCount" :has-unread-notifications="chat.hasUnreadNotifications"
-        :show-create-button="canCreateRoom" :show-private-chat-button="canStartPrivateChat"
-        :show-invite-members-button="canInviteMembers" :show-manage-group-button="canManageGroup"
-        :show-members-button="isCurrentGroupRoom" @open-sidebar="sidebarOpen = true"
-        @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
-        @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
-        @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
+      <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId" :room-type="currentRoomType"
+        :avatar-url="currentRoomAvatarUrl" :online-count="chat.currentRoomOnlineCount"
+        :has-unread-notifications="chat.hasUnreadNotifications" :show-create-button="canCreateRoom"
+        :show-private-chat-button="canStartPrivateChat" :show-invite-members-button="canInviteMembers"
+        :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
+        @open-sidebar="sidebarOpen = true" @create-room="showCreateRoom = true"
+        @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby" @toggle-sidebar="toggleSidebar"
+        @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers" @invite-members="showInviteMembers = true"
+        @open-manage-group="openGroupManage" />
 
       <UserMenu :open="showUserMenu" :name="auth.user?.name || auth.user?.account || '使用者'"
         :account="auth.user?.account || ''" :invitation-count="chat.invitations.length + friendRequests.length"
@@ -103,12 +104,14 @@ import {
   removeChatRoomMemberApi,
   transferChatRoomManagerApi,
   updateGroupChatRoomApi,
+  uploadGroupChatRoomAvatarApi,
   rejectChatInvitationApi,
   searchChatUsersApi,
   createFriendRequestApi,
   getMyFriendRequestsApi,
   acceptFriendRequestApi,
   rejectFriendRequestApi,
+  deleteGroupChatRoomAvatarApi,
 } from '@/api/chatApi'
 import { connectChatSocket, disconnectChatSocket, joinRoom } from '@/websocket/chatSocket'
 import { useAuthStore } from '@/stores/authStore'
@@ -162,7 +165,6 @@ const searchingPrivateUsers = ref(false)
 const privateUserSearched = ref(false)
 const invitingPrivateUserId = ref<string | null>(null)
 const privateChatUsers = ref<ChatUserSearchItem[]>([])
-const privateUserSearchKeyword = ref('')
 let privateUserSearchRequestId = 0
 const invitingMembers = ref(false)
 const updatingGroupInfo = ref(false)
@@ -249,14 +251,23 @@ const messageTimelineItems = computed<MessageTimelineItem[]>(() => {
   return items
 })
 
-const currentRoomTitle = computed(() => {
-  if (chat.currentRoomId === 'lobby') return '🏠 大廳'
+const currentRoom = computed(() => chat.rooms.find((room) => room.id === chat.currentRoomId))
 
-  const room = chat.rooms.find((item) => item.id === chat.currentRoomId)
-  return `💬 ${room?.name || '聊天室'}`
+const currentRoomTitle = computed(() => {
+  if (chat.currentRoomId === 'lobby') return '大廳'
+
+  return currentRoom.value?.name?.trim() || '聊天室'
 })
 
-const currentRoom = computed(() => chat.rooms.find((room) => room.id === chat.currentRoomId))
+const currentRoomType = computed<'group' | 'private' | 'lobby'>(() => {
+  if (chat.currentRoomId === 'lobby') return 'lobby'
+
+  return currentRoom.value?.type === 'group' ? 'group' : 'private'
+})
+
+const currentRoomAvatarUrl = computed(() =>
+  currentRoomType.value === 'group' ? currentRoom.value?.avatarUrl ?? null : null,
+)
 
 const isCurrentGroupRoom = computed(() => currentRoom.value?.type === 'group')
 const isCurrentRoomManager = computed(
@@ -417,8 +428,6 @@ async function searchPrivateUsers(keyword: string): Promise<void> {
     return
   }
 
-  privateUserSearchKeyword.value = trimmedKeyword
-
   const requestId = ++privateUserSearchRequestId
 
   searchingPrivateUsers.value = true
@@ -456,7 +465,6 @@ function clearPrivateUserSearch(): void {
    */
   privateUserSearchRequestId += 1
 
-  privateUserSearchKeyword.value = ''
   privateChatUsers.value = []
   privateUserSearched.value = false
   searchingPrivateUsers.value = false
@@ -818,7 +826,8 @@ async function reInvite(inviteeAccount: string): Promise<void> {
 
 async function saveGroupInfo(payload: {
   roomName: string
-  avatarUrl: string | null
+  avatarFile: File | null
+  removeAvatar: boolean
 }): Promise<void> {
   if (!canManageGroup.value || updatingGroupInfo.value) return
 
@@ -827,12 +836,26 @@ async function saveGroupInfo(payload: {
   try {
     await updateGroupChatRoomApi(chat.currentRoomId, {
       roomName: payload.roomName,
-      avatarUrl: payload.avatarUrl,
     })
+
+    if (payload.removeAvatar) {
+      await deleteGroupChatRoomAvatarApi(chat.currentRoomId)
+    } else if (payload.avatarFile) {
+      await uploadGroupChatRoomAvatarApi(
+        chat.currentRoomId,
+        payload.avatarFile,
+      )
+    }
+
     await loadMyRooms()
-    showToast('群組資訊已更新')
+
+    showToast(
+      payload.removeAvatar
+        ? "群組頭像已刪除"
+        : "群組資訊已更新",
+    )
   } catch {
-    showToast('更新失敗，請稍後再試', 'error')
+    showToast("更新失敗，請稍後再試", "error")
   } finally {
     updatingGroupInfo.value = false
   }
@@ -992,77 +1015,6 @@ onMounted(async () => {
               showGroupManage.value = false
               showToast('聊天室管理員已變更')
             }
-          }
-
-          break
-        }
-
-        case 'FRIEND_REQUEST_RECEIVED': {
-          chat.applyEvent(message)
-
-          friendRequests.value = [
-            message.payload,
-            ...friendRequests.value.filter(
-              (item) => item.requestId !== message.payload.requestId,
-            ),
-          ]
-
-          privateChatUsers.value = privateChatUsers.value.map((user) =>
-            String(user.userId) === String(message.payload.requesterId)
-              ? {
-                ...user,
-                friendshipStatus: 'incoming_pending',
-              }
-              : user,
-          )
-
-          break
-        }
-
-        case 'FRIEND_REQUEST_ACCEPTED': {
-          chat.applyEvent(message)
-
-          friendRequests.value = friendRequests.value.filter(
-            (item) => item.requestId !== message.payload.requestId,
-          )
-
-          privateChatUsers.value = privateChatUsers.value.map((user) =>
-            String(user.userId) === String(message.payload.requesterId) ||
-              String(user.userId) === String(message.payload.receiverId)
-              ? {
-                ...user,
-                friendshipStatus: 'friend',
-              }
-              : user,
-          )
-
-          void loadMyRooms()
-
-          if (showPrivateChat.value && privateUserSearchKeyword.value) {
-            void searchPrivateUsers(privateUserSearchKeyword.value)
-          }
-
-          break
-        }
-
-        case 'FRIEND_REQUEST_REJECTED': {
-          chat.applyEvent(message)
-
-          friendRequests.value = friendRequests.value.filter(
-            (item) => item.requestId !== message.payload.requestId,
-          )
-
-          privateChatUsers.value = privateChatUsers.value.map((user) =>
-            String(user.userId) === String(message.payload.receiverId)
-              ? {
-                ...user,
-                friendshipStatus: 'none',
-              }
-              : user,
-          )
-
-          if (showPrivateChat.value && privateUserSearchKeyword.value) {
-            void searchPrivateUsers(privateUserSearchKeyword.value)
           }
 
           break

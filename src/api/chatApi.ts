@@ -109,8 +109,12 @@ export interface InviteChatRoomMembersResponse {
  * 更新群組聊天室請求
  */
 export interface UpdateGroupChatRoomRequest {
-  roomName?: string
-  avatarUrl?: string | null
+  roomName: string
+}
+
+export interface UploadGroupChatRoomAvatarResponse {
+  success: true
+  avatarPath: string
 }
 
 /**
@@ -240,6 +244,33 @@ export async function updateGroupChatRoomApi(
   )
 
   return data
+}
+
+/**
+ * 上傳群組聊天室頭像
+ */
+export async function uploadGroupChatRoomAvatarApi(
+  roomId: string,
+  file: File,
+): Promise<UploadGroupChatRoomAvatarResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const { data } = await http.post<UploadGroupChatRoomAvatarResponse>(
+    `/chat/rooms/${encodeURIComponent(roomId)}/avatar`,
+    formData,
+  )
+
+  return data
+}
+
+/**
+ * 刪除群組聊天室頭像
+ */
+export async function deleteGroupChatRoomAvatarApi(
+  roomId: string,
+): Promise<void> {
+  await http.delete(`/chat/rooms/${roomId}/avatar`)
 }
 
 /**
