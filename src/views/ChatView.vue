@@ -162,6 +162,7 @@ const searchingPrivateUsers = ref(false)
 const privateUserSearched = ref(false)
 const invitingPrivateUserId = ref<string | null>(null)
 const privateChatUsers = ref<ChatUserSearchItem[]>([])
+const privateUserSearchKeyword = ref('')
 let privateUserSearchRequestId = 0
 const invitingMembers = ref(false)
 const updatingGroupInfo = ref(false)
@@ -416,6 +417,8 @@ async function searchPrivateUsers(keyword: string): Promise<void> {
     return
   }
 
+  privateUserSearchKeyword.value = trimmedKeyword
+
   const requestId = ++privateUserSearchRequestId
 
   searchingPrivateUsers.value = true
@@ -453,6 +456,7 @@ function clearPrivateUserSearch(): void {
    */
   privateUserSearchRequestId += 1
 
+  privateUserSearchKeyword.value = ''
   privateChatUsers.value = []
   privateUserSearched.value = false
   searchingPrivateUsers.value = false
@@ -988,6 +992,77 @@ onMounted(async () => {
               showGroupManage.value = false
               showToast('聊天室管理員已變更')
             }
+          }
+
+          break
+        }
+
+        case 'FRIEND_REQUEST_RECEIVED': {
+          chat.applyEvent(message)
+
+          friendRequests.value = [
+            message.payload,
+            ...friendRequests.value.filter(
+              (item) => item.requestId !== message.payload.requestId,
+            ),
+          ]
+
+          privateChatUsers.value = privateChatUsers.value.map((user) =>
+            String(user.userId) === String(message.payload.requesterId)
+              ? {
+                ...user,
+                friendshipStatus: 'incoming_pending',
+              }
+              : user,
+          )
+
+          break
+        }
+
+        case 'FRIEND_REQUEST_ACCEPTED': {
+          chat.applyEvent(message)
+
+          friendRequests.value = friendRequests.value.filter(
+            (item) => item.requestId !== message.payload.requestId,
+          )
+
+          privateChatUsers.value = privateChatUsers.value.map((user) =>
+            String(user.userId) === String(message.payload.requesterId) ||
+              String(user.userId) === String(message.payload.receiverId)
+              ? {
+                ...user,
+                friendshipStatus: 'friend',
+              }
+              : user,
+          )
+
+          void loadMyRooms()
+
+          if (showPrivateChat.value && privateUserSearchKeyword.value) {
+            void searchPrivateUsers(privateUserSearchKeyword.value)
+          }
+
+          break
+        }
+
+        case 'FRIEND_REQUEST_REJECTED': {
+          chat.applyEvent(message)
+
+          friendRequests.value = friendRequests.value.filter(
+            (item) => item.requestId !== message.payload.requestId,
+          )
+
+          privateChatUsers.value = privateChatUsers.value.map((user) =>
+            String(user.userId) === String(message.payload.receiverId)
+              ? {
+                ...user,
+                friendshipStatus: 'none',
+              }
+              : user,
+          )
+
+          if (showPrivateChat.value && privateUserSearchKeyword.value) {
+            void searchPrivateUsers(privateUserSearchKeyword.value)
           }
 
           break

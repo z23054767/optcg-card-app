@@ -55,27 +55,28 @@
             </span>
           </span>
 
-          <span v-if="user.friendshipStatus === 'friend'" class="shrink-0 text-xs font-medium text-green-600">
-            已經是朋友
+          <span v-if="user.friendshipStatus === 'friend'"
+            class="shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">
+            已是好友
           </span>
 
           <span v-else-if="user.friendshipStatus === 'outgoing_pending'"
-            class="shrink-0 text-xs font-medium text-amber-600">
-            已發送邀請
+            class="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
+            邀請中
           </span>
 
           <span v-else-if="user.friendshipStatus === 'incoming_pending'"
-            class="shrink-0 text-xs font-medium text-blue-600">
-            對方已邀請你
+            class="shrink-0 rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
+            待你接受
           </span>
 
           <button v-else type="button"
-            class="shrink-0 rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+            class="shrink-0 rounded-lg bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="inviting" @click="$emit('invite', user)">
             {{
               invitingUserId === user.userId
                 ? "邀請中…"
-                : "發送好友邀請"
+                : "發送邀請"
             }}
           </button>
         </div>
