@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
+  <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4" @click.self="$emit('close')">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[88vh]">
       <!-- Sticky header -->
       <div class="flex items-center justify-between px-5 py-4 border-b shrink-0">
