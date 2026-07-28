@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 
-type AuthUser = {
+export type AuthUser = {
   userId: string
   name: string
   account: string
+  avatarUrl?: string | null
+  bio?: string | null
 }
 
 function parseJwt(token: string): AuthUser {
@@ -54,6 +56,11 @@ export const useAuthStore = defineStore('auth', {
       this.user = parseJwt(token)
 
       localStorage.setItem('token', token)
+    },
+
+    updateProfile(profile: { name: string; avatarUrl: string | null; bio: string | null }) {
+      if (!this.user) return
+      this.user = { ...this.user, ...profile }
     },
 
     logout() {

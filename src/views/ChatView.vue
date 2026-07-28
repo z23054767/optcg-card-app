@@ -5,18 +5,22 @@
 
     <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId" :room-type="currentRoomType"
-        :avatar-url="currentRoomAvatarUrl" :online-count="chat.currentRoomOnlineCount"
+        :avatar-url="currentRoomAvatarUrl" :user-name="auth.user?.name || auth.user?.account || '使用者'"
+        :user-avatar-url="resolvedUserAvatarUrl" :online-count="chat.currentRoomOnlineCount"
         :has-unread-notifications="chat.hasUnreadNotifications" :show-create-button="canCreateRoom"
         :show-private-chat-button="canStartPrivateChat" :show-invite-members-button="canInviteMembers"
         :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
-        @open-sidebar="sidebarOpen = true" @create-room="showCreateRoom = true"
-        @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby" @toggle-sidebar="toggleSidebar"
-        @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers" @invite-members="showInviteMembers = true"
-        @open-manage-group="openGroupManage" />
+        @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
+        @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
+        @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
 
       <UserMenu :open="showUserMenu" :name="auth.user?.name || auth.user?.account || '使用者'"
-        :account="auth.user?.account || ''" :invitation-count="chat.invitations.length + friendRequests.length"
-        @close="showUserMenu = false" @logout="logout" @open-invitations="openInvitations" />
+        :account="auth.user?.account || ''" :avatar-url="resolvedUserAvatarUrl"
+        :invitation-count="chat.invitations.length + friendRequests.length" @close="showUserMenu = false"
+        @logout="logout" @open-invitations="openInvitations" @open-settings="openProfileSettings" />
+
+      <ProfileSettingsModal v-if="showProfileSettings && userProfile" :profile="userProfile"
+        @close="showProfileSettings = false" @saved="handleProfileSaved" />
 
       <CreateRoomModal v-if="showCreateRoom" :loading="creatingRoom" @close="showCreateRoom = false"
         @create="createRoom" />
@@ -138,6 +142,8 @@ import InviteMembersModal from '@/components/InviteMembersModal.vue'
 import PrivateChatModal from '@/components/PrivateChatModal.vue'
 import RoomMembersModal from '@/components/RoomMembersModal.vue'
 import GroupManageModal from '@/components/GroupManageModal.vue'
+import ProfileSettingsModal from '@/components/ProfileSettingsModal.vue'
+import { getMyProfileApi, resolveUserAvatarUrl, type UserProfile } from '@/api/profileApi'
 
 const auth = useAuthStore()
 const chat = useChatStore()
@@ -173,6 +179,9 @@ const removingMemberUserId = ref<string | null>(null)
 const transferringManagerUserId = ref<string | null>(null)
 const reInvitingInviteeId = ref<string | null>(null)
 const showUserMenu = ref(false)
+const showProfileSettings = ref(false)
+const userProfile = ref<UserProfile | null>(null)
+const resolvedUserAvatarUrl = computed(() => resolveUserAvatarUrl(auth.user?.avatarUrl))
 const showInvitations = ref(false)
 const showRoomMembers = ref(false)
 const showInviteMembers = ref(false)
@@ -265,9 +274,17 @@ const currentRoomType = computed<'group' | 'private' | 'lobby'>(() => {
   return currentRoom.value?.type === 'group' ? 'group' : 'private'
 })
 
-const currentRoomAvatarUrl = computed(() =>
-  currentRoomType.value === 'group' ? currentRoom.value?.avatarUrl ?? null : null,
-)
+const currentRoomAvatarUrl = computed<string | null>(() => {
+  switch (currentRoomType.value) {
+    case 'group':
+    case 'private':
+      return currentRoom.value?.avatarUrl ?? null
+
+    case 'lobby':
+    default:
+      return null
+  }
+})
 
 const isCurrentGroupRoom = computed(() => currentRoom.value?.type === 'group')
 const isCurrentRoomManager = computed(
@@ -277,6 +294,22 @@ const canCreateRoom = computed(() => chat.currentRoomId === 'lobby')
 const canStartPrivateChat = computed(() => chat.currentRoomId === 'lobby')
 const canInviteMembers = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
 const canManageGroup = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
+
+async function loadMyProfile(): Promise<void> {
+  try {
+    const profile = await getMyProfileApi()
+
+    userProfile.value = profile
+
+    auth.updateProfile({
+      name: profile.name,
+      avatarUrl: profile.avatarUrl,
+      bio: profile.bio,
+    })
+  } catch {
+    showToast("無法載入個人資料", "error")
+  }
+}
 
 function handleMessageScroll(event: Event): void {
   const el = event.currentTarget
@@ -918,6 +951,32 @@ async function deleteGroupRoom(): Promise<void> {
   }
 }
 
+
+async function openProfileSettings(): Promise<void> {
+  showUserMenu.value = false
+
+  try {
+    userProfile.value = await getMyProfileApi()
+
+    auth.updateProfile({
+      name: userProfile.value.name,
+      avatarUrl: userProfile.value.avatarUrl,
+      bio: userProfile.value.bio,
+    })
+
+    showProfileSettings.value = true
+  } catch {
+    showToast("無法載入個人設定", "error")
+  }
+}
+
+function handleProfileSaved(profile: UserProfile): void {
+  userProfile.value = profile
+  auth.updateProfile({ name: profile.name, avatarUrl: profile.avatarUrl, bio: profile.bio })
+  showProfileSettings.value = false
+  showToast('個人設定已更新')
+}
+
 function openInvitations(): void {
   showUserMenu.value = false
   showInvitations.value = true
@@ -966,6 +1025,12 @@ onMounted(async () => {
   if (!auth.isAuthenticated) return
 
   const roomId = String(route.query.roomId ?? 'lobby')
+
+  await Promise.all([
+    loadMyProfile(),
+    loadMyRooms(),
+    loadMyInvitations(false),
+  ])
 
   await loadMyRooms()
   await loadMyInvitations(false)
