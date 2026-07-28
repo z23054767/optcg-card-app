@@ -148,6 +148,18 @@ export type RoomManagerTransferredEvent = BaseChatEvent<
 >
 
 /**
+ * 群組聊天室資訊已更新事件
+ */
+export type RoomUpdatedEvent = BaseChatEvent<
+  'ROOM_UPDATED',
+  {
+    roomId: ChatRoomId
+    roomName?: string | null
+    avatarUrl?: string | null
+  }
+>
+
+/**
  * 收到好友申請事件
  */
 export type FriendRequestReceivedEvent = BaseChatEvent<'FRIEND_REQUEST_RECEIVED', ChatFriendRequest>
@@ -193,6 +205,7 @@ export type ChatWsEvent =
   | RoomDeletedEvent
   | MemberRemovedEvent
   | RoomManagerTransferredEvent
+  | RoomUpdatedEvent
   | FriendRequestReceivedEvent
   | FriendRequestAcceptedEvent
   | FriendRequestRejectedEvent

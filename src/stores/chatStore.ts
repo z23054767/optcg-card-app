@@ -106,6 +106,15 @@ export const useChatStore = defineStore('chat', {
         case 'ROOM_MANAGER_TRANSFERRED':
           this.updateRoomOwner(event.payload.roomId, event.payload.ownerId)
           break
+
+        case 'ROOM_UPDATED':
+          this.updateRoomInfo(
+            event.payload.roomId,
+            event.payload.roomName,
+            event.payload.avatarUrl,
+          )
+          break
+
         case 'INVITATION_ACCEPTED':
           // 管理員側在 ChatView 重新取得成員與邀請資料
           break
@@ -258,6 +267,22 @@ export const useChatStore = defineStore('chat', {
           ? {
               ...room,
               ownerId,
+            }
+          : room,
+      )
+    },
+
+    updateRoomInfo(
+      roomId: string,
+      roomName?: string | null,
+      avatarUrl?: string | null,
+    ): void {
+      this.rooms = this.rooms.map((room) =>
+        room.id === roomId
+          ? {
+              ...room,
+              name: roomName,
+              avatarUrl,
             }
           : room,
       )
