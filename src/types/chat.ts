@@ -11,6 +11,24 @@ export interface ChatAttachment {
   size: number
 }
 
+/** 網址預覽 */
+export interface ChatUrlPreview {
+  /** 實際開啟網址 */
+  url: string
+
+  /** 網頁標題 */
+  title: string | null
+
+  /** 網頁描述 */
+  description: string | null
+
+  /** 預覽圖片網址 */
+  imageUrl: string | null
+
+  /** 網站名稱 */
+  siteName: string | null
+}
+
 /**
  * 聊天訊息
  */
@@ -35,6 +53,9 @@ export interface ChatMessage {
 
   /** 附件 */
   attachment?: ChatAttachment | null
+
+  /** 網址預覽 */
+  urlPreview?: ChatUrlPreview | null
 
   /** 建立時間（ISO 8601） */
   createdAt: string

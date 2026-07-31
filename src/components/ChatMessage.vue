@@ -12,6 +12,46 @@
             {{ message.content }}
           </div>
 
+          <!-- 網址預覽 -->
+          <a v-if="message.urlPreview" :href="message.urlPreview.url" target="_blank" rel="noopener noreferrer"
+            class="block w-[min(76vw,360px)] max-w-full overflow-hidden rounded-xl border bg-white text-left text-gray-900 shadow-sm transition hover:border-gray-300 hover:shadow-md"
+            :class="message.content ? 'mt-2' : ''">
+            <img v-if="message.urlPreview.imageUrl && !urlPreviewImageFailed" :src="message.urlPreview.imageUrl"
+              :alt="message.urlPreview.title || message.urlPreview.siteName || '網址預覽圖片'"
+              class="h-40 w-full bg-gray-100 object-cover sm:h-44" loading="lazy" referrerpolicy="no-referrer"
+              @error="urlPreviewImageFailed = true" />
+
+            <div class="px-3 py-2.5">
+              <div class="flex items-start gap-2.5">
+                <div v-if="!message.urlPreview.imageUrl || urlPreviewImageFailed"
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-lg"
+                  aria-hidden="true">
+                  🌐
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <div v-if="message.urlPreview.siteName" class="mb-1 truncate text-[11px] text-gray-500">
+                    {{ message.urlPreview.siteName }}
+                  </div>
+
+                  <div v-if="message.urlPreview.title"
+                    class="line-clamp-2 text-sm font-semibold leading-5 text-gray-900">
+                    {{ message.urlPreview.title }}
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="message.urlPreview.description"
+                class="mt-1 line-clamp-2 text-xs leading-5 text-gray-500">
+                {{ message.urlPreview.description }}
+              </div>
+
+              <div class="mt-1.5 truncate text-[11px] text-blue-600">
+                {{ previewHostname }}
+              </div>
+            </div>
+          </a>
+
           <!-- 圖片載入中 -->
           <div v-if="message.attachment && isImageAttachment && previewLoading"
             class="flex h-36 w-52 max-w-[70vw] items-center justify-center overflow-hidden rounded-xl bg-gray-100 sm:h-48 sm:w-72"
@@ -235,6 +275,7 @@ const previewUrl = ref('')
 const previewLoading = ref(false)
 const previewLoadFailed = ref(false)
 const imagePreviewOpen = ref(false)
+const urlPreviewImageFailed = ref(false)
 
 const isMine = computed(() => {
   return auth.isAuthenticated && props.message.senderId === auth.userId
@@ -456,6 +497,18 @@ const formattedFileSize = computed(() => {
   return `${(size / 1024 / 1024).toFixed(1)} MB`
 })
 
+const previewHostname = computed(() => {
+  const url = props.message.urlPreview?.url
+
+  if (!url) return ''
+
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url
+  }
+})
+
 const formattedTime = computed(() => {
   return formatMessageTime(props.message.createdAt)
 })
@@ -563,6 +616,13 @@ watch(
   () => {
     closeImagePreview()
     void loadAttachmentPreview()
+  },
+)
+
+watch(
+  () => props.message.urlPreview?.imageUrl,
+  () => {
+    urlPreviewImageFailed.value = false
   },
 )
 
