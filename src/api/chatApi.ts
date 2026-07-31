@@ -399,3 +399,62 @@ export async function rejectFriendRequestApi(requestId: string): Promise<{ succe
 
   return data
 }
+
+
+/**
+ * 上傳聊天附件（單檔最大 25 MB）
+ */
+export async function uploadChatAttachmentApi(
+  roomId: string,
+  file: File,
+): Promise<{ message: ChatMessage }> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const { data } = await http.post<{ message: ChatMessage }>(
+    `/chat/rooms/${encodeURIComponent(roomId)}/attachments`,
+    formData,
+  )
+
+  return data
+}
+
+/**
+ * 取得聊天室附件 Blob
+ */
+export async function getChatAttachmentBlobApi(
+  roomId: string,
+  attachmentId: string,
+): Promise<Blob> {
+  const { data } = await http.get<Blob>(
+    `/chat/rooms/${encodeURIComponent(roomId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    {
+      responseType: 'blob',
+    },
+  )
+
+  return data
+}
+
+/**
+ * 下載聊天室附件
+ */
+export async function downloadChatAttachmentApi(
+  roomId: string,
+  attachmentId: string,
+  fileName: string,
+): Promise<void> {
+  const blob = await getChatAttachmentBlobApi(roomId, attachmentId)
+  const objectUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  try {
+    link.href = objectUrl
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+  } finally {
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+  }
+}

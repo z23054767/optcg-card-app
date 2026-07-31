@@ -3,6 +3,14 @@
  */
 export type ChatRoomId = string
 
+/** 聊天附件 */
+export interface ChatAttachment {
+  id: string
+  name: string
+  mimeType: string
+  size: number
+}
+
 /**
  * 聊天訊息
  */
@@ -24,6 +32,9 @@ export interface ChatMessage {
 
   /** 訊息內容 */
   content: string
+
+  /** 附件 */
+  attachment?: ChatAttachment | null
 
   /** 建立時間（ISO 8601） */
   createdAt: string
@@ -144,6 +155,9 @@ export interface ChatInvitation {
   /** 邀請狀態 */
   status: 'pending' | 'accepted' | 'rejected'
 
+  /** 附件 */
+  attachment?: ChatAttachment | null
+
   /** 建立時間（ISO 8601） */
   createdAt: string
 }
@@ -174,6 +188,9 @@ export interface ChatFriendRequest {
 
   /** 好友申請狀態 */
   status: ChatFriendRequestStatus
+
+  /** 附件 */
+  attachment?: ChatAttachment | null
 
   /** 建立時間（ISO 8601） */
   createdAt: string

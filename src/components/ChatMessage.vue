@@ -1,30 +1,225 @@
 <template>
-  <div class="mb-2 flex" :class="isMine ? 'justify-end' : 'justify-start'">
-    <div class="flex max-w-[92%] items-end gap-1 sm:max-w-[82%] lg:max-w-[68%]" :class="rowClass">
-      <div class="shrink-0 px-0.5 pb-0.5 text-[11px] leading-none text-gray-400">
-        {{ formattedTime }}
-      </div>
-
+  <div class="mb-3 flex w-full" :class="isMine ? 'justify-end' : 'justify-start'">
+    <div class="flex min-w-0 max-w-[86%] items-end gap-1.5 sm:max-w-[76%] lg:max-w-[64%]" :class="rowClass">
       <div class="min-w-0">
         <div v-if="!isMine" class="mb-1 px-1 text-[11px] leading-none text-gray-500">
           {{ displayName }}
         </div>
-        <div
-          class="w-fit rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm sm:text-[15px]"
-          :class="bubbleClass"
-        >
-          <div class="whitespace-pre-wrap break-words">
+
+        <div class="w-fit max-w-full text-sm leading-relaxed sm:text-[15px]" :class="[bubbleClass, bubblePaddingClass]">
+          <!-- 純文字訊息 -->
+          <div v-if="message.content" class="whitespace-pre-wrap wrap-break-word">
             {{ message.content }}
           </div>
+
+          <!-- 圖片載入中 -->
+          <div v-if="message.attachment && isImageAttachment && previewLoading"
+            class="flex h-36 w-52 max-w-[70vw] items-center justify-center overflow-hidden rounded-xl bg-gray-100 sm:h-48 sm:w-72"
+            :class="message.content ? 'mt-2' : ''">
+            <div class="flex flex-col items-center gap-2 text-gray-400">
+              <span class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500"></span>
+              <span class="text-xs">圖片載入中</span>
+            </div>
+          </div>
+
+          <!-- 圖片附件 -->
+          <div v-else-if="
+            message.attachment &&
+            isImageAttachment &&
+            previewUrl &&
+            !previewLoadFailed
+          " class="overflow-hidden rounded-xl border shadow-sm" :class="[
+            message.content ? 'mt-2' : '',
+            isMine
+              ? 'border-blue-400/50 bg-blue-600'
+              : 'border-gray-200 bg-white',
+          ]">
+            <button type="button" class="group relative block max-w-full overflow-hidden bg-gray-100" title="開啟圖片預覽"
+              @click="openImagePreview">
+              <img :src="previewUrl" :alt="message.attachment.name" class="
+                  block
+                  h-auto
+                  max-h-65
+                  max-w-[70vw]
+                  object-contain
+                  sm:max-h-95
+                  sm:max-w-105
+                  lg:max-h-110
+                  lg:max-w-130
+                " @error="handlePreviewError" />
+
+              <span class="
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  flex
+                  items-center
+                  justify-center
+                  bg-black/0
+                  opacity-0
+                  transition
+                  group-hover:bg-black/20
+                  group-hover:opacity-100
+                ">
+                <span class="rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white">
+                  查看圖片
+                </span>
+              </span>
+            </button>
+
+            <div class="flex max-w-[70vw] items-center gap-2 px-2.5 py-2 sm:max-w-105 lg:max-w-130"
+              :class="isMine ? 'text-white' : 'text-gray-700'">
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-xs font-medium">
+                  {{ message.attachment.name }}
+                </div>
+
+                <div class="text-[11px]" :class="isMine ? 'text-blue-100' : 'text-gray-400'">
+                  {{ formattedFileSize }}
+                </div>
+              </div>
+
+              <button type="button" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition"
+                :class="isMine
+                  ? 'bg-white/15 text-white hover:bg-white/25'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  " title="下載圖片" @click.stop="downloadAttachment">
+                ↓
+              </button>
+            </div>
+          </div>
+
+          <!-- 不支援預覽的附件 -->
+          <button v-else-if="message.attachment" type="button" class="
+            group
+            flex
+            w-[min(76vw,320px)]
+            max-w-full
+            items-center
+            gap-3
+            rounded-xl
+            border
+            border-gray-200
+            bg-white
+            px-3
+            py-3
+            text-left
+            text-gray-800
+            shadow-sm
+            transition
+            hover:border-gray-300
+            hover:bg-gray-50
+            active:scale-[0.99]
+          " :class="message.content ? 'mt-2' : ''" @click="downloadAttachment">
+            <span class="
+              flex
+              h-11
+              w-11
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              bg-gray-100
+              text-2xl
+            ">
+              {{ attachmentIcon }}
+            </span>
+
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-800">
+                {{ message.attachment.name }}
+              </span>
+
+              <span class="mt-0.5 block text-xs text-gray-500">
+                {{ attachmentTypeLabel }}・{{ formattedFileSize }}
+              </span>
+            </span>
+
+            <span class="
+              flex
+              h-8
+              w-8
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              bg-gray-100
+              text-gray-600
+              transition
+              group-hover:bg-gray-200
+            ">
+              ↓
+            </span>
+          </button>
+
+          <!-- 預覽失敗 -->
+          <div v-if="
+            message.attachment &&
+            isImageAttachment &&
+            previewLoadFailed
+          " class="mt-1 text-xs" :class="isMine ? 'text-blue-100' : 'text-red-600'">
+            圖片預覽載入失敗，請點擊附件下載。
+          </div>
+        </div>
+
+        <!-- 時間改到氣泡下方，手機比較不會擠壓 -->
+        <div class="mt-1 px-1 text-[10px] leading-none text-gray-400" :class="isMine ? 'text-right' : 'text-left'">
+          {{ formattedTime }}
         </div>
       </div>
     </div>
   </div>
+
+  <!-- 全螢幕圖片預覽 -->
+  <Teleport to="body">
+    <div v-if="imagePreviewOpen && previewUrl && message.attachment"
+      class="fixed inset-0 z-100 flex flex-col bg-black/90" @click.self="closeImagePreview">
+      <header class="flex h-14 shrink-0 items-center justify-between gap-3 px-3 text-white sm:px-5">
+        <div class="min-w-0">
+          <div class="truncate text-sm font-medium">
+            {{ message.attachment.name }}
+          </div>
+
+          <div class="text-[11px] text-gray-300">
+            {{ formattedFileSize }}
+          </div>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-2">
+          <button type="button" class="rounded-lg bg-white/10 px-3 py-2 text-sm hover:bg-white/20"
+            @click="downloadAttachment">
+            下載
+          </button>
+
+          <button type="button"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-2xl hover:bg-white/20"
+            aria-label="關閉圖片預覽" @click="closeImagePreview">
+            ×
+          </button>
+        </div>
+      </header>
+
+      <div class="flex min-h-0 flex-1 items-center justify-center overflow-auto p-3 sm:p-5"
+        @click.self="closeImagePreview">
+        <img :src="previewUrl" :alt="message.attachment.name" class="max-h-full max-w-full object-contain" />
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 
+import {
+  downloadChatAttachmentApi,
+  getChatAttachmentBlobApi,
+} from '@/api/chatApi'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { ChatMessage } from '@/types/chat'
@@ -36,6 +231,11 @@ const props = defineProps<{
 const auth = useAuthStore()
 const chat = useChatStore()
 
+const previewUrl = ref('')
+const previewLoading = ref(false)
+const previewLoadFailed = ref(false)
+const imagePreviewOpen = ref(false)
+
 const isMine = computed(() => {
   return auth.isAuthenticated && props.message.senderId === auth.userId
 })
@@ -43,7 +243,10 @@ const isMine = computed(() => {
 const displayName = computed(() => {
   if (isMine.value) {
     const name =
-      auth.userName || props.message.senderName || props.message.senderAccount || '使用者'
+      auth.userName ||
+      props.message.senderName ||
+      props.message.senderAccount ||
+      '使用者'
 
     return `${name}（你）`
   }
@@ -59,17 +262,269 @@ const displayName = computed(() => {
   )
 })
 
-const rowClass = computed(() => (isMine.value ? 'flex-row-reverse' : 'flex-row'))
-
-const bubbleClass = computed(() => {
-  if (isMine.value) {
-    return 'rounded-br-md bg-blue-500 text-white'
-  }
-
-  return 'rounded-bl-md border border-gray-200 bg-white text-gray-900'
+const rowClass = computed(() => {
+  return isMine.value ? 'flex-row-reverse' : 'flex-row'
 })
 
-const formattedTime = computed(() => formatMessageTime(props.message.createdAt))
+const isAttachmentOnlyMessage = computed(() => {
+  return Boolean(props.message.attachment) && !props.message.content
+})
+
+const bubbleClass = computed(() => {
+  if (isAttachmentOnlyMessage.value) {
+    return ''
+  }
+
+  if (isMine.value) {
+    return 'rounded-2xl rounded-br-md bg-blue-500 text-white shadow-sm'
+  }
+
+  return 'rounded-2xl rounded-bl-md border border-gray-200 bg-white text-gray-900 shadow-sm'
+})
+
+const bubblePaddingClass = computed(() => {
+  if (isAttachmentOnlyMessage.value) {
+    return ''
+  }
+
+  return 'px-3 py-2'
+})
+
+const attachmentMimeType = computed(() => {
+  return props.message.attachment?.mimeType?.toLowerCase() ?? ''
+})
+
+const attachmentFileName = computed(() => {
+  return props.message.attachment?.name.toLowerCase() ?? ''
+})
+
+const isImageAttachment = computed(() => {
+  if (attachmentMimeType.value.startsWith('image/')) {
+    return true
+  }
+
+  return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(
+    attachmentFileName.value,
+  )
+})
+
+const attachmentIcon = computed(() => {
+  const mimeType = attachmentMimeType.value
+  const fileName = attachmentFileName.value
+
+  if (isImageAttachment.value) {
+    return '🖼️'
+  }
+
+  if (
+    mimeType.startsWith('video/') ||
+    /\.(mp4|webm|mov|m4v|avi)$/i.test(fileName)
+  ) {
+    return '🎬'
+  }
+
+  if (
+    mimeType.startsWith('audio/') ||
+    /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(fileName)
+  ) {
+    return '🎵'
+  }
+
+  if (
+    mimeType.includes('pdf') ||
+    fileName.endsWith('.pdf')
+  ) {
+    return '📕'
+  }
+
+  if (
+    mimeType.includes('zip') ||
+    mimeType.includes('compressed') ||
+    /\.(zip|rar|7z)$/i.test(fileName)
+  ) {
+    return '🗜️'
+  }
+
+  if (
+    mimeType.includes('word') ||
+    /\.(doc|docx)$/i.test(fileName)
+  ) {
+    return '📝'
+  }
+
+  if (
+    mimeType.includes('spreadsheet') ||
+    mimeType.includes('excel') ||
+    /\.(xls|xlsx)$/i.test(fileName)
+  ) {
+    return '📊'
+  }
+
+  if (
+    mimeType.includes('presentation') ||
+    mimeType.includes('powerpoint') ||
+    /\.(ppt|pptx)$/i.test(fileName)
+  ) {
+    return '📽️'
+  }
+
+  if (
+    mimeType.startsWith('text/') ||
+    /\.(txt|csv|json|xml|md)$/i.test(fileName)
+  ) {
+    return '📃'
+  }
+
+  return '📄'
+})
+
+
+const attachmentTypeLabel = computed(() => {
+  const mimeType = attachmentMimeType.value
+  const fileName = attachmentFileName.value
+
+  if (mimeType.includes('pdf') || fileName.endsWith('.pdf')) {
+    return 'PDF 文件'
+  }
+
+  if (
+    mimeType.includes('word') ||
+    /\.(doc|docx)$/i.test(fileName)
+  ) {
+    return 'Word 文件'
+  }
+
+  if (
+    mimeType.includes('spreadsheet') ||
+    mimeType.includes('excel') ||
+    /\.(xls|xlsx)$/i.test(fileName)
+  ) {
+    return 'Excel 試算表'
+  }
+
+  if (
+    mimeType.includes('presentation') ||
+    mimeType.includes('powerpoint') ||
+    /\.(ppt|pptx)$/i.test(fileName)
+  ) {
+    return 'PowerPoint 簡報'
+  }
+
+  if (
+    mimeType.includes('zip') ||
+    mimeType.includes('compressed') ||
+    /\.(zip|rar|7z)$/i.test(fileName)
+  ) {
+    return '壓縮檔案'
+  }
+
+  if (
+    mimeType.startsWith('video/') ||
+    /\.(mp4|webm|mov|m4v|avi)$/i.test(fileName)
+  ) {
+    return '影片檔案'
+  }
+
+  if (
+    mimeType.startsWith('audio/') ||
+    /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(fileName)
+  ) {
+    return '音訊檔案'
+  }
+
+  if (
+    mimeType.startsWith('text/') ||
+    /\.(txt|csv|json|xml|md)$/i.test(fileName)
+  ) {
+    return '文字檔案'
+  }
+
+  return '附件'
+})
+
+const formattedFileSize = computed(() => {
+  const size = props.message.attachment?.size ?? 0
+
+  if (size < 1024) {
+    return `${size} B`
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`
+  }
+
+  return `${(size / 1024 / 1024).toFixed(1)} MB`
+})
+
+const formattedTime = computed(() => {
+  return formatMessageTime(props.message.createdAt)
+})
+
+async function loadAttachmentPreview(): Promise<void> {
+  revokePreviewUrl()
+
+  const attachment = props.message.attachment
+
+  if (!attachment || !isImageAttachment.value) {
+    return
+  }
+
+  previewLoading.value = true
+  previewLoadFailed.value = false
+
+  try {
+    const blob = await getChatAttachmentBlobApi(
+      props.message.roomId,
+      attachment.id,
+    )
+
+    previewUrl.value = URL.createObjectURL(blob)
+  } catch (error: unknown) {
+    console.error('圖片預覽載入失敗', error)
+    previewLoadFailed.value = true
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+async function downloadAttachment(): Promise<void> {
+  const attachment = props.message.attachment
+
+  if (!attachment) return
+
+  try {
+    await downloadChatAttachmentApi(
+      props.message.roomId,
+      attachment.id,
+      attachment.name,
+    )
+  } catch (error: unknown) {
+    console.error('附件下載失敗', error)
+  }
+}
+
+function handlePreviewError(): void {
+  previewLoadFailed.value = true
+}
+
+function openImagePreview(): void {
+  if (!previewUrl.value) return
+
+  imagePreviewOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+function closeImagePreview(): void {
+  imagePreviewOpen.value = false
+  document.body.style.overflow = ''
+}
+
+function revokePreviewUrl(): void {
+  if (!previewUrl.value) return
+
+  URL.revokeObjectURL(previewUrl.value)
+  previewUrl.value = ''
+}
 
 function formatMessageTime(isoTime: string): string {
   const date = new Date(isoTime)
@@ -79,6 +534,7 @@ function formatMessageTime(isoTime: string): string {
   }
 
   const now = new Date()
+
   const isSameDate =
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
@@ -101,4 +557,21 @@ function formatMessageTime(isoTime: string): string {
 
   return `${dateText} ${timeText}`
 }
+
+watch(
+  () => props.message.attachment?.id,
+  () => {
+    closeImagePreview()
+    void loadAttachmentPreview()
+  },
+)
+
+onMounted(() => {
+  void loadAttachmentPreview()
+})
+
+onBeforeUnmount(() => {
+  closeImagePreview()
+  revokePreviewUrl()
+})
 </script>
