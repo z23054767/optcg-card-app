@@ -107,6 +107,10 @@ export const useChatStore = defineStore('chat', {
           this.updateRoomOwner(event.payload.roomId, event.payload.ownerId)
           break
 
+        case 'USER_PROFILE_UPDATED':
+          // ChatView 會重新取得聊天室與目前成員資料。
+          break
+
         case 'ROOM_UPDATED':
           this.updateRoomInfo(
             event.payload.roomId,

@@ -1085,6 +1085,16 @@ onMounted(async () => {
           break
         }
 
+        case 'USER_PROFILE_UPDATED': {
+          loadMyRooms()
+
+          if (chat.currentRoomId !== 'lobby') {
+            loadRoomMembers(chat.currentRoomId)
+          }
+
+          break
+        }
+
         case 'INVITATION_ACCEPTED': {
           const { roomId } = message.payload
 

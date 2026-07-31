@@ -188,6 +188,19 @@ export type FriendRequestRejectedEvent = BaseChatEvent<
   }
 >
 
+
+/**
+ * 好友個人資料已更新事件
+ */
+export type UserProfileUpdatedEvent = BaseChatEvent<
+  'USER_PROFILE_UPDATED',
+  {
+    userId: string
+    name: string
+    avatarUrl: string | null
+  }
+>
+
 /**
  * Server → Client WebSocket 訊息格式
  */
@@ -209,3 +222,4 @@ export type ChatWsEvent =
   | FriendRequestReceivedEvent
   | FriendRequestAcceptedEvent
   | FriendRequestRejectedEvent
+  | UserProfileUpdatedEvent
