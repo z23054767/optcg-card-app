@@ -1,21 +1,27 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
     <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-6 sm:p-8">
-      <!-- Title -->
-      <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">登入系統</h1>
+      <!-- Login Logo -->
+      <div class="mb-6 flex flex-col items-center">
+        <img src="/images/login-logo.png" alt="Login Logo" class="h-20 w-20 object-contain drop-shadow-sm" />
+
+        <h1 class="mt-3 text-2xl font-bold text-gray-800">
+          Login
+        </h1>
+
+        <p class="mt-1 text-sm text-gray-500">
+          登入您的帳號以繼續使用
+        </p>
+      </div>
 
       <!-- Form -->
       <form @submit.prevent="login" class="space-y-4">
         <!-- Account -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"> 帳號 </label>
-          <input
-            v-model="account"
-            type="text"
-            placeholder="example@email.com"
+          <input v-model="account" type="text" placeholder="example@email.com"
             class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+            required />
         </div>
 
         <!-- Password -->
@@ -23,21 +29,13 @@
           <label class="block text-sm font-medium text-gray-700 mb-1"> 密碼 </label>
 
           <div class="relative">
-            <input
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="請輸入密碼"
+            <input v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="請輸入密碼"
               class="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+              required />
 
-            <button
-              type="button"
-              :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'"
-              :title="showPassword ? '隱藏密碼' : '顯示密碼'"
+            <button type="button" :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'" :title="showPassword ? '隱藏密碼' : '顯示密碼'"
               class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 hover:text-gray-700"
-              @click="showPassword = !showPassword"
-            >
+              @click="showPassword = !showPassword">
               <FontAwesomeIcon :icon="showPassword ? 'eye-slash' : 'eye'" class="text-lg">
               </FontAwesomeIcon>
             </button>
@@ -50,11 +48,8 @@
         </p>
 
         <!-- Button -->
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full rounded-lg bg-blue-600 py-2 text-white font-semibold hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
-        >
+        <button type="submit" :disabled="loading"
+          class="w-full rounded-lg bg-blue-600 py-2 text-white font-semibold hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition">
           {{ loading ? '登入中...' : '登入' }}
         </button>
       </form>
