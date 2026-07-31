@@ -7,7 +7,7 @@
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId" :room-type="currentRoomType"
         :avatar-url="currentRoomAvatarUrl" :user-name="auth.user?.name || auth.user?.account || '使用者'"
         :user-avatar-url="resolvedUserAvatarUrl" :online-count="chat.currentRoomOnlineCount"
-        :has-unread-notifications="chat.hasUnreadNotifications" :show-create-button="canCreateRoom"
+        :unread-notification-count="notificationCount" :show-create-button="canCreateRoom"
         :show-private-chat-button="canStartPrivateChat" :show-invite-members-button="canInviteMembers"
         :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
         @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
@@ -15,9 +15,9 @@
         @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
 
       <UserMenu :open="showUserMenu" :name="auth.user?.name || auth.user?.account || '使用者'"
-        :account="auth.user?.account || ''" :avatar-url="resolvedUserAvatarUrl"
-        :invitation-count="chat.invitations.length + friendRequests.length" @close="showUserMenu = false"
-        @logout="logout" @open-invitations="openInvitations" @open-settings="openProfileSettings" />
+        :account="auth.user?.account || ''" :avatar-url="resolvedUserAvatarUrl" :invitation-count="notificationCount"
+        @close="showUserMenu = false" @logout="logout" @open-invitations="openInvitations"
+        @open-settings="openProfileSettings" />
 
       <ProfileSettingsModal v-if="showProfileSettings && userProfile" :profile="userProfile"
         @close="showProfileSettings = false" @saved="handleProfileSaved" />
@@ -152,6 +152,10 @@ const router = useRouter()
 
 const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
 let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+const notificationCount = computed<number>(() => {
+  return chat.invitations.length + friendRequests.value.length
+})
 
 function showToast(message: string, type: 'success' | 'error' = 'success'): void {
   if (toastTimer) clearTimeout(toastTimer)
@@ -1124,6 +1128,29 @@ onMounted(async () => {
           if (showGroupManage.value && chat.currentRoomId === roomId) {
             void loadRoomInvitations(roomId)
           }
+
+          break
+        }
+
+        case 'FRIEND_REQUEST_ACCEPTED': {
+          const { requestId, roomId } = message.payload
+
+          chat.applyEvent(message)
+
+          friendRequests.value = friendRequests.value.filter(
+            (item) => item.requestId !== requestId,
+          )
+
+          void loadMyRooms()
+
+          if (chat.currentRoomId === 'lobby') {
+            showToast('好友已接受你的申請')
+          }
+
+          console.log('[ChatView] 好友申請已接受', {
+            requestId,
+            roomId,
+          })
 
           break
         }

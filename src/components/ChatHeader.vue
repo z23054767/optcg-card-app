@@ -80,9 +80,9 @@
           </span>
         </span>
 
-        <span v-if="hasUnreadNotifications"
-          class="absolute -right-1 -top-1 h-4 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
-          !
+        <span v-if="unreadNotificationCount > 0"
+          class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-5 text-white">
+          {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
         </span>
       </button>
     </div>
@@ -140,7 +140,7 @@ const props = defineProps<{
   userName: string
   userAvatarUrl: string | null
   onlineCount: number
-  hasUnreadNotifications: boolean
+  unreadNotificationCount: number
   showCreateButton: boolean
   showPrivateChatButton: boolean
   showInviteMembersButton: boolean
