@@ -118,6 +118,7 @@ import {
   deleteGroupChatRoomAvatarApi,
 } from '@/api/chatApi'
 import { connectChatSocket, disconnectChatSocket, joinRoom } from '@/websocket/chatSocket'
+import { refreshAccessToken } from '@/api/http'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
 import type {
@@ -1165,18 +1166,20 @@ onMounted(async () => {
       joinRoom(chat.currentRoomId)
     },
     async () => {
-      const currentRoute = router.currentRoute.value
+      try {
+        return await refreshAccessToken()
+      } catch {
+        const currentRoute = router.currentRoute.value
+        disconnectChatSocket()
+        auth.logout()
 
-      disconnectChatSocket()
-      auth.logout()
+        await router.replace({
+          path: '/login',
+          query: { redirect: currentRoute.fullPath, reason: 'expired' },
+        })
 
-      await router.replace({
-        path: '/login',
-        query: {
-          redirect: currentRoute.fullPath,
-          reason: 'expired',
-        },
-      })
+        return null
+      }
     },
   )
 

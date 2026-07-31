@@ -37,11 +37,15 @@ function parseJwt(token: string): AuthUser {
 export const useAuthStore = defineStore('auth', {
   state: () => {
     const token = localStorage.getItem('token') ?? ''
+    let user: AuthUser | null = null
 
-    return {
-      token,
-      user: token ? parseJwt(token) : (null as AuthUser | null),
+    try {
+      user = token ? parseJwt(token) : null
+    } catch {
+      localStorage.removeItem('token')
     }
+
+    return { token: user ? token : '', user }
   },
 
   getters: {
@@ -51,11 +55,15 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    login(token: string) {
+    setAccessToken(token: string) {
       this.token = token
       this.user = parseJwt(token)
 
       localStorage.setItem('token', token)
+    },
+
+    login(token: string) {
+      this.setAccessToken(token)
     },
 
     updateProfile(profile: { name: string; avatarUrl: string | null; bio: string | null }) {

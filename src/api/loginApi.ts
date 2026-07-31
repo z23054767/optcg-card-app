@@ -33,3 +33,8 @@ export async function loginApi(input: LoginRequest): Promise<LoginResponse> {
 
   return data
 }
+
+/** 登出並撤銷 Refresh Token。 */
+export async function logoutApi(): Promise<void> {
+  await http.post('/auth/logout')
+}

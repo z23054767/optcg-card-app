@@ -54,7 +54,7 @@ let onMessageHandler: ((message: ChatWsEvent) => void) | null = null
  * WebSocket 成功建立後的 Callback
  */
 let onOpenHandler: (() => void) | null = null
-let onAuthFailedHandler: (() => void) | null = null
+let onAuthFailedHandler: (() => Promise<string | null>) | null = null
 
 /**
  * 重連最小等待時間
@@ -207,9 +207,25 @@ function createSocket(): void {
       event.code === WS_CLOSE_AUTH_TOKEN_EXPIRED || event.code === WS_CLOSE_AUTH_TOKEN_INVALID
 
     if (isAuthErrorClose) {
-      shouldReconnect = false
       clearReconnectTimer()
-      onAuthFailedHandler?.()
+
+      const refreshTokenPromise = onAuthFailedHandler?.()
+      if (!refreshTokenPromise) {
+        shouldReconnect = false
+        return
+      }
+
+      void refreshTokenPromise.then((token) => {
+        if (!token) {
+          shouldReconnect = false
+          return
+        }
+
+        connectionToken = token
+        shouldReconnect = true
+        reconnectAttempts = 0
+        createSocket()
+      })
       return
     }
 
@@ -230,7 +246,7 @@ export function connectChatSocket(
   token: string,
   onMessage: (message: ChatWsEvent) => void,
   onOpen?: () => void,
-  onAuthFailed?: () => void,
+  onAuthFailed?: () => Promise<string | null>,
 ): void {
   connectionToken = token
   onMessageHandler = onMessage
