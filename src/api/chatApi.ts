@@ -270,7 +270,7 @@ export async function uploadGroupChatRoomAvatarApi(
 export async function deleteGroupChatRoomAvatarApi(
   roomId: string,
 ): Promise<void> {
-  await http.delete(`/chat/rooms/${roomId}/avatar`)
+  await http.delete(`/chat/rooms/${encodeURIComponent(roomId)}/avatar`)
 }
 
 /**

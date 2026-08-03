@@ -14,6 +14,7 @@
         @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
         @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
 
+      <div v-if="showUserMenu" class="fixed inset-0 z-40" @click="showUserMenu = false"></div>
       <UserMenu :open="showUserMenu" :name="auth.user?.name || auth.user?.account || '使用者'"
         :account="auth.user?.account || ''" :avatar-url="resolvedUserAvatarUrl" :invitation-count="notificationCount"
         @close="showUserMenu = false" @logout="logout" @open-invitations="openInvitations"
@@ -47,29 +48,8 @@
 
       <main ref="messagesEl" class="relative min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50 sm:px-4"
         @scroll="handleMessageScroll">
-        <div v-if="loadingOlderMessages" class="sticky top-2 z-20 flex justify-center py-2">
-          <div
-            class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-lg">
-            <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></span>
-
-            <span>載入舊訊息中...</span>
-          </div>
-        </div>
-        <template v-for="item in messageTimelineItems" :key="item.key">
-          <div v-if="item.type === 'separator'" class="my-3 flex items-center gap-3">
-            <div class="h-px flex-1 bg-gray-200"></div>
-            <div class="rounded-full bg-gray-200 px-3 py-1 text-xs text-gray-600">
-              {{ item.label }}
-            </div>
-            <div class="h-px flex-1 bg-gray-200"></div>
-          </div>
-          <ChatMessage v-else :message="item.message" />
-        </template>
-        <button v-show="showScrollButton" type="button" aria-label="回到最新訊息"
-          class="fixed right-4 bottom-20 z-20 flex h-11 w-11 items-center justify-center rounded-full border bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95 sm:right-6 sm:bottom-6"
-          @click="handleScrollButtonClick">
-          <span class="text-lg">⬇️</span>
-        </button>
+        <ChatMessageTimeline :messages="filteredMessages" :loading-older-messages="loadingOlderMessages"
+          :show-scroll-button="showScrollButton" :date-anchor="dateLabelAnchor" @scroll-button-click="handleScrollButtonClick" />
       </main>
 
       <footer class="border-t bg-white px-3 py-2">
@@ -93,48 +73,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import {
-  acceptChatInvitationApi,
-  createChatRoomApi,
-  getChatRoomMembersApi,
-  getChatRoomMessagesApi,
-  getMyChatInvitationsApi,
-  getMyChatRoomsApi,
-  getRoomInvitationsApi,
-  inviteChatRoomMembersApi,
-  deleteChatRoomApi,
-  removeChatRoomMemberApi,
-  transferChatRoomManagerApi,
-  updateGroupChatRoomApi,
-  uploadGroupChatRoomAvatarApi,
-  rejectChatInvitationApi,
-  searchChatUsersApi,
-  createFriendRequestApi,
-  getMyFriendRequestsApi,
-  acceptFriendRequestApi,
-  rejectFriendRequestApi,
-  deleteGroupChatRoomAvatarApi,
-} from '@/api/chatApi'
-import { connectChatSocket, disconnectChatSocket, joinRoom } from '@/websocket/chatSocket'
-import { refreshAccessToken } from '@/api/http'
+import { ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
-import type {
-  ChatInvitation as ChatInvitationType,
-  ChatFriendRequest,
-  ChatMessage as ChatMessageType,
-  ChatRoomMember as ChatRoomMemberType,
-  ChatUserSearchItem,
-} from '@/types/chat'
-
-import type { ChatWsEvent } from '@/types/chatWsEvents'
-
+import { useChatMessages } from '@/composables/useChatMessages'
+import { useChatRoomModals } from '@/composables/useChatRoomModals'
+import { useChatRoomSession } from '@/composables/useChatRoomSession'
 import UserMenu from '@/components/UserMenu.vue'
 import ChatSidebar from '@/components/ChatSidebar.vue'
 import ChatHeader from '@/components/ChatHeader.vue'
-import ChatMessage from '@/components/ChatMessage.vue'
+import ChatMessageTimeline from '@/components/ChatMessageTimeline.vue'
 import ChatInput from '@/components/ChatInput.vue'
 import WelcomePopup from '@/components/WelcomePopup.vue'
 import InvitationModal from '@/components/InvitationModal.vue'
@@ -144,19 +92,11 @@ import PrivateChatModal from '@/components/PrivateChatModal.vue'
 import RoomMembersModal from '@/components/RoomMembersModal.vue'
 import GroupManageModal from '@/components/GroupManageModal.vue'
 import ProfileSettingsModal from '@/components/ProfileSettingsModal.vue'
-import { getMyProfileApi, resolveUserAvatarUrl, type UserProfile } from '@/api/profileApi'
 
 const auth = useAuthStore()
 const chat = useChatStore()
-const route = useRoute()
-const router = useRouter()
-
 const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
 let toastTimer: ReturnType<typeof setTimeout> | null = null
-
-const notificationCount = computed<number>(() => {
-  return chat.invitations.length + friendRequests.value.length
-})
 
 function showToast(message: string, type: 'success' | 'error' = 'success'): void {
   if (toastTimer) clearTimeout(toastTimer)
@@ -167,1035 +107,97 @@ function showToast(message: string, type: 'success' | 'error' = 'success'): void
   }, 3000)
 }
 
-const sidebarOpen = ref(false)
-const showCreateRoom = ref(false)
-const creatingRoom = ref(false)
-const showPrivateChat = ref(false)
-const creatingPrivateChat = ref(false)
-const searchingPrivateUsers = ref(false)
-const privateUserSearched = ref(false)
-const invitingPrivateUserId = ref<string | null>(null)
-const privateChatUsers = ref<ChatUserSearchItem[]>([])
-let privateUserSearchRequestId = 0
-const invitingMembers = ref(false)
-const updatingGroupInfo = ref(false)
-const deletingGroupRoom = ref(false)
-const removingMemberUserId = ref<string | null>(null)
-const transferringManagerUserId = ref<string | null>(null)
-const reInvitingInviteeId = ref<string | null>(null)
-const showUserMenu = ref(false)
-const showProfileSettings = ref(false)
-const userProfile = ref<UserProfile | null>(null)
-const resolvedUserAvatarUrl = computed(() => resolveUserAvatarUrl(auth.user?.avatarUrl))
-const showInvitations = ref(false)
-const showRoomMembers = ref(false)
-const showInviteMembers = ref(false)
-const showGroupManage = ref(false)
-const invitationSyncTimer = ref<ReturnType<typeof setInterval> | null>(null)
-const midnightRefreshTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-const loadingLatestMessages = ref(false)
-const loadingOlderMessages = ref(false)
-const loadingRoomMembers = ref(false)
-const loadingRoomInvitations = ref(false)
-const hasMoreMessages = ref(true)
-const historyCursor = ref<{ beforeCreatedAt: string; beforeId: string } | null>(null)
-const dateLabelAnchor = ref(Date.now())
-const roomMembers = ref<ChatRoomMemberType[]>([])
-const roomInvitations = ref<ChatInvitationType[]>([])
-const friendRequests = ref<ChatFriendRequest[]>([])
-const processingFriendRequestId = ref<string | null>(null)
-
-const messagesEl = ref<HTMLElement | null>(null)
-const lastRequestedCursorKey = ref<string | null>(null)
-
-const showScrollButton = ref(false)
-const initializingRoom = ref(false)
-
-const MESSAGE_PAGE_SIZE = 30
-
-const filteredMessages = computed(() =>
-  chat.messages.filter(
-    (message) => message && String(message.roomId) === String(chat.currentRoomId),
-  ),
-)
-
-const lastMessageId = computed<string | null>(() => {
-  const messages = filteredMessages.value
-  const lastMessage = messages[messages.length - 1]
-
-  return lastMessage?.id ?? null
+const session = useChatRoomSession()
+const messages = useChatMessages()
+const modals = useChatRoomModals({
+  showUserMenu: session.showUserMenu,
+  loadMyRooms: session.loadMyRooms,
+  loadMyProfile: session.loadMyProfile,
+  switchRoom: session.switchRoom,
+  showToast,
 })
 
-type MessageTimelineItem =
-  | {
-    type: 'separator'
-    key: string
-    label: string
-  }
-  | {
-    type: 'message'
-    key: string
-    message: ChatMessageType
-  }
-
-const messageTimelineItems = computed<MessageTimelineItem[]>(() => {
-  const nowDate = new Date(dateLabelAnchor.value)
-  const items: MessageTimelineItem[] = []
-  let previousDateKey = ''
-
-  for (const message of filteredMessages.value) {
-    const dateKey = getDateKey(message.createdAt)
-
-    if (dateKey && dateKey !== previousDateKey) {
-      items.push({
-        type: 'separator',
-        key: `sep-${dateKey}`,
-        label: getDateLabel(message.createdAt, nowDate),
-      })
-      previousDateKey = dateKey
-    }
-
-    items.push({
-      type: 'message',
-      key: `msg-${message.id}`,
-      message,
-    })
-  }
-
-  return items
+session.initializeSession({
+  messages,
+  modals,
+  showToast,
 })
 
-const currentRoom = computed(() => chat.rooms.find((room) => room.id === chat.currentRoomId))
+const sidebarOpen = session.sidebarOpen
+const showUserMenu = session.showUserMenu
+const currentRoom = session.currentRoom
+const currentRoomTitle = session.currentRoomTitle
+const currentRoomType = session.currentRoomType
+const currentRoomAvatarUrl = session.currentRoomAvatarUrl
+const isCurrentGroupRoom = session.isCurrentGroupRoom
+const canCreateRoom = session.canCreateRoom
+const canStartPrivateChat = session.canStartPrivateChat
+const canInviteMembers = session.canInviteMembers
+const canManageGroup = session.canManageGroup
+const resolvedUserAvatarUrl = session.resolvedUserAvatarUrl
+const notificationCount = modals.notificationCount
+
+const filteredMessages = messages.filteredMessages
+const messagesEl = messages.messagesEl
+const loadingOlderMessages = messages.loadingOlderMessages
+const showScrollButton = messages.showScrollButton
+const dateLabelAnchor = messages.dateLabelAnchor
+
+const showCreateRoom = modals.showCreateRoom
+const creatingRoom = modals.creatingRoom
+const showPrivateChat = modals.showPrivateChat
+const creatingPrivateChat = modals.creatingPrivateChat
+const searchingPrivateUsers = modals.searchingPrivateUsers
+const privateUserSearched = modals.privateUserSearched
+const invitingPrivateUserId = modals.invitingPrivateUserId
+const privateChatUsers = modals.privateChatUsers
+const showProfileSettings = modals.showProfileSettings
+const userProfile = modals.userProfile
+const showInvitations = modals.showInvitations
+const showRoomMembers = modals.showRoomMembers
+const showInviteMembers = modals.showInviteMembers
+const showGroupManage = modals.showGroupManage
+const invitingMembers = modals.invitingMembers
+const updatingGroupInfo = modals.updatingGroupInfo
+const deletingGroupRoom = modals.deletingGroupRoom
+const removingMemberUserId = modals.removingMemberUserId
+const transferringManagerUserId = modals.transferringManagerUserId
+const reInvitingInviteeId = modals.reInvitingInviteeId
+const loadingRoomMembers = modals.loadingRoomMembers
+const loadingRoomInvitations = modals.loadingRoomInvitations
+const roomMembers = modals.roomMembers
+const roomInvitations = modals.roomInvitations
+const friendRequests = modals.friendRequests
+const processingFriendRequestId = modals.processingFriendRequestId
+
+const handleMessageScroll = messages.handleMessageScroll
+const handleScrollButtonClick = messages.handleScrollButtonClick
+
+const switchRoom = session.switchRoom
+const backToLobby = session.backToLobby
+const toggleSidebar = session.toggleSidebar
+const toggleUserMenu = session.toggleUserMenu
+const logout = session.logout
+
+const createRoom = modals.createRoom
+const searchPrivateUsers = modals.searchPrivateUsers
+const clearPrivateUserSearch = modals.clearPrivateUserSearch
+const closePrivateChatModal = modals.closePrivateChatModal
+const createPrivateChat = modals.createPrivateChat
+const acceptInvitation = modals.acceptInvitation
+const acceptFriendRequest = modals.acceptFriendRequest
+const rejectFriendRequest = modals.rejectFriendRequest
+const rejectInvitation = modals.rejectInvitation
+const inviteMembers = modals.inviteMembers
+const openRoomMembers = modals.openRoomMembers
+const openGroupManage = modals.openGroupManage
+const reInvite = modals.reInvite
+const saveGroupInfo = modals.saveGroupInfo
+const removeMember = modals.removeMember
+const transferManager = modals.transferManager
+const deleteGroupRoom = modals.deleteGroupRoom
+const openProfileSettings = modals.openProfileSettings
+const handleProfileSaved = modals.handleProfileSaved
+const openInvitations = modals.openInvitations
 
-const currentRoomTitle = computed(() => {
-  if (chat.currentRoomId === 'lobby') return '大廳'
-
-  return currentRoom.value?.name?.trim() || '聊天室'
-})
-
-const currentRoomType = computed<'group' | 'private' | 'lobby'>(() => {
-  if (chat.currentRoomId === 'lobby') return 'lobby'
-
-  return currentRoom.value?.type === 'group' ? 'group' : 'private'
-})
-
-const currentRoomAvatarUrl = computed<string | null>(() => {
-  switch (currentRoomType.value) {
-    case 'group':
-    case 'private':
-      return currentRoom.value?.avatarUrl ?? null
-
-    case 'lobby':
-    default:
-      return null
-  }
-})
-
-const isCurrentGroupRoom = computed(() => currentRoom.value?.type === 'group')
-const isCurrentRoomManager = computed(
-  () => Boolean(currentRoom.value) && String(currentRoom.value?.ownerId) === String(auth.userId),
-)
-const canCreateRoom = computed(() => chat.currentRoomId === 'lobby')
-const canStartPrivateChat = computed(() => chat.currentRoomId === 'lobby')
-const canInviteMembers = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
-const canManageGroup = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
-
-async function loadMyProfile(): Promise<void> {
-  try {
-    const profile = await getMyProfileApi()
-
-    userProfile.value = profile
-
-    auth.updateProfile({
-      name: profile.name,
-      avatarUrl: profile.avatarUrl,
-      bio: profile.bio,
-    })
-  } catch {
-    showToast("無法載入個人資料", "error")
-  }
-}
-
-function handleMessageScroll(event: Event): void {
-  const el = event.currentTarget
-
-  if (!(el instanceof HTMLElement)) return
-
-  const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-
-  const isNearTop = el.scrollTop <= 50
-  const isNearBottom = distanceFromBottom <= 50
-
-  // 只要不在最底，就顯示按鈕
-  showScrollButton.value = !isNearBottom
-
-  if (initializingRoom.value) return
-
-  if (!isNearTop) return
-
-  void loadOlderMessages()
-}
-
-function delay(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, milliseconds)
-  })
-}
-
-function getDateKey(input: string | Date): string {
-  const date = input instanceof Date ? input : new Date(input)
-
-  if (Number.isNaN(date.getTime())) {
-    return ''
-  }
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
-}
-
-function getDateLabel(isoTime: string, now: Date): string {
-  const date = new Date(isoTime)
-
-  if (Number.isNaN(date.getTime())) {
-    return ''
-  }
-
-  const todayKey = getDateKey(now)
-  const targetKey = getDateKey(isoTime)
-
-  const yesterday = new Date(now)
-  yesterday.setDate(now.getDate() - 1)
-  const yesterdayKey = getDateKey(yesterday)
-
-  if (targetKey === todayKey) {
-    return '今天'
-  }
-
-  if (targetKey === yesterdayKey) {
-    return '昨天'
-  }
-
-  return new Intl.DateTimeFormat('zh-TW', {
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date)
-}
-
-function scheduleNextMidnightRefresh(): void {
-  const now = new Date()
-  const nextMidnight = new Date(now)
-  nextMidnight.setHours(24, 0, 0, 0)
-
-  const delay = Math.max(1000, nextMidnight.getTime() - now.getTime())
-
-  midnightRefreshTimer.value = setTimeout(() => {
-    dateLabelAnchor.value = Date.now()
-    scheduleNextMidnightRefresh()
-  }, delay)
-}
-
-function startMidnightRefresh(): void {
-  stopMidnightRefresh()
-  scheduleNextMidnightRefresh()
-}
-
-function stopMidnightRefresh(): void {
-  if (!midnightRefreshTimer.value) return
-
-  clearTimeout(midnightRefreshTimer.value)
-  midnightRefreshTimer.value = null
-}
-
-async function handleScrollButtonClick(): Promise<void> {
-  await scrollToBottom(true)
-}
-
-async function scrollToBottom(smooth = false): Promise<void> {
-  await nextTick()
-
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      const el = messagesEl.value
-
-      if (el) {
-        el.scrollTo({
-          top: el.scrollHeight,
-          behavior: smooth ? 'smooth' : 'auto',
-        })
-      }
-
-      resolve()
-    })
-  })
-}
-
-async function createRoom(payload: { roomName: string }): Promise<void> {
-  if (creatingRoom.value) return
-
-  creatingRoom.value = true
-
-  try {
-    const response = await createChatRoomApi({
-      roomType: 'group',
-      roomName: payload.roomName,
-    })
-
-    chat.upsertRoom({
-      id: response.roomId,
-      type: 'group',
-      name: payload.roomName,
-      ownerId: auth.userId ?? '',
-    })
-
-    await switchRoom(response.roomId)
-
-    showCreateRoom.value = false
-  } finally {
-    creatingRoom.value = false
-  }
-}
-
-async function searchPrivateUsers(keyword: string): Promise<void> {
-  const trimmedKeyword = keyword.trim()
-
-  if (!trimmedKeyword) {
-    clearPrivateUserSearch()
-    return
-  }
-
-  const requestId = ++privateUserSearchRequestId
-
-  searchingPrivateUsers.value = true
-  privateUserSearched.value = true
-
-  try {
-    const response = await searchChatUsersApi(trimmedKeyword)
-
-    /**
-     * 使用者可能已輸入新的搜尋條件。
-     * 舊 Request 較晚回傳時，不允許覆蓋新的搜尋結果。
-     */
-    if (requestId !== privateUserSearchRequestId) {
-      return
-    }
-
-    privateChatUsers.value = response.users ?? []
-  } catch {
-    if (requestId !== privateUserSearchRequestId) {
-      return
-    }
-
-    privateChatUsers.value = []
-    showToast('搜尋使用者失敗，請稍後再試', 'error')
-  } finally {
-    if (requestId === privateUserSearchRequestId) {
-      searchingPrivateUsers.value = false
-    }
-  }
-}
-
-function clearPrivateUserSearch(): void {
-  /**
-   * 讓目前尚未完成的舊搜尋 Request 失效。
-   */
-  privateUserSearchRequestId += 1
-
-  privateChatUsers.value = []
-  privateUserSearched.value = false
-  searchingPrivateUsers.value = false
-}
-
-function closePrivateChatModal(): void {
-  showPrivateChat.value = false
-  clearPrivateUserSearch()
-}
-
-async function createPrivateChat(
-  user: ChatUserSearchItem,
-): Promise<void> {
-  if (
-    user.friendshipStatus !== "none" ||
-    creatingPrivateChat.value
-  ) {
-    return
-  }
-
-  invitingPrivateUserId.value = String(user.userId)
-  creatingPrivateChat.value = true
-
-  try {
-    await createFriendRequestApi(user.userId)
-
-    privateChatUsers.value = privateChatUsers.value.map((item) =>
-      item.userId === user.userId
-        ? {
-          ...item,
-          friendshipStatus: "outgoing_pending",
-        }
-        : item,
-    )
-
-    showToast(`已向 ${user.name} 發送好友邀請`)
-  } catch {
-    showToast("好友邀請發送失敗", "error")
-  } finally {
-    creatingPrivateChat.value = false
-    invitingPrivateUserId.value = null
-  }
-}
-
-async function switchRoom(roomId: string): Promise<void> {
-  initializingRoom.value = true
-
-  try {
-    chat.setCurrentRoom(roomId)
-    historyCursor.value = null
-    lastRequestedCursorKey.value = null
-    hasMoreMessages.value = true
-
-    showRoomMembers.value = false
-    showInviteMembers.value = false
-    showPrivateChat.value = false
-    showGroupManage.value = false
-
-    sidebarOpen.value = false
-    showUserMenu.value = false
-
-    joinRoom(roomId)
-
-    await loadLatestMessages(roomId)
-
-    if (isCurrentGroupRoom.value) {
-      await loadRoomMembers(roomId)
-    } else {
-      roomMembers.value = []
-    }
-
-    // 初始直接定位最新訊息
-    await scrollToBottom(false)
-  } finally {
-    initializingRoom.value = false
-  }
-}
-
-async function loadLatestMessages(roomId: string): Promise<void> {
-  loadingLatestMessages.value = true
-
-  try {
-    const response = await getChatRoomMessagesApi(roomId, {
-      limit: MESSAGE_PAGE_SIZE,
-    })
-
-    chat.setMessages(response.messages ?? [])
-    hasMoreMessages.value = response.hasMore === true
-    historyCursor.value = response.nextCursor ?? null
-  } finally {
-    loadingLatestMessages.value = false
-  }
-}
-
-async function loadOlderMessages(): Promise<void> {
-  if (initializingRoom.value) return
-  if (loadingLatestMessages.value) return
-  if (loadingOlderMessages.value) return
-  if (!hasMoreMessages.value) return
-
-  const cursor = historyCursor.value
-  const el = messagesEl.value
-
-  if (!cursor || !el) return
-
-  const cursorKey = `${cursor.beforeCreatedAt}_${cursor.beforeId}`
-
-  if (lastRequestedCursorKey.value === cursorKey) return
-
-  const roomId = chat.currentRoomId
-  const previousScrollHeight = el.scrollHeight
-  const previousScrollTop = el.scrollTop
-
-  lastRequestedCursorKey.value = cursorKey
-  loadingOlderMessages.value = true
-
-  try {
-    // 先讓 Vue 顯示「載入舊訊息中...」
-    await nextTick()
-
-    // 確保瀏覽器已經繪製畫面
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        resolve()
-      })
-    })
-
-    // 讓載入提示固定顯示 800 毫秒後，再呼叫 API
-    await delay(800)
-
-    const response = await getChatRoomMessagesApi(roomId, {
-      limit: MESSAGE_PAGE_SIZE,
-      beforeCreatedAt: cursor.beforeCreatedAt,
-      beforeId: cursor.beforeId,
-    })
-
-    if (chat.currentRoomId !== roomId) return
-
-    const olderMessages = response.messages ?? []
-
-    if (olderMessages.length === 0) {
-      hasMoreMessages.value = false
-      historyCursor.value = null
-      return
-    }
-
-    chat.prependMessages(olderMessages)
-
-    hasMoreMessages.value = response.hasMore === true
-    historyCursor.value = response.nextCursor ?? null
-
-    await nextTick()
-
-    const addedHeight = el.scrollHeight - previousScrollHeight
-
-    // 維持載入前的閱讀位置
-    el.scrollTop = previousScrollTop + addedHeight
-  } catch (error) {
-    lastRequestedCursorKey.value = null
-    throw error
-  } finally {
-    loadingOlderMessages.value = false
-  }
-}
-
-async function backToLobby(): Promise<void> {
-  await switchRoom('lobby')
-}
-
-async function loadMyRooms(): Promise<void> {
-  const response = await getMyChatRoomsApi()
-
-  chat.setRooms(response.rooms ?? [])
-}
-
-async function loadMyInvitations(markUnreadOnNew = true): Promise<void> {
-  const [invitationResponse, friendResponse] = await Promise.all([
-    getMyChatInvitationsApi(),
-    getMyFriendRequestsApi(),
-  ])
-  chat.setInvitations(invitationResponse.invitations ?? [], { markUnreadOnNew })
-  friendRequests.value = friendResponse.requests ?? []
-}
-
-function startInvitationSync(): void {
-  if (invitationSyncTimer.value) return
-
-  invitationSyncTimer.value = setInterval(() => {
-    void loadMyInvitations()
-  }, 3000)
-}
-
-function stopInvitationSync(): void {
-  if (!invitationSyncTimer.value) return
-
-  clearInterval(invitationSyncTimer.value)
-  invitationSyncTimer.value = null
-}
-
-function handleWindowFocus(): void {
-  void loadMyInvitations()
-}
-
-function handleVisibilityChange(): void {
-  if (document.visibilityState !== 'visible') return
-
-  void loadMyInvitations()
-}
-
-async function acceptInvitation(invitationId: string): Promise<void> {
-  try {
-    const response = await acceptChatInvitationApi(invitationId)
-
-    chat.removeInvitation(invitationId)
-
-    await loadMyRooms()
-    await switchRoom(response.roomId)
-
-    showInvitations.value = false
-    showToast('已接受聊天室邀請')
-  } catch {
-    showToast('接受聊天室邀請失敗，請稍後再試', 'error')
-  }
-}
-
-async function acceptFriendRequest(requestId: string): Promise<void> {
-  if (processingFriendRequestId.value) return
-
-  processingFriendRequestId.value = requestId
-
-  try {
-    const response = await acceptFriendRequestApi(requestId)
-
-    friendRequests.value = friendRequests.value.filter((item) => item.requestId !== requestId)
-
-    await loadMyRooms()
-    await switchRoom(response.roomId)
-
-    showInvitations.value = false
-    showToast('已接受好友申請')
-  } catch {
-    showToast('接受好友申請失敗，請稍後再試', 'error')
-  } finally {
-    processingFriendRequestId.value = null
-  }
-}
-
-async function rejectFriendRequest(requestId: string): Promise<void> {
-  if (processingFriendRequestId.value) return
-
-  processingFriendRequestId.value = requestId
-
-  try {
-    await rejectFriendRequestApi(requestId)
-
-    friendRequests.value = friendRequests.value.filter((item) => item.requestId !== requestId)
-
-    if (friendRequests.value.length === 0) {
-      showInvitations.value = false
-    }
-
-    showToast('已拒絕好友申請')
-  } catch {
-    showToast('拒絕好友申請失敗，請稍後再試', 'error')
-  } finally {
-    processingFriendRequestId.value = null
-  }
-}
-
-async function rejectInvitation(invitationId: string): Promise<void> {
-  try {
-    await rejectChatInvitationApi(invitationId)
-
-    chat.removeInvitation(invitationId)
-
-    if (chat.invitations.length === 0 && friendRequests.value.length === 0) {
-      showInvitations.value = false
-    }
-
-    showToast('已拒絕聊天室邀請')
-  } catch {
-    showToast('拒絕邀請失敗，請稍後再試', 'error')
-  }
-}
-async function loadRoomMembers(roomId: string): Promise<void> {
-  loadingRoomMembers.value = true
-
-  try {
-    const response = await getChatRoomMembersApi(roomId)
-    roomMembers.value = response.members ?? []
-  } finally {
-    loadingRoomMembers.value = false
-  }
-}
-
-async function openRoomMembers(): Promise<void> {
-  if (!isCurrentGroupRoom.value) return
-
-  showRoomMembers.value = true
-  await loadRoomMembers(chat.currentRoomId)
-}
-
-async function inviteMembers(payload: { emails: string[] }): Promise<void> {
-  if (!canInviteMembers.value || invitingMembers.value) return
-
-  invitingMembers.value = true
-
-  try {
-    await inviteChatRoomMembersApi(chat.currentRoomId, {
-      inviteEmails: payload.emails,
-    })
-    showInviteMembers.value = false
-  } finally {
-    invitingMembers.value = false
-  }
-}
-
-async function openGroupManage(): Promise<void> {
-  if (!canManageGroup.value) return
-
-  showGroupManage.value = true
-  await Promise.all([loadRoomMembers(chat.currentRoomId), loadRoomInvitations(chat.currentRoomId)])
-}
-
-async function loadRoomInvitations(roomId: string): Promise<void> {
-  loadingRoomInvitations.value = true
-
-  try {
-    const response = await getRoomInvitationsApi(roomId)
-
-    roomInvitations.value = [...(response.invitations ?? [])]
-  } catch {
-    showToast('取得邀請紀錄失敗，請稍後再試', 'error')
-  } finally {
-    loadingRoomInvitations.value = false
-  }
-}
-
-async function reInvite(inviteeAccount: string): Promise<void> {
-  if (!canManageGroup.value) return
-
-  // 從邀請列表找到 inviteeId 以顯示 loading
-  const inv = roomInvitations.value.find((item) => item.inviteeAccount === inviteeAccount)
-
-  if (inv) {
-    reInvitingInviteeId.value = String(inv.inviteeId)
-  }
-
-  try {
-    await inviteChatRoomMembersApi(chat.currentRoomId, { inviteEmails: [inviteeAccount] })
-    await loadRoomInvitations(chat.currentRoomId)
-    showToast('已重新送出邀請')
-  } catch {
-    showToast('重新邀請失敗，請稍後再試', 'error')
-  } finally {
-    reInvitingInviteeId.value = null
-  }
-}
-
-async function saveGroupInfo(payload: {
-  roomName: string
-  avatarFile: File | null
-  removeAvatar: boolean
-}): Promise<void> {
-  if (!canManageGroup.value || updatingGroupInfo.value) return
-
-  updatingGroupInfo.value = true
-
-  try {
-    await updateGroupChatRoomApi(chat.currentRoomId, {
-      roomName: payload.roomName,
-    })
-
-    if (payload.removeAvatar) {
-      await deleteGroupChatRoomAvatarApi(chat.currentRoomId)
-    } else if (payload.avatarFile) {
-      await uploadGroupChatRoomAvatarApi(
-        chat.currentRoomId,
-        payload.avatarFile,
-      )
-    }
-
-    await loadMyRooms()
-
-    showToast(
-      payload.removeAvatar
-        ? "群組頭像已刪除"
-        : "群組資訊已更新",
-    )
-  } catch {
-    showToast("更新失敗，請稍後再試", "error")
-  } finally {
-    updatingGroupInfo.value = false
-  }
-}
-
-async function removeMember(userId: string): Promise<void> {
-  if (!canManageGroup.value || removingMemberUserId.value) return
-
-  removingMemberUserId.value = userId
-
-  try {
-    await removeChatRoomMemberApi(chat.currentRoomId, userId)
-    await loadRoomMembers(chat.currentRoomId)
-    showToast('已移除成員')
-  } catch {
-    showToast('移除失敗，請稍後再試', 'error')
-  } finally {
-    removingMemberUserId.value = null
-  }
-}
-
-async function transferManager(userId: string): Promise<void> {
-  if (!canManageGroup.value || transferringManagerUserId.value) return
-
-  transferringManagerUserId.value = userId
-
-  try {
-    await transferChatRoomManagerApi(chat.currentRoomId, {
-      targetUserId: userId,
-    })
-
-    showGroupManage.value = false
-
-    await loadMyRooms()
-    await loadRoomMembers(chat.currentRoomId)
-
-    showToast('已成功轉讓管理員')
-  } catch {
-    showToast('轉讓失敗，請稍後再試', 'error')
-  } finally {
-    transferringManagerUserId.value = null
-  }
-}
-
-async function deleteGroupRoom(): Promise<void> {
-  if (!canManageGroup.value || deletingGroupRoom.value) return
-
-  deletingGroupRoom.value = true
-
-  try {
-    await deleteChatRoomApi(chat.currentRoomId)
-    showGroupManage.value = false
-    await loadMyRooms()
-    await switchRoom('lobby')
-    showToast('聊天室已刪除')
-  } catch {
-    showToast('刪除失敗，請稍後再試', 'error')
-  } finally {
-    deletingGroupRoom.value = false
-  }
-}
-
-
-async function openProfileSettings(): Promise<void> {
-  showUserMenu.value = false
-
-  try {
-    userProfile.value = await getMyProfileApi()
-
-    auth.updateProfile({
-      name: userProfile.value.name,
-      avatarUrl: userProfile.value.avatarUrl,
-      bio: userProfile.value.bio,
-    })
-
-    showProfileSettings.value = true
-  } catch {
-    showToast("無法載入個人設定", "error")
-  }
-}
-
-function handleProfileSaved(profile: UserProfile): void {
-  userProfile.value = profile
-  auth.updateProfile({ name: profile.name, avatarUrl: profile.avatarUrl, bio: profile.bio })
-  showProfileSettings.value = false
-  showToast('個人設定已更新')
-}
-
-function openInvitations(): void {
-  showUserMenu.value = false
-  showInvitations.value = true
-  chat.markNotificationsAsSeen()
-}
-
-function logout(): void {
-  disconnectChatSocket()
-  auth.logout()
-  void router.replace('/login')
-}
-
-function toggleSidebar(): void {
-  sidebarOpen.value = !sidebarOpen.value
-
-  if (sidebarOpen.value) {
-    showUserMenu.value = false
-  }
-}
-
-function toggleUserMenu(): void {
-  showUserMenu.value = !showUserMenu.value
-
-  if (showUserMenu.value) {
-    sidebarOpen.value = false
-  }
-}
-
-watch(
-  lastMessageId,
-  async (newMessageId, oldMessageId) => {
-    if (initializingRoom.value) return
-    if (loadingLatestMessages.value) return
-    if (loadingOlderMessages.value) return
-    if (!oldMessageId) return
-    if (!newMessageId || newMessageId === oldMessageId) return
-
-    await scrollToBottom(true)
-  },
-  {
-    flush: 'post',
-  },
-)
-
-onMounted(async () => {
-  if (!auth.isAuthenticated) return
-
-  const roomId = String(route.query.roomId ?? 'lobby')
-
-  await Promise.all([
-    loadMyProfile(),
-    loadMyRooms(),
-    loadMyInvitations(false),
-  ])
-
-  await loadMyRooms()
-  await loadMyInvitations(false)
-  await switchRoom(roomId)
-
-  connectChatSocket(
-    auth.token,
-    (message: ChatWsEvent) => {
-      switch (message.type) {
-        case 'ROOM_DELETED': {
-          const { roomId } = message.payload
-
-          chat.applyEvent(message)
-
-          if (chat.currentRoomId === roomId) {
-            showGroupManage.value = false
-            void switchRoom('lobby')
-          }
-
-          break
-        }
-
-        case 'MEMBER_REMOVED': {
-          const { roomId } = message.payload
-
-          chat.applyEvent(message)
-
-          if (chat.currentRoomId === roomId) {
-            void switchRoom('lobby')
-            showToast('你已被移出此聊天室', 'error')
-          }
-
-          break
-        }
-
-        case 'ROOM_MANAGER_TRANSFERRED': {
-          const { roomId, ownerId } = message.payload
-
-          chat.applyEvent(message)
-
-          if (chat.currentRoomId === roomId) {
-            void loadRoomMembers(roomId)
-
-            if (String(ownerId) === String(auth.userId)) {
-              showToast('你已成為聊天室管理員')
-            } else {
-              showGroupManage.value = false
-              showToast('聊天室管理員已變更')
-            }
-          }
-
-          break
-        }
-
-        case 'USER_PROFILE_UPDATED': {
-          loadMyRooms()
-
-          if (chat.currentRoomId !== 'lobby') {
-            loadRoomMembers(chat.currentRoomId)
-          }
-
-          break
-        }
-
-        case 'INVITATION_ACCEPTED': {
-          const { roomId } = message.payload
-
-          console.log('[ChatView] 收到邀請接受事件', message.payload)
-
-          if (showGroupManage.value && chat.currentRoomId === roomId) {
-            void Promise.all([loadRoomMembers(roomId), loadRoomInvitations(roomId)])
-          }
-
-          break
-        }
-
-        case 'INVITATION_REJECTED': {
-          const { roomId, invitationId } = message.payload
-
-          console.log('[ChatView] 收到邀請拒絕事件', message.payload)
-
-          roomInvitations.value = roomInvitations.value.map((invitation) =>
-            invitation.invitationId === invitationId
-              ? {
-                ...invitation,
-                status: 'rejected',
-              }
-              : invitation,
-          )
-
-          if (showGroupManage.value && chat.currentRoomId === roomId) {
-            void loadRoomInvitations(roomId)
-          }
-
-          break
-        }
-
-        case 'FRIEND_REQUEST_ACCEPTED': {
-          const { requestId, roomId } = message.payload
-
-          chat.applyEvent(message)
-
-          friendRequests.value = friendRequests.value.filter(
-            (item) => item.requestId !== requestId,
-          )
-
-          void loadMyRooms()
-
-          if (chat.currentRoomId === 'lobby') {
-            showToast('好友已接受你的申請')
-          }
-
-          console.log('[ChatView] 好友申請已接受', {
-            requestId,
-            roomId,
-          })
-
-          break
-        }
-
-        default:
-          chat.applyEvent(message)
-          break
-      }
-    },
-    () => {
-      void loadMyInvitations()
-      joinRoom(chat.currentRoomId)
-    },
-    async () => {
-      try {
-        return await refreshAccessToken()
-      } catch {
-        const currentRoute = router.currentRoute.value
-        disconnectChatSocket()
-        auth.logout()
-
-        await router.replace({
-          path: '/login',
-          query: { redirect: currentRoute.fullPath, reason: 'expired' },
-        })
-
-        return null
-      }
-    },
-  )
-
-  startInvitationSync()
-  startMidnightRefresh()
-  window.addEventListener('focus', handleWindowFocus)
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-
-  chat.showSelfWelcome(auth.user?.name ?? auth.user?.account ?? '使用者')
-})
-
-onUnmounted(() => {
-  stopInvitationSync()
-  stopMidnightRefresh()
-  window.removeEventListener('focus', handleWindowFocus)
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
-  disconnectChatSocket()
-})
 </script>
