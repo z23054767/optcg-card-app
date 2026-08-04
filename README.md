@@ -26,7 +26,7 @@ npm run format
 
 - API 透過 `VITE_API_BASE_URL` 指向後端。
 - 開發環境會透過 Vite proxy 將 `/api` 轉發到後端。
-- 登入頁支援帳密登入，以及 Google / LINE / Apple 第三方登入。
+- 登入頁支援帳密登入，以及 Google / Microsoft / LINE 第三方登入。
 - 聊天室頁面使用 WebSocket、Pinia store 與多個 API 請求協作，改動時請注意狀態同步。
 
 ## 架構文件

@@ -86,15 +86,19 @@
           </span>
         </button>
 
-        <!-- Apple -->
+        <!-- Microsoft -->
         <button type="button" :disabled="oauthLoadingProvider !== null"
           class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          @click="startOAuthLogin('apple')">
+          @click="startOAuthLogin('microsoft')">
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-            <img :src="AppleIcon" alt="Apple" class="h-5 w-5 justify-self-center object-contain" />
+            <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
+              <img :src="MicrosoftIcon" alt="Microsoft" class="h-5 w-5 justify-self-center object-contain" />
 
-            <span class="whitespace-nowrap text-center">
-              {{ oauthLoadingProvider === "apple" ? "前往 Apple..." : "使用 Apple 登入" }}
+              <span class="whitespace-nowrap text-center">
+                {{ oauthLoadingProvider === "microsoft" ? "前往 Microsoft..." : "使用 Microsoft 登入" }}
+              </span>
+
+              <span aria-hidden="true"></span>
             </span>
 
             <span aria-hidden="true"></span>
@@ -130,8 +134,8 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { showWarningAlert } from '@/utils/alerts'
 import { refreshAccessToken } from '@/api/http'
 import GoogleIcon from '@/assets/icons/google.svg'
-import AppleIcon from '@/assets/icons/apple.svg'
 import LineIcon from '@/assets/icons/line.svg'
+import MicrosoftIcon from '@/assets/icons/microsoft.svg'
 
 const authStore = useAuthStore()
 
