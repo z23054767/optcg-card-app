@@ -1,5 +1,7 @@
 import { http } from '@/api/http'
 
+export type OAuthProvider = 'google' | 'line' | 'apple'
+
 /**
  * 登入請求
  */
@@ -37,4 +39,12 @@ export async function loginApi(input: LoginRequest): Promise<LoginResponse> {
 /** 登出並撤銷 Refresh Token。 */
 export async function logoutApi(): Promise<void> {
   await http.post('/auth/logout')
+}
+
+export function buildOAuthLoginUrl(provider: OAuthProvider, redirect: string): string {
+  const apiBaseUrl = (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
+  const url = new URL(`${apiBaseUrl}/auth/oauth/${provider}/start`, window.location.origin)
+  url.searchParams.set('redirect', redirect)
+
+  return url.toString()
 }
