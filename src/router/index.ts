@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import LoginView from '@/views/LoginView.vue'
+import VerifySuccessView from '@/views/VerifySuccessView.vue'
 import ChatView from '@/views/ChatView.vue'
 import ChatInviteView from '@/views/ChatInviteView.vue'
 
@@ -18,6 +19,10 @@ const router = createRouter({
       component: LoginView,
     },
     {
+      path: '/auth/verify-success',
+      component: VerifySuccessView,
+    },
+    {
       path: '/chat',
       component: ChatView,
     },
@@ -31,19 +36,18 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
 
-  // 未登入，保留原本要去的網址
-  if (!auth.isAuthenticated && to.path !== '/login') {
+  if (auth.isAuthenticated && to.path === '/login') {
+    return '/chat'
+  }
+
+  // 驗證成功頁面必須可被未登入使用者開啟，讓使用者看到成功結果後再導向登入
+  if (!auth.isAuthenticated && to.path !== '/login' && to.path !== '/auth/verify-success') {
     return {
       path: '/login',
       query: {
         redirect: to.fullPath,
       },
     }
-  }
-
-  // 已登入且還在 login 頁，回聊天室
-  if (auth.isAuthenticated && to.path === '/login') {
-    return '/chat'
   }
 })
 
