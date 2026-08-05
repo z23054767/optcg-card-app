@@ -20,7 +20,12 @@ import {
   uploadGroupChatRoomAvatarApi,
 } from '@/api/chatApi'
 import type { UserProfile } from '@/api/profileApi'
-import type { ChatFriendRequest, ChatInvitation, ChatRoomMember, ChatUserSearchItem } from '@/types/chat'
+import type {
+  ChatFriendRequest,
+  ChatInvitation,
+  ChatRoomMember,
+  ChatUserSearchItem,
+} from '@/types/chat'
 
 type ChatRoomModalsDeps = {
   showUserMenu: Ref<boolean>
@@ -184,9 +189,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
       await createFriendRequestApi(user.userId)
 
       privateChatUsers.value = privateChatUsers.value.map((item) =>
-        item.userId === user.userId
-          ? { ...item, friendshipStatus: 'outgoing_pending' }
-          : item,
+        item.userId === user.userId ? { ...item, friendshipStatus: 'outgoing_pending' } : item,
       )
 
       deps.showToast(`已向 ${user.name} 發送好友邀請`)
@@ -299,7 +302,10 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     if (!chat.currentRoomId) return
 
     showGroupManage.value = true
-    await Promise.all([loadRoomMembers(chat.currentRoomId), loadRoomInvitations(chat.currentRoomId)])
+    await Promise.all([
+      loadRoomMembers(chat.currentRoomId),
+      loadRoomInvitations(chat.currentRoomId),
+    ])
   }
 
   async function reInvite(inviteeAccount: string): Promise<void> {

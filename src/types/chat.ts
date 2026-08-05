@@ -93,17 +93,17 @@ export interface LeaveRoomPayload {
  */
 export type ClientWsMessage =
   | {
-    type: 'SEND_MESSAGE'
-    payload: SendMessagePayload
-  }
+      type: 'SEND_MESSAGE'
+      payload: SendMessagePayload
+    }
   | {
-    type: 'JOIN_ROOM'
-    payload: JoinRoomPayload
-  }
+      type: 'JOIN_ROOM'
+      payload: JoinRoomPayload
+    }
   | {
-    type: 'LEAVE_ROOM'
-    payload: LeaveRoomPayload
-  }
+      type: 'LEAVE_ROOM'
+      payload: LeaveRoomPayload
+    }
 
 /**
  * 聊天室資訊
@@ -227,11 +227,7 @@ export interface ChatFriendRequestListResponse {
 /**
  * 使用者搜尋結果
  */
-export type ChatFriendshipStatus =
-  | "none"
-  | "outgoing_pending"
-  | "incoming_pending"
-  | "friend"
+export type ChatFriendshipStatus = 'none' | 'outgoing_pending' | 'incoming_pending' | 'friend'
 
 export interface ChatUserSearchItem {
   /** 使用者 ID */

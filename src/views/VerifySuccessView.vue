@@ -1,21 +1,17 @@
 <template>
   <div class="min-h-screen bg-gray-100 px-4 py-6 sm:flex sm:items-center sm:justify-center">
     <div class="mx-auto w-full max-w-md rounded-xl bg-white p-6 text-center shadow-lg sm:p-8">
-      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+      <div
+        class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600"
+      >
         <FontAwesomeIcon icon="circle-check" class="text-3xl" />
       </div>
 
-      <h1 class="text-2xl font-bold text-gray-800">
-        Email 驗證成功
-      </h1>
+      <h1 class="text-2xl font-bold text-gray-800">Email 驗證成功</h1>
 
-      <p class="mt-3 text-sm text-gray-600">
-        帳號已完成驗證，將自動前往登入頁面。
-      </p>
+      <p class="mt-3 text-sm text-gray-600">帳號已完成驗證，將自動前往登入頁面。</p>
 
-      <p class="mt-4 text-xs text-gray-400">
-        {{ countdown }} 秒後跳轉
-      </p>
+      <p class="mt-4 text-xs text-gray-400">{{ countdown }} 秒後跳轉</p>
 
       <button
         type="button"

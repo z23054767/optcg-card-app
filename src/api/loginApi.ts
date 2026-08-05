@@ -42,9 +42,33 @@ export async function logoutApi(): Promise<void> {
 }
 
 export function buildOAuthLoginUrl(provider: OAuthProvider, redirect: string): string {
-  const apiBaseUrl = (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
+  const apiBaseUrl = (
+    import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL
+  ).replace(/\/$/, '')
   const url = new URL(`${apiBaseUrl}/auth/oauth/${provider}/start`, window.location.origin)
   url.searchParams.set('redirect', redirect)
 
   return url.toString()
+}
+
+/** 註冊請求 */
+export interface RegisterRequest {
+  account: string
+  password: string
+  name: string
+}
+
+/** 建立本機帳號並寄送驗證信。 */
+export async function registerApi(input: RegisterRequest): Promise<void> {
+  await http.post('/auth/register', input)
+}
+
+/** 寄送密碼重設信。 */
+export async function forgotPasswordApi(account: string): Promise<void> {
+  await http.post('/auth/forgot-password', { account })
+}
+
+/** 使用重設密碼權杖更新密碼。 */
+export async function resetPasswordApi(token: string, newPassword: string): Promise<void> {
+  await http.post('/auth/reset-password', { token, newPassword })
 }

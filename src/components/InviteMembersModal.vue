@@ -1,14 +1,17 @@
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" @click.self="$emit('close')">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+    @click.self="$emit('close')"
+  >
     <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-4">
       <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-base font-semibold text-gray-800">
-          邀請成員
-        </h2>
+        <h2 class="text-base font-semibold text-gray-800">邀請成員</h2>
 
-        <button type="button"
+        <button
+          type="button"
           class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-          @click="$emit('close')">
+          @click="$emit('close')"
+        >
           ✕
         </button>
       </div>
@@ -17,29 +20,48 @@
           <label class="block text-sm text-gray-600 mb-1">邀請信箱</label>
           <div
             class="min-h-24 max-h-48 overflow-y-auto w-full border rounded px-2 py-2 text-sm flex flex-wrap items-start gap-2 bg-white"
-            :class="{ 'border-red-400': emailError }">
-            <span v-for="entry in emails" :key="entry.email"
-              class="inline-flex items-center max-w-full gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700">
+            :class="{ 'border-red-400': emailError }"
+          >
+            <span
+              v-for="entry in emails"
+              :key="entry.email"
+              class="inline-flex items-center max-w-full gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700"
+            >
               <span class="max-w-48 truncate">{{ entry.name }}</span>
               <span class="text-slate-400 truncate max-w-32">{{ entry.email }}</span>
-              <button type="button" class="text-gray-500 hover:text-red-600 ml-0.5" :disabled="loading"
-                @click="removeEmail(entry.email)">
+              <button
+                type="button"
+                class="text-gray-500 hover:text-red-600 ml-0.5"
+                :disabled="loading"
+                @click="removeEmail(entry.email)"
+              >
                 ×
               </button>
             </span>
 
             <div class="inline-flex items-center gap-1 basis-full">
-              <input v-model="emailInput" type="text" class="flex-1 px-1 py-1 outline-none disabled:bg-white text-sm"
-                placeholder="輸入信箱後按 Enter 確認..." :disabled="loading || validating" @keydown="onEmailKeydown"
-                @blur="() => void addEmailFromInput()" />
+              <input
+                v-model="emailInput"
+                type="text"
+                class="flex-1 px-1 py-1 outline-none disabled:bg-white text-sm"
+                placeholder="輸入信箱後按 Enter 確認..."
+                :disabled="loading || validating"
+                @keydown="onEmailKeydown"
+                @blur="() => void addEmailFromInput()"
+              />
               <span v-if="validating" class="text-xs text-gray-400 shrink-0">查詢中…</span>
             </div>
           </div>
 
-          <p v-if="emailError" class="text-xs mt-1" :class="emailError === '查無此人' || emailError === '已是成員'
-            ? 'text-amber-600'
-            : 'text-red-600'
-            ">
+          <p
+            v-if="emailError"
+            class="text-xs mt-1"
+            :class="
+              emailError === '查無此人' || emailError === '已是成員'
+                ? 'text-amber-600'
+                : 'text-red-600'
+            "
+          >
             {{
               emailError === '查無此人'
                 ? '⚠ 查無此帳號，請確認信箱是否正確'
@@ -54,13 +76,19 @@
       </div>
 
       <div class="flex justify-end gap-2 mt-4">
-        <button class="px-3 py-1 text-sm border rounded disabled:opacity-50" :disabled="loading"
-          @click="$emit('close')">
+        <button
+          class="px-3 py-1 text-sm border rounded disabled:opacity-50"
+          :disabled="loading"
+          @click="$emit('close')"
+        >
           取消
         </button>
 
-        <button class="px-3 py-1 text-sm rounded bg-indigo-600 text-white disabled:opacity-50"
-          :disabled="emails.length === 0 || loading || validating" @click="handleInvite">
+        <button
+          class="px-3 py-1 text-sm rounded bg-indigo-600 text-white disabled:opacity-50"
+          :disabled="emails.length === 0 || loading || validating"
+          @click="handleInvite"
+        >
           {{ loading ? '邀請中...' : '送出邀請' }}
         </button>
       </div>

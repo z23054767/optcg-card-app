@@ -1,10 +1,6 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  getMyChatInvitationsApi,
-  getMyChatRoomsApi,
-  getMyFriendRequestsApi,
-} from '@/api/chatApi'
+import { getMyChatInvitationsApi, getMyChatRoomsApi, getMyFriendRequestsApi } from '@/api/chatApi'
 import { connectChatSocket, disconnectChatSocket, joinRoom } from '@/websocket/chatSocket'
 import { refreshAccessToken } from '@/api/http'
 import { getMyProfileApi, resolveUserAvatarUrl, type UserProfile } from '@/api/profileApi'
@@ -31,7 +27,15 @@ type RoomSessionDeps = {
     showProfileSettings: { value: boolean }
     friendRequests: { value: ChatFriendRequest[] }
     roomInvitations: { value: ChatInvitation[] }
-    roomMembers: { value: Array<{ userId: string; account: string; name: string; role: 'manager' | 'member'; avatarUrl?: string | null }> }
+    roomMembers: {
+      value: Array<{
+        userId: string
+        account: string
+        name: string
+        role: 'manager' | 'member'
+        avatarUrl?: string | null
+      }>
+    }
     loadRoomMembers: (roomId: string) => Promise<void>
     loadRoomInvitations: (roomId: string) => Promise<void>
   }
@@ -212,11 +216,7 @@ export function useChatRoomSession() {
 
     const roomId = String(route.query.roomId ?? 'lobby')
 
-    await Promise.all([
-      loadMyProfile(),
-      loadMyRooms(),
-      loadMyInvitations(false),
-    ])
+    await Promise.all([loadMyProfile(), loadMyRooms(), loadMyInvitations(false)])
 
     await switchRoom(roomId)
 
@@ -280,10 +280,11 @@ export function useChatRoomSession() {
           case 'INVITATION_REJECTED': {
             chat.applyEvent(message)
             const { roomId: rejectedRoomId, invitationId } = message.payload
-            nextDeps.modals.roomInvitations.value = nextDeps.modals.roomInvitations.value.map((invitation) =>
-              invitation.invitationId === invitationId
-                ? { ...invitation, status: 'rejected' }
-                : invitation,
+            nextDeps.modals.roomInvitations.value = nextDeps.modals.roomInvitations.value.map(
+              (invitation) =>
+                invitation.invitationId === invitationId
+                  ? { ...invitation, status: 'rejected' }
+                  : invitation,
             )
             if (nextDeps.modals.showGroupManage.value && chat.currentRoomId === rejectedRoomId) {
               void nextDeps.modals.loadRoomInvitations(rejectedRoomId)

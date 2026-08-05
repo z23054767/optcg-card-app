@@ -267,9 +267,7 @@ export async function uploadGroupChatRoomAvatarApi(
 /**
  * 刪除群組聊天室頭像
  */
-export async function deleteGroupChatRoomAvatarApi(
-  roomId: string,
-): Promise<void> {
+export async function deleteGroupChatRoomAvatarApi(roomId: string): Promise<void> {
   await http.delete(`/chat/rooms/${encodeURIComponent(roomId)}/avatar`)
 }
 
@@ -399,7 +397,6 @@ export async function rejectFriendRequestApi(requestId: string): Promise<{ succe
 
   return data
 }
-
 
 /**
  * 上傳聊天附件（單檔最大 25 MB）

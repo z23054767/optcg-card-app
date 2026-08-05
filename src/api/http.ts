@@ -13,14 +13,20 @@ type ApiErrorResponse = {
 }
 
 export const http = axios.create({
-  baseURL: (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(/\/$/, ''),
+  baseURL: (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(
+    /\/$/,
+    '',
+  ),
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
   withCredentials: true,
 })
 
 const refreshHttp = axios.create({
-  baseURL: (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(/\/$/, ''),
+  baseURL: (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(
+    /\/$/,
+    '',
+  ),
   timeout: 10000,
   withCredentials: true,
 })

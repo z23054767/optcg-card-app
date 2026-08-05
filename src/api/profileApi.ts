@@ -1,11 +1,21 @@
 import { http } from '@/api/http'
 
+/**
+ * 使用者驗證提供者
+ * local: 本地帳號
+ * google: Google OAuth
+ * microsoft: Microsoft OAuth
+ * line: LINE OAuth
+ */
+export type AuthProvider = 'local' | 'google' | 'microsoft' | 'line'
+
 export interface UserProfile {
   id: number
   account: string
   name: string
   avatarUrl: string | null
   bio: string | null
+  authProvider: AuthProvider
   isActive: boolean
 }
 

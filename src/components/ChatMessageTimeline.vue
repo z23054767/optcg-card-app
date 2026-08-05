@@ -2,8 +2,11 @@
   <div class="space-y-3">
     <div v-if="loadingOlderMessages" class="sticky top-2 z-20 flex justify-center py-2">
       <div
-        class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-lg">
-        <span class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></span>
+        class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-lg"
+      >
+        <span
+          class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"
+        ></span>
         <span>載入舊訊息中...</span>
       </div>
     </div>
@@ -25,7 +28,8 @@
       type="button"
       aria-label="回到最新訊息"
       class="fixed right-4 bottom-20 z-20 flex h-11 w-11 items-center justify-center rounded-full border bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95 sm:right-6 sm:bottom-6"
-      @click="$emit('scroll-button-click')">
+      @click="$emit('scroll-button-click')"
+    >
       <span class="text-lg">⬇️</span>
     </button>
   </div>

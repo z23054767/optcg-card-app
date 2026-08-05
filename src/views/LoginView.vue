@@ -3,47 +3,64 @@
     <div class="mx-auto w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8">
       <!-- Login Logo -->
       <div class="mb-6 flex flex-col items-center">
-        <img src="/images/login-logo.png" alt="Login Logo" class="h-20 w-20 object-contain drop-shadow-sm" />
+        <img
+          src="/images/login-logo.png"
+          alt="Login Logo"
+          class="h-20 w-20 object-contain drop-shadow-sm"
+        />
 
-        <h1 class="mt-3 text-2xl font-bold text-gray-800">
-          Login
-        </h1>
+        <h1 class="mt-3 text-2xl font-bold text-gray-800">Login</h1>
 
-        <p class="mt-1 text-center text-sm text-gray-500">
-          登入您的帳號以繼續使用
-        </p>
+        <p class="mt-1 text-center text-sm text-gray-500">登入您的帳號以繼續使用</p>
       </div>
 
       <!-- Form -->
       <form class="space-y-4" @submit.prevent="login">
         <!-- Account -->
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            帳號
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> 帳號 </label>
 
-          <input v-model="account" type="text" placeholder="example@email.com"
+          <input
+            v-model="account"
+            type="text"
+            placeholder="example@email.com"
             class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required />
+            required
+          />
         </div>
 
         <!-- Password -->
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            密碼
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> 密碼 </label>
 
           <div class="relative">
-            <input v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="請輸入密碼"
+            <input
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="請輸入密碼"
               class="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required />
+              required
+            />
 
-            <button type="button" :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'" :title="showPassword ? '隱藏密碼' : '顯示密碼'"
+            <button
+              type="button"
+              :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'"
+              :title="showPassword ? '隱藏密碼' : '顯示密碼'"
               class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-gray-700"
-              @click="showPassword = !showPassword">
+              @click="showPassword = !showPassword"
+            >
               <FontAwesomeIcon :icon="showPassword ? 'eye-slash' : 'eye'" class="text-lg" />
             </button>
           </div>
+        </div>
+
+        <div class="flex items-center justify-end">
+          <RouterLink
+            to="/forgot-password"
+            class="text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            忘記密碼？
+          </RouterLink>
         </div>
 
         <!-- Error -->
@@ -52,19 +69,27 @@
         </p>
 
         <!-- Login Button -->
-        <button type="submit" :disabled="loading"
-          class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-          {{ loading ? "登入中..." : "登入" }}
+        <button
+          type="submit"
+          :disabled="loading"
+          class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {{ loading ? '登入中...' : '登入' }}
         </button>
       </form>
+
+      <p class="mt-5 text-center text-sm text-gray-500">
+        還沒有帳號？
+        <RouterLink to="/register" class="font-medium text-blue-600 hover:text-blue-700"
+          >立即註冊</RouterLink
+        >
+      </p>
 
       <!-- Divider -->
       <div class="my-6 flex items-center gap-3">
         <div class="h-px flex-1 bg-gray-200"></div>
 
-        <span class="shrink-0 text-xs text-gray-400">
-          或使用第三方登入
-        </span>
+        <span class="shrink-0 text-xs text-gray-400"> 或使用第三方登入 </span>
 
         <div class="h-px flex-1 bg-gray-200"></div>
       </div>
@@ -72,14 +97,21 @@
       <!-- OAuth Login -->
       <div class="space-y-3">
         <!-- Google -->
-        <button type="button" :disabled="oauthLoadingProvider !== null"
+        <button
+          type="button"
+          :disabled="oauthLoadingProvider !== null"
           class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          @click="startOAuthLogin('google')">
+          @click="startOAuthLogin('google')"
+        >
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-            <img :src="GoogleIcon" alt="Google" class="h-5 w-5 justify-self-center object-contain" />
+            <img
+              :src="GoogleIcon"
+              alt="Google"
+              class="h-5 w-5 justify-self-center object-contain"
+            />
 
             <span class="whitespace-nowrap text-center">
-              {{ oauthLoadingProvider === "google" ? "前往 Google..." : "使用 Google 登入" }}
+              {{ oauthLoadingProvider === 'google' ? '前往 Google...' : '使用 Google 登入' }}
             </span>
 
             <span aria-hidden="true"></span>
@@ -87,15 +119,26 @@
         </button>
 
         <!-- Microsoft -->
-        <button type="button" :disabled="oauthLoadingProvider !== null"
+        <button
+          type="button"
+          :disabled="oauthLoadingProvider !== null"
           class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          @click="startOAuthLogin('microsoft')">
+          @click="startOAuthLogin('microsoft')"
+        >
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-            <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-              <img :src="MicrosoftIcon" alt="Microsoft" class="h-5 w-5 justify-self-center object-contain" />
+            <span
+              class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3"
+            >
+              <img
+                :src="MicrosoftIcon"
+                alt="Microsoft"
+                class="h-5 w-5 justify-self-center object-contain"
+              />
 
               <span class="whitespace-nowrap text-center">
-                {{ oauthLoadingProvider === "microsoft" ? "前往 Microsoft..." : "使用 Microsoft 登入" }}
+                {{
+                  oauthLoadingProvider === 'microsoft' ? '前往 Microsoft...' : '使用 Microsoft 登入'
+                }}
               </span>
 
               <span aria-hidden="true"></span>
@@ -106,14 +149,17 @@
         </button>
 
         <!-- LINE -->
-        <button type="button" :disabled="oauthLoadingProvider !== null"
+        <button
+          type="button"
+          :disabled="oauthLoadingProvider !== null"
           class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          @click="startOAuthLogin('line')">
+          @click="startOAuthLogin('line')"
+        >
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
             <img :src="LineIcon" alt="LINE" class="h-5 w-5 justify-self-center object-contain" />
 
             <span class="whitespace-nowrap text-center">
-              {{ oauthLoadingProvider === "line" ? "前往 LINE..." : "使用 LINE 登入" }}
+              {{ oauthLoadingProvider === 'line' ? '前往 LINE...' : '使用 LINE 登入' }}
             </span>
 
             <span aria-hidden="true"></span>

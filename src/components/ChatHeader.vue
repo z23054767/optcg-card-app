@@ -1,17 +1,27 @@
 <template>
   <header class="sticky top-0 z-10 border-b bg-white">
     <div class="flex min-h-14 items-center gap-3 px-3 py-2 sm:px-4">
-      <button type="button"
+      <button
+        type="button"
         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-gray-600 hover:bg-gray-100 sm:hidden"
-        aria-label="開啟聊天室選單" @click="$emit('toggle-sidebar')">
+        aria-label="開啟聊天室選單"
+        @click="$emit('toggle-sidebar')"
+      >
         ☰
       </button>
 
       <div class="flex min-w-0 flex-1 items-center gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
-          :class="[avatarBackgroundClass, avatarTextClass]">
-          <img v-if="resolvedAvatarUrl && !avatarLoadFailed" :src="resolvedAvatarUrl" :alt="`${title} 頭像`"
-            class="h-full w-full object-cover" @error="avatarLoadFailed = true" />
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
+          :class="[avatarBackgroundClass, avatarTextClass]"
+        >
+          <img
+            v-if="resolvedAvatarUrl && !avatarLoadFailed"
+            :src="resolvedAvatarUrl"
+            :alt="`${title} 頭像`"
+            class="h-full w-full object-cover"
+            @error="avatarLoadFailed = true"
+          />
           <span v-else>{{ defaultAvatar }}</span>
         </span>
 
@@ -21,8 +31,12 @@
           </h1>
 
           <div class="mt-0.5 flex items-center gap-2 text-xs">
-            <button v-if="currentRoomId !== 'lobby'" type="button"
-              class="text-blue-600 hover:text-blue-700 hover:underline" @click="$emit('back-to-lobby')">
+            <button
+              v-if="currentRoomId !== 'lobby'"
+              type="button"
+              class="text-blue-600 hover:text-blue-700 hover:underline"
+              @click="$emit('back-to-lobby')"
+            >
               ← 回到大廳
             </button>
 
@@ -37,90 +51,133 @@
       </div>
 
       <div class="hidden shrink-0 items-center gap-2 sm:flex">
-        <button v-if="showCreateButton" type="button"
+        <button
+          v-if="showCreateButton"
+          type="button"
           class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-          @click="$emit('create-room')">
+          @click="$emit('create-room')"
+        >
           建立群組聊天
         </button>
 
-        <button v-if="showInviteMembersButton" type="button"
+        <button
+          v-if="showInviteMembersButton"
+          type="button"
           class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-          @click="$emit('invite-members')">
+          @click="$emit('invite-members')"
+        >
           邀請成員
         </button>
 
-        <button v-if="showPrivateChatButton" type="button"
+        <button
+          v-if="showPrivateChatButton"
+          type="button"
           class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-          @click="$emit('start-private-chat')">
+          @click="$emit('start-private-chat')"
+        >
           新增好友
         </button>
 
-        <button v-if="showManageGroupButton" type="button"
+        <button
+          v-if="showManageGroupButton"
+          type="button"
           class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          @click="$emit('open-manage-group')">
+          @click="$emit('open-manage-group')"
+        >
           群組管理
         </button>
 
-        <button v-if="showMembersButton" type="button"
+        <button
+          v-if="showMembersButton"
+          type="button"
           class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          @click="$emit('open-members')">
+          @click="$emit('open-members')"
+        >
           成員
         </button>
       </div>
 
-      <button type="button"
+      <button
+        type="button"
         class="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-visible rounded-full bg-gray-200 font-semibold text-gray-500 hover:bg-gray-300"
-        aria-label="開啟使用者選單" @click="$emit('toggle-user-menu')">
+        aria-label="開啟使用者選單"
+        @click="$emit('toggle-user-menu')"
+      >
         <span class="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
-          <img v-if="userAvatarUrl && !userAvatarLoadFailed" :src="userAvatarUrl" :alt="`${userName} 個人頭像`"
-            class="h-full w-full object-cover" @error="userAvatarLoadFailed = true" />
+          <img
+            v-if="userAvatarUrl && !userAvatarLoadFailed"
+            :src="userAvatarUrl"
+            :alt="`${userName} 個人頭像`"
+            class="h-full w-full object-cover"
+            @error="userAvatarLoadFailed = true"
+          />
 
           <span v-else>
             {{ defaultUserAvatar }}
           </span>
         </span>
 
-        <span v-if="unreadNotificationCount > 0"
-          class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-5 text-white">
+        <span
+          v-if="unreadNotificationCount > 0"
+          class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-5 text-white"
+        >
           {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
         </span>
       </button>
     </div>
 
-    <div v-if="
-      showCreateButton ||
-      showPrivateChatButton ||
-      showInviteMembersButton ||
-      showManageGroupButton ||
-      showMembersButton
-    " class="flex gap-2 overflow-x-auto border-t border-gray-100 px-3 py-2 sm:hidden">
-      <button v-if="showCreateButton" type="button"
+    <div
+      v-if="
+        showCreateButton ||
+        showPrivateChatButton ||
+        showInviteMembersButton ||
+        showManageGroupButton ||
+        showMembersButton
+      "
+      class="flex gap-2 overflow-x-auto border-t border-gray-100 px-3 py-2 sm:hidden"
+    >
+      <button
+        v-if="showCreateButton"
+        type="button"
         class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-        @click="$emit('create-room')">
+        @click="$emit('create-room')"
+      >
         建立群組聊天
       </button>
 
-      <button v-if="showInviteMembersButton" type="button"
+      <button
+        v-if="showInviteMembersButton"
+        type="button"
         class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-        @click="$emit('invite-members')">
+        @click="$emit('invite-members')"
+      >
         邀請成員
       </button>
 
-      <button v-if="showPrivateChatButton" type="button"
+      <button
+        v-if="showPrivateChatButton"
+        type="button"
         class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-        @click="$emit('start-private-chat')">
+        @click="$emit('start-private-chat')"
+      >
         新增好友
       </button>
 
-      <button v-if="showManageGroupButton" type="button"
+      <button
+        v-if="showManageGroupButton"
+        type="button"
         class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        @click="$emit('open-manage-group')">
+        @click="$emit('open-manage-group')"
+      >
         群組管理
       </button>
 
-      <button v-if="showMembersButton" type="button"
+      <button
+        v-if="showMembersButton"
+        type="button"
         class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        @click="$emit('open-members')">
+        @click="$emit('open-members')"
+      >
         成員
       </button>
     </div>

@@ -112,11 +112,7 @@ export const useChatStore = defineStore('chat', {
           break
 
         case 'ROOM_UPDATED':
-          this.updateRoomInfo(
-            event.payload.roomId,
-            event.payload.roomName,
-            event.payload.avatarUrl,
-          )
+          this.updateRoomInfo(event.payload.roomId, event.payload.roomName, event.payload.avatarUrl)
           break
 
         case 'INVITATION_ACCEPTED':
@@ -276,11 +272,7 @@ export const useChatStore = defineStore('chat', {
       )
     },
 
-    updateRoomInfo(
-      roomId: string,
-      roomName?: string | null,
-      avatarUrl?: string | null,
-    ): void {
+    updateRoomInfo(roomId: string, roomName?: string | null, avatarUrl?: string | null): void {
       this.rooms = this.rooms.map((room) =>
         room.id === roomId
           ? {

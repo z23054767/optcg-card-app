@@ -19,7 +19,9 @@ export function useChatMessages() {
   const midnightRefreshTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 
   const filteredMessages = computed(() =>
-    chat.messages.filter((message) => message && String(message.roomId) === String(chat.currentRoomId)),
+    chat.messages.filter(
+      (message) => message && String(message.roomId) === String(chat.currentRoomId),
+    ),
   )
 
   const lastMessageId = computed<string | null>(() => {

@@ -188,7 +188,6 @@ export type FriendRequestRejectedEvent = BaseChatEvent<
   }
 >
 
-
 /**
  * 好友個人資料已更新事件
  */

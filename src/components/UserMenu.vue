@@ -2,8 +2,15 @@
   <div v-if="open" class="fixed right-2 top-14 z-50 w-64 rounded-lg border bg-white shadow-lg py-2">
     <div class="px-4 py-2">
       <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 font-semibold text-gray-500">
-          <img v-if="avatarUrl" :src="avatarUrl" class="h-full w-full object-cover" alt="個人頭像" />
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 font-semibold text-gray-500"
+        >
+          <img
+            v-if="avatarUrl"
+            :src="avatarUrl"
+            class="h-full w-full object-cover"
+            alt="個人頭像"
+          />
           <span v-else>{{ name.trim().charAt(0).toUpperCase() || '?' }}</span>
         </div>
         <div class="min-w-0">
@@ -11,7 +18,6 @@
           <div class="mt-0.5 truncate text-xs text-gray-500">{{ account }}</div>
         </div>
       </div>
-
     </div>
 
     <div class="border-t my-1"></div>
@@ -32,7 +38,10 @@
 
     <div class="border-t my-1"></div>
 
-    <button class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" @click="$emit('open-settings')">
+    <button
+      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+      @click="$emit('open-settings')"
+    >
       ⚙ 個人設定
     </button>
 
