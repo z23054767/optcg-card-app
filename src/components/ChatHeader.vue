@@ -11,7 +11,15 @@
       </button>
 
       <div class="flex min-w-0 flex-1 items-center gap-3">
+        <UserAvatar
+          v-if="roomType === 'private'"
+          class="h-10 w-10 text-sm"
+          :avatar-url="avatarUrl"
+          :name="title"
+        />
+
         <span
+          v-else
           class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
           :class="[avatarBackgroundClass, avatarTextClass]"
         >
@@ -99,23 +107,17 @@
 
       <button
         type="button"
-        class="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-visible rounded-full bg-gray-200 font-semibold text-gray-500 hover:bg-gray-300"
+        class="relative h-9 w-9 shrink-0 overflow-visible rounded-full"
         aria-label="開啟使用者選單"
         @click="$emit('toggle-user-menu')"
       >
-        <span class="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
-          <img
-            v-if="userAvatarUrl && !userAvatarLoadFailed"
-            :src="userAvatarUrl"
-            :alt="`${userName} 個人頭像`"
-            class="h-full w-full object-cover"
-            @error="userAvatarLoadFailed = true"
-          />
-
-          <span v-else>
-            {{ defaultUserAvatar }}
-          </span>
-        </span>
+        <UserAvatar
+          class="h-9 w-9 text-sm"
+          :avatar-url="userAvatarUrl"
+          :name="userName"
+          :account="userAccount"
+          :user-id="userId"
+        />
 
         <span
           v-if="unreadNotificationCount > 0"
@@ -188,6 +190,7 @@
 import { computed, ref, watch } from 'vue'
 import { resolveChatRoomAvatarUrl } from '@/utils/chatRoomAvatar'
 import { resolveUserAvatarUrl } from '@/api/profileApi'
+import UserAvatar from '@/components/base/UserAvatar.vue'
 
 const props = defineProps<{
   title: string
@@ -195,6 +198,8 @@ const props = defineProps<{
   roomType: 'group' | 'private' | 'lobby'
   avatarUrl?: string | null
   userName: string
+  userAccount: string
+  userId?: string | number | null
   userAvatarUrl: string | null
   onlineCount: number
   unreadNotificationCount: number
@@ -206,7 +211,6 @@ const props = defineProps<{
 }>()
 
 const avatarLoadFailed = ref(false)
-const userAvatarLoadFailed = ref(false)
 
 const resolvedAvatarUrl = computed<string | null>(() => {
   switch (props.roomType) {
@@ -227,15 +231,11 @@ const defaultAvatar = computed(() => {
     case 'group':
       return '👥'
     case 'private':
-      return props.title.trim().charAt(0).toUpperCase() || '?'
+      return ''
     case 'lobby':
     default:
       return '🏠'
   }
-})
-
-const defaultUserAvatar = computed(() => {
-  return props.userName.trim().charAt(0).toUpperCase() || '?'
 })
 
 const avatarBackgroundClass = computed(() => {
@@ -271,12 +271,6 @@ watch(
   },
 )
 
-watch(
-  () => props.userAvatarUrl,
-  () => {
-    userAvatarLoadFailed.value = false
-  },
-)
 
 defineEmits<{
   'toggle-sidebar': []

@@ -67,11 +67,13 @@
               :key="member.userId"
               class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5"
             >
-              <div
-                class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-sm shrink-0"
-              >
-                👤
-              </div>
+              <UserAvatar
+                class="h-9 w-9 text-sm"
+                :avatar-url="member.avatarUrl"
+                :name="member.name"
+                :account="member.account"
+                :user-id="member.userId"
+              />
               <div class="min-w-0 flex-1">
                 <div class="truncate text-sm font-medium text-gray-800">{{ member.name }}</div>
                 <div class="truncate text-xs text-gray-400">{{ member.account }}</div>
@@ -183,11 +185,11 @@
               :key="inv.invitationId"
               class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5"
             >
-              <div
-                class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm shrink-0"
-              >
-                👤
-              </div>
+              <UserAvatar
+                class="h-9 w-9 text-sm"
+                :account="inv.inviteeAccount"
+                :user-id="inv.inviteeId"
+              />
               <div class="min-w-0 flex-1 truncate text-sm text-gray-700">
                 {{ inv.inviteeAccount }}
               </div>
@@ -258,6 +260,7 @@
 </template>
 
 <script setup lang="ts">
+import UserAvatar from '@/components/base/UserAvatar.vue'
 import { computed, ref, watch } from 'vue'
 import type { ChatInvitation, ChatRoomListItem, ChatRoomMember } from '@/types/chat'
 import { resolveChatRoomAvatarUrl } from '@/utils/chatRoomAvatar'

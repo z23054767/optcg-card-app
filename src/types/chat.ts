@@ -138,6 +138,9 @@ export interface ChatRoomMember {
   /** 使用者名稱 */
   name: string
 
+  /** 使用者頭像 */
+  avatarUrl?: string | null
+
   /** 聊天室角色 */
   role: 'manager' | 'member'
 }
@@ -204,6 +207,9 @@ export interface ChatFriendRequest {
   /** 發起者帳號 */
   requesterAccount: string
 
+  /** 發起者頭像 */
+  requesterAvatarUrl?: string | null
+
   /** 接收者 ID */
   receiverId: string
 
@@ -238,6 +244,9 @@ export interface ChatUserSearchItem {
 
   /** 使用者帳號 */
   account: string
+
+  /** 使用者頭像 */
+  avatarUrl?: string | null
 
   /** 與目前登入使用者的好友關係狀態 */
   friendshipStatus: ChatFriendshipStatus

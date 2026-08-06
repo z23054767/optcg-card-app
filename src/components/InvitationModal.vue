@@ -28,13 +28,20 @@
             :key="request.requestId"
             class="mb-3 rounded-lg border p-4"
           >
-            <div class="font-medium text-gray-800">
-              {{ request.requesterName }}
+            <div class="flex items-center gap-3">
+              <UserAvatar
+                class="h-10 w-10 text-sm"
+                :avatar-url="request.requesterAvatarUrl"
+                :name="request.requesterName"
+                :account="request.requesterAccount"
+                :user-id="request.requesterId"
+              />
+              <div class="min-w-0">
+                <div class="truncate font-medium text-gray-800">{{ request.requesterName }}</div>
+                <div class="truncate text-sm text-gray-500">{{ request.requesterAccount }}</div>
+              </div>
             </div>
 
-            <div class="mt-1 text-sm text-gray-500">
-              {{ request.requesterAccount }}
-            </div>
 
             <div class="mt-2 text-sm text-gray-600">向你發出好友申請</div>
 
@@ -103,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import UserAvatar from '@/components/base/UserAvatar.vue'
 import type { ChatFriendRequest, ChatInvitation } from '@/types/chat'
 
 defineProps<{

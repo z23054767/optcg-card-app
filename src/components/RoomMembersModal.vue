@@ -24,9 +24,13 @@
           :key="member.userId"
           class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2"
         >
-          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm">
-            👤
-          </div>
+          <UserAvatar
+            class="h-9 w-9 text-sm"
+            :avatar-url="member.avatarUrl"
+            :name="member.name"
+            :account="member.account"
+            :user-id="member.userId"
+          />
 
           <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-medium text-gray-800">
@@ -55,6 +59,7 @@
 </template>
 
 <script setup lang="ts">
+import UserAvatar from '@/components/base/UserAvatar.vue'
 import type { ChatRoomMember } from '@/types/chat'
 
 defineProps<{

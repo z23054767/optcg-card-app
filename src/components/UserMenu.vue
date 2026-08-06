@@ -2,17 +2,12 @@
   <div v-if="open" class="fixed right-2 top-14 z-50 w-64 rounded-lg border bg-white shadow-lg py-2">
     <div class="px-4 py-2">
       <div class="flex items-center gap-3">
-        <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 font-semibold text-gray-500"
-        >
-          <img
-            v-if="avatarUrl"
-            :src="avatarUrl"
-            class="h-full w-full object-cover"
-            alt="個人頭像"
-          />
-          <span v-else>{{ name.trim().charAt(0).toUpperCase() || '?' }}</span>
-        </div>
+        <UserAvatar
+          class="h-10 w-10 text-sm"
+          :avatar-url="avatarUrl"
+          :name="name"
+          :account="account"
+        />
         <div class="min-w-0">
           <div class="truncate text-sm font-semibold text-gray-800">{{ name }}</div>
           <div class="mt-0.5 truncate text-xs text-gray-500">{{ account }}</div>
@@ -55,6 +50,7 @@
 </template>
 
 <script setup lang="ts">
+import UserAvatar from '@/components/base/UserAvatar.vue'
 defineProps<{
   open: boolean
   name: string

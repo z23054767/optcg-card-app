@@ -68,21 +68,12 @@
               :title="getRoomName(room)"
               @click="$emit('switch-room', room.id)"
             >
-              <span
-                class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-purple-100 font-semibold text-purple-600"
-              >
-                <img
-                  v-if="getPrivateRoomAvatarUrl(room) && !failedAvatarRoomIds.has(room.id)"
-                  :src="getPrivateRoomAvatarUrl(room) ?? undefined"
-                  :alt="`${getRoomName(room)} 頭像`"
-                  class="h-full w-full object-cover"
-                  @error="markAvatarLoadFailed(room.id)"
-                />
-
-                <span v-else>
-                  {{ getPrivateRoomDefaultAvatar(room) }}
-                </span>
-              </span>
+              <UserAvatar
+                class="h-7 w-7 text-xs"
+                :avatar-url="room.avatarUrl"
+                :name="getRoomName(room)"
+                :user-id="room.id"
+              />
 
               <span class="truncate">{{ getRoomName(room) }}</span>
             </button>
@@ -152,7 +143,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { resolveChatRoomAvatarUrl } from '@/utils/chatRoomAvatar'
-import { resolveUserAvatarUrl } from '@/api/profileApi'
+import UserAvatar from '@/components/base/UserAvatar.vue'
 import type { ChatRoomListItem } from '@/types/chat'
 
 const props = defineProps<{
@@ -178,13 +169,6 @@ function getRoomAvatarUrl(room: ChatRoomListItem): string | null {
   return resolveChatRoomAvatarUrl(room.avatarUrl ?? null)
 }
 
-function getPrivateRoomAvatarUrl(room: ChatRoomListItem): string | null {
-  return resolveUserAvatarUrl(room.avatarUrl ?? null)
-}
-
-function getPrivateRoomDefaultAvatar(room: ChatRoomListItem): string {
-  return getRoomName(room).charAt(0).toUpperCase() || '?'
-}
 
 function markAvatarLoadFailed(roomId: string): void {
   failedAvatarRoomIds.value = new Set([...failedAvatarRoomIds.value, roomId])

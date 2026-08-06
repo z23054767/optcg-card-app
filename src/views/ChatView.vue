@@ -15,6 +15,8 @@
         :room-type="currentRoomType"
         :avatar-url="currentRoomAvatarUrl"
         :user-name="auth.user?.name || auth.user?.account || '使用者'"
+        :user-account="auth.user?.account || ''"
+        :user-id="auth.user?.userId || null"
         :user-avatar-url="resolvedUserAvatarUrl"
         :online-count="chat.currentRoomOnlineCount"
         :unread-notification-count="notificationCount"

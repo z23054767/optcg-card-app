@@ -65,11 +65,13 @@
           :key="user.userId"
           class="flex w-full items-center gap-3 rounded-lg border p-3"
         >
-          <span
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100"
-          >
-            👤
-          </span>
+          <UserAvatar
+            class="h-10 w-10 text-sm"
+            :avatar-url="user.avatarUrl"
+            :name="user.name"
+            :account="user.account"
+            :user-id="user.userId"
+          />
 
           <span class="min-w-0 flex-1">
             <span class="block truncate text-sm font-semibold text-gray-800">
@@ -119,6 +121,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
+import UserAvatar from '@/components/base/UserAvatar.vue'
 import type { ChatUserSearchItem } from '@/types/chat'
 
 defineProps<{
