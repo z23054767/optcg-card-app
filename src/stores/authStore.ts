@@ -3,7 +3,8 @@ import { defineStore } from 'pinia'
 export type AuthUser = {
   userId: string
   name: string
-  account: string
+  displayName: string
+  email?: string | null
   avatarUrl?: string | null
   bio?: string | null
 }
@@ -30,7 +31,8 @@ function parseJwt(token: string): AuthUser {
   return {
     userId: String(payload.userId),
     name: payload.name,
-    account: payload.account,
+    displayName: payload.displayName || payload.name,
+    email: payload.email ?? null,
   }
 }
 
@@ -66,7 +68,7 @@ export const useAuthStore = defineStore('auth', {
       this.setAccessToken(token)
     },
 
-    updateProfile(profile: { name: string; avatarUrl: string | null; bio: string | null }) {
+    updateProfile(profile: { displayName: string; avatarUrl: string | null; bio: string | null }) {
       if (!this.user) return
       this.user = { ...this.user, ...profile }
     },

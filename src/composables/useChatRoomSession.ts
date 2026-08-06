@@ -30,8 +30,12 @@ type RoomSessionDeps = {
     roomMembers: {
       value: Array<{
         userId: string
-        account: string
+        /** 使用者名稱，唯一識別 */
         name: string
+        /** 顯示名稱 */
+        displayName: string
+        /** 舊欄位，暫時保留相容 */
+        account: string
         role: 'manager' | 'member'
         avatarUrl?: string | null
       }>
@@ -101,7 +105,7 @@ export function useChatRoomSession() {
     currentProfile.value = profile
 
     auth.updateProfile({
-      name: profile.name,
+      displayName: profile.displayName,
       avatarUrl: profile.avatarUrl,
       bio: profile.bio,
     })
@@ -331,7 +335,7 @@ export function useChatRoomSession() {
     )
 
     startInvitationSync()
-    chat.showSelfWelcome(auth.user?.name ?? auth.user?.account ?? '使用者')
+    chat.showSelfWelcome(auth.user?.displayName ?? auth.user?.name ?? '使用者')
   })
 
   onUnmounted(() => {

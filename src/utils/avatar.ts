@@ -3,6 +3,7 @@ import { resolveUserAvatarUrl } from '@/api/profileApi'
 export interface AvatarInput {
   avatarUrl?: string | null
   name?: string | null
+  displayName?: string | null
   account?: string | null
   userId?: string | number | null
 }
@@ -26,11 +27,11 @@ function normalize(value?: string | number | null): string {
 }
 
 export function getAvatarDisplayName(input: AvatarInput): string {
-  return normalize(input.name) || normalize(input.account) || '使用者'
+  return normalize(input.displayName) || normalize(input.name) || normalize(input.account) || '使用者'
 }
 
-export function getAvatarInitial(input: Pick<AvatarInput, 'name' | 'account'>): string {
-  const displayName = normalize(input.name) || normalize(input.account)
+export function getAvatarInitial(input: Pick<AvatarInput, 'displayName' | 'name' | 'account'>): string {
+  const displayName = normalize(input.displayName) || normalize(input.name) || normalize(input.account)
   return Array.from(displayName)[0]?.toLocaleUpperCase() || '?'
 }
 

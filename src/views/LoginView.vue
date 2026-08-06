@@ -21,9 +21,9 @@
           <label class="mb-1 block text-sm font-medium text-gray-700"> 帳號 </label>
 
           <input
-            v-model="account"
+            v-model="name"
             type="text"
-            placeholder="example@email.com"
+            placeholder="請輸入 Username"
             class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
@@ -185,7 +185,7 @@ import MicrosoftIcon from '@/assets/icons/microsoft.svg'
 
 const authStore = useAuthStore()
 
-const account = ref('')
+const name = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
@@ -212,7 +212,7 @@ function resolveOAuthErrorMessage(code: unknown): string {
     case 'OAUTH_CODE_EXCHANGE_FAILED':
       return '第三方登入授權失敗，請稍後再試'
     case 'OAUTH_EMAIL_REQUIRED':
-      return '第三方登入未提供 Email，無法建立帳號'
+      return '第三方登入資料不完整，無法建立帳號'
     case 'OAUTH_TOKEN_INVALID':
       return '第三方登入憑證無效，請重新登入'
     case 'OAUTH_ACCOUNT_CONFLICT':
@@ -228,7 +228,7 @@ async function login() {
 
   try {
     const res = await loginApi({
-      account: account.value,
+      name: name.value,
       password: password.value,
     })
 

@@ -93,17 +93,17 @@ export interface LeaveRoomPayload {
  */
 export type ClientWsMessage =
   | {
-      type: 'SEND_MESSAGE'
-      payload: SendMessagePayload
-    }
+    type: 'SEND_MESSAGE'
+    payload: SendMessagePayload
+  }
   | {
-      type: 'JOIN_ROOM'
-      payload: JoinRoomPayload
-    }
+    type: 'JOIN_ROOM'
+    payload: JoinRoomPayload
+  }
   | {
-      type: 'LEAVE_ROOM'
-      payload: LeaveRoomPayload
-    }
+    type: 'LEAVE_ROOM'
+    payload: LeaveRoomPayload
+  }
 
 /**
  * 聊天室資訊
@@ -117,6 +117,9 @@ export interface ChatRoomListItem {
 
   /** 聊天室名稱 */
   name?: string | null
+
+  /** 私人聊天室顯示名稱 */
+  displayName?: string | null
 
   /** 聊天室頭像 */
   avatarUrl?: string | null
@@ -132,17 +135,17 @@ export interface ChatRoomMember {
   /** 使用者 ID */
   userId: string
 
-  /** 使用者帳號 */
-  account: string
-
-  /** 使用者名稱 */
+  /** 唯一使用者名稱 */
   name: string
 
-  /** 使用者頭像 */
-  avatarUrl?: string | null
+  /** 顯示名稱 */
+  displayName: string
 
-  /** 聊天室角色 */
-  role: 'manager' | 'member'
+  /** 頭像 */
+  avatarUrl: string | null
+
+  /** 成員角色 */
+  role: "manager" | "member"
 }
 
 /**
@@ -164,17 +167,26 @@ export interface ChatInvitation {
   /** 邀請者 ID */
   inviterId: string
 
-  /** 邀請者名稱 */
+  /** 邀請者使用者名稱 */
   inviterName: string
 
-  /** 邀請者帳號 */
-  inviterAccount: string
+  /** 邀請者顯示名稱 */
+  inviterDisplayName: string
+
+  /** 邀請者頭像 */
+  inviterAvatarUrl: string | null
 
   /** 受邀者 ID */
   inviteeId: string
 
-  /** 受邀者帳號 */
-  inviteeAccount: string
+  /** 受邀者使用者名稱 */
+  inviteeName: string
+
+  /** 受邀者顯示名稱 */
+  inviteeDisplayName: string
+
+  /** 受邀者頭像 */
+  inviteeAvatarUrl: string | null
 
   /** 邀請狀態 */
   status: 'pending' | 'accepted' | 'rejected'
@@ -201,17 +213,23 @@ export interface ChatFriendRequest {
   /** 發起者 ID */
   requesterId: string
 
-  /** 發起者名稱 */
+  /** 發起者 Username（唯一識別） */
   requesterName: string
 
-  /** 發起者帳號 */
-  requesterAccount: string
+  /** 發起者 Display Name */
+  requesterDisplayName: string
 
   /** 發起者頭像 */
   requesterAvatarUrl?: string | null
 
   /** 接收者 ID */
   receiverId: string
+
+  /** 接收者 Username（唯一識別） */
+  receiverName: string
+
+  /** 接收者 Display Name */
+  receiverDisplayName: string
 
   /** 好友申請狀態 */
   status: ChatFriendRequestStatus
@@ -242,8 +260,8 @@ export interface ChatUserSearchItem {
   /** 使用者名稱 */
   name: string
 
-  /** 使用者帳號 */
-  account: string
+  /** 顯示名稱 */
+  displayName: string
 
   /** 使用者頭像 */
   avatarUrl?: string | null

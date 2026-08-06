@@ -99,7 +99,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
     userProfile.value = profile
     auth.updateProfile({
-      name: profile.name,
+      displayName: profile.displayName,
       avatarUrl: profile.avatarUrl,
       bio: profile.bio,
     })
@@ -276,17 +276,26 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     }
   }
 
-  async function inviteMembers(payload: { emails: string[] }): Promise<void> {
+  async function inviteMembers(payload: { names: string[] }): Promise<void> {
     if (invitingMembers.value) return
     if (!chat.currentRoomId) return
+    if (payload.names.length === 0) return
+
+    const roomId = chat.currentRoomId
 
     invitingMembers.value = true
 
     try {
-      await inviteChatRoomMembersApi(chat.currentRoomId, {
-        inviteEmails: payload.emails,
+      await inviteChatRoomMembersApi(roomId, {
+        names: payload.names,
       })
+
+      await loadRoomInvitations(roomId)
+
       showInviteMembers.value = false
+      deps.showToast('邀請已送出')
+    } catch {
+      deps.showToast('邀請成員失敗，請稍後再試', 'error')
     } finally {
       invitingMembers.value = false
     }
@@ -308,17 +317,22 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     ])
   }
 
-  async function reInvite(inviteeAccount: string): Promise<void> {
+  async function reInvite(inviteeName: string): Promise<void> {
     if (!chat.currentRoomId) return
 
-    const inv = roomInvitations.value.find((item) => item.inviteeAccount === inviteeAccount)
+    const invitation = roomInvitations.value.find(
+      (item) => item.inviteeName === inviteeName,
+    )
 
-    if (inv) {
-      reInvitingInviteeId.value = String(inv.inviteeId)
+    if (invitation) {
+      reInvitingInviteeId.value = String(invitation.inviteeId)
     }
 
     try {
-      await inviteChatRoomMembersApi(chat.currentRoomId, { inviteEmails: [inviteeAccount] })
+      await inviteChatRoomMembersApi(chat.currentRoomId, {
+        names: [inviteeName],
+      })
+
       await loadRoomInvitations(chat.currentRoomId)
       deps.showToast('已重新送出邀請')
     } catch {
@@ -427,7 +441,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
   function handleProfileSaved(profile: UserProfile): void {
     userProfile.value = profile
-    auth.updateProfile({ name: profile.name, avatarUrl: profile.avatarUrl, bio: profile.bio })
+    auth.updateProfile({ displayName: profile.displayName, avatarUrl: profile.avatarUrl, bio: profile.bio })
     showProfileSettings.value = false
     deps.showToast('個人設定已更新')
   }

@@ -7,7 +7,7 @@ export type OAuthProvider = 'google' | 'microsoft' | 'line'
  */
 export interface LoginRequest {
   /** 帳號 */
-  account: string
+  name: string
 
   /** 密碼 */
   password: string
@@ -53,9 +53,10 @@ export function buildOAuthLoginUrl(provider: OAuthProvider, redirect: string): s
 
 /** 註冊請求 */
 export interface RegisterRequest {
-  account: string
-  password: string
   name: string
+  displayName?: string
+  email: string
+  password: string
 }
 
 /** 建立本機帳號並寄送驗證信。 */
@@ -64,11 +65,16 @@ export async function registerApi(input: RegisterRequest): Promise<void> {
 }
 
 /** 寄送密碼重設信。 */
-export async function forgotPasswordApi(account: string): Promise<void> {
-  await http.post('/auth/forgot-password', { account })
+export async function forgotPasswordApi(email: string): Promise<void> {
+  await http.post('/auth/forgot-password', { email })
 }
 
 /** 使用重設密碼權杖更新密碼。 */
 export async function resetPasswordApi(token: string, newPassword: string): Promise<void> {
   await http.post('/auth/reset-password', { token, newPassword })
+}
+
+export async function checkNameAvailabilityApi(name: string): Promise<boolean> {
+  const { data } = await http.get<{ success: boolean; available: boolean }>('/auth/name-availability', { params: { name } })
+  return data.available
 }

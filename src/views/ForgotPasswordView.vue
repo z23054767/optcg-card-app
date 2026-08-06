@@ -15,7 +15,7 @@
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">Email</label>
           <input
-            v-model.trim="account"
+            v-model.trim="email"
             type="email"
             autocomplete="email"
             placeholder="example@email.com"
@@ -48,7 +48,7 @@ import { forgotPasswordApi } from '@/api/loginApi'
 import { resolveApiError } from '@/api/resolveApiError'
 import { showSuccessAlert } from '@/utils/alerts'
 
-const account = ref('')
+const email = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 
@@ -56,9 +56,9 @@ async function submit(): Promise<void> {
   errorMessage.value = ''
   loading.value = true
   try {
-    await forgotPasswordApi(account.value)
+    await forgotPasswordApi(email.value)
     await showSuccessAlert('若此 Email 已註冊，密碼重設信將寄送至您的信箱')
-    account.value = ''
+    email.value = ''
   } catch (error: unknown) {
     errorMessage.value = resolveApiError(error)
   } finally {

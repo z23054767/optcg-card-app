@@ -36,22 +36,22 @@
             <label class="mb-1 block text-sm font-medium text-gray-700"> 顯示名稱 </label>
 
             <input
-              v-model="name"
+              v-model="displayName"
               maxlength="30"
-              :disabled="isThirdPartyAccount"
+              
               class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
             />
 
             <p v-if="isThirdPartyAccount" class="mt-1 text-xs text-gray-500">
-              第三方登入帳號的顯示名稱由登入服務提供，無法在此修改。
+              顯示名稱可隨時修改。
             </p>
           </div>
 
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700"> 帳號 </label>
+            <label class="mb-1 block text-sm font-medium text-gray-700"> Username（不可修改） </label>
 
             <input
-              :value="account"
+              :value="`@${name}`"
               disabled
               class="w-full rounded-lg border bg-gray-50 px-3 py-2 text-sm text-gray-500"
             />
@@ -90,7 +90,7 @@
 
         <button
           class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          :disabled="saving || !name.trim()"
+          :disabled="saving || !displayName.trim()"
           @click="save"
         >
           {{ saving ? '儲存中...' : '儲存' }}
@@ -129,9 +129,9 @@ const avatarCropper = ref<AvatarCropperExpose | null>(null)
 const hasSelectedAvatarFile = ref(false)
 const removeCurrentAvatar = ref(false)
 
-const name = ref(props.profile.name)
+const name = props.profile.name
+const displayName = ref(props.profile.displayName)
 const bio = ref(props.profile.bio ?? '')
-const account = props.profile.account
 
 const saving = ref(false)
 const errorMessage = ref('')
@@ -139,9 +139,9 @@ const errorMessage = ref('')
 const currentAvatarUrl = computed(() => resolveUserAvatarUrl(props.profile.avatarUrl))
 
 async function save(): Promise<void> {
-  const trimmedName = name.value.trim()
+  const trimmedDisplayName = displayName.value.trim()
 
-  if (!trimmedName) {
+  if (!trimmedDisplayName) {
     return
   }
 
@@ -150,7 +150,7 @@ async function save(): Promise<void> {
 
   try {
     let profile = await updateMyProfileApi({
-      name: trimmedName,
+      displayName: trimmedDisplayName,
       bio: bio.value.trim() || null,
     })
 

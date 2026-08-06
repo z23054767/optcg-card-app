@@ -30,7 +30,7 @@ export interface CreateChatRoomRequest {
  * 邀請聊天室成員請求
  */
 export interface InviteChatRoomMembersRequest {
-  inviteEmails: string[]
+  names: string[]
 }
 
 /**
@@ -308,11 +308,15 @@ export interface RoomInvitationsResponse {
 }
 
 /**
- * 依 email 查詢使用者結果
+ * 依使用者名稱查詢使用者是否存在
  */
-export type SearchUserByEmailResponse =
-  | { found: true; userId: string; name: string; account: string; isMember: boolean }
-  | { found: false }
+export interface SearchUserByNameResponse {
+  found: boolean
+  isMember: boolean
+  name: string
+  displayName: string
+  avatarUrl: string | null
+}
 
 /**
  * 刪除聊天室
@@ -335,15 +339,21 @@ export async function getRoomInvitationsApi(roomId: string): Promise<RoomInvitat
 }
 
 /**
- * 依 email 查詢使用者是否存在
+ * 依使用者名稱查詢使用者是否存在
  */
-export async function searchUserByEmailApi(
-  email: string,
+export async function searchUserByNameApi(
+  name: string,
   roomId: string,
-): Promise<SearchUserByEmailResponse> {
-  const { data } = await http.get<SearchUserByEmailResponse>('/chat/users/search/email', {
-    params: { email, roomId },
-  })
+): Promise<SearchUserByNameResponse> {
+  const { data } = await http.get<SearchUserByNameResponse>(
+    '/chat/users/search/name',
+    {
+      params: {
+        name,
+        roomId,
+      },
+    },
+  )
 
   return data
 }

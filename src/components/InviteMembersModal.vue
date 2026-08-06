@@ -1,94 +1,88 @@
 <template>
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-    @click.self="$emit('close')"
-  >
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-4">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" @click.self="$emit('close')">
+    <div class="w-full max-w-md rounded-lg bg-white p-4 shadow-lg">
       <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-base font-semibold text-gray-800">邀請成員</h2>
+        <h2 class="text-base font-semibold text-gray-800">
+          邀請成員
+        </h2>
 
-        <button
-          type="button"
+        <button type="button"
           class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-          @click="$emit('close')"
-        >
+          aria-label="關閉" @click="$emit('close')">
           ✕
         </button>
       </div>
+
       <div class="space-y-3">
         <div>
-          <label class="block text-sm text-gray-600 mb-1">邀請信箱</label>
+          <label class="mb-1 block text-sm text-gray-600">
+            使用者名稱
+          </label>
+
           <div
-            class="min-h-24 max-h-48 overflow-y-auto w-full border rounded px-2 py-2 text-sm flex flex-wrap items-start gap-2 bg-white"
-            :class="{ 'border-red-400': emailError }"
-          >
-            <span
-              v-for="entry in emails"
-              :key="entry.email"
-              class="inline-flex items-center max-w-full gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700"
-            >
-              <span class="max-w-48 truncate">{{ entry.name }}</span>
-              <span class="text-slate-400 truncate max-w-32">{{ entry.email }}</span>
-              <button
-                type="button"
-                class="text-gray-500 hover:text-red-600 ml-0.5"
-                :disabled="loading"
-                @click="removeEmail(entry.email)"
-              >
+            class="flex min-h-24 max-h-48 w-full flex-wrap items-start gap-2 overflow-y-auto rounded border bg-white px-2 py-2 text-sm"
+            :class="{ 'border-red-400': usernameError }">
+            <span v-for="entry in users" :key="entry.name"
+              class="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700">
+              <span class="max-w-48 truncate">
+                {{ entry.displayName || entry.name }}
+              </span>
+
+              <span class="max-w-32 truncate text-slate-400">
+                @{{ entry.name }}
+              </span>
+
+              <button type="button"
+                class="ml-0.5 text-gray-500 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="loading" :aria-label="`移除 ${entry.displayName || entry.name}`"
+                @click="removeUser(entry.name)">
                 ×
               </button>
             </span>
 
-            <div class="inline-flex items-center gap-1 basis-full">
-              <input
-                v-model="emailInput"
-                type="text"
-                class="flex-1 px-1 py-1 outline-none disabled:bg-white text-sm"
-                placeholder="輸入信箱後按 Enter 確認..."
-                :disabled="loading || validating"
-                @keydown="onEmailKeydown"
-                @blur="() => void addEmailFromInput()"
-              />
-              <span v-if="validating" class="text-xs text-gray-400 shrink-0">查詢中…</span>
+            <div class="inline-flex basis-full items-center gap-1">
+              <input v-model="usernameInput" type="text" class="flex-1 px-1 py-1 text-sm outline-none disabled:bg-white"
+                placeholder="輸入 @使用者名稱後按 Enter" autocomplete="off" spellcheck="false" maxlength="31"
+                :disabled="loading || validating" @keydown="onUsernameKeydown" @blur="() => void addUserFromInput()" />
+
+              <span v-if="validating" class="shrink-0 text-xs text-gray-400">
+                查詢中…
+              </span>
             </div>
           </div>
 
-          <p
-            v-if="emailError"
-            class="text-xs mt-1"
-            :class="
-              emailError === '查無此人' || emailError === '已是成員'
-                ? 'text-amber-600'
-                : 'text-red-600'
-            "
-          >
+          <p v-if="usernameError" class="mt-1 text-xs" :class="usernameError === '查無此人' ||
+              usernameError === '已是成員' ||
+              usernameError === '已加入清單'
+              ? 'text-amber-600'
+              : 'text-red-600'
+            ">
             {{
-              emailError === '查無此人'
-                ? '⚠ 查無此帳號，請確認信箱是否正確'
-                : emailError === '已是成員'
+              usernameError === '查無此人'
+                ? '⚠ 查無此使用者，請確認使用者名稱是否正確'
+                : usernameError === '已是成員'
                   ? '此使用者已是群組成員'
-                  : emailError
+                  : usernameError === '已加入清單'
+                    ? '此使用者已加入邀請清單'
+                    : usernameError
             }}
           </p>
 
-          <p v-else class="text-xs text-gray-400 mt-1">可用 Enter、Tab、逗號分隔多筆信箱</p>
+          <p v-else class="mt-1 text-xs text-gray-400">
+            請以 @ 開頭，可使用 Enter、Tab、逗號或分號加入多位使用者。
+          </p>
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 mt-4">
-        <button
-          class="px-3 py-1 text-sm border rounded disabled:opacity-50"
-          :disabled="loading"
-          @click="$emit('close')"
-        >
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded border px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="loading" @click="$emit('close')">
           取消
         </button>
 
-        <button
-          class="px-3 py-1 text-sm rounded bg-indigo-600 text-white disabled:opacity-50"
-          :disabled="emails.length === 0 || loading || validating"
-          @click="handleInvite"
-        >
+        <button type="button"
+          class="rounded bg-indigo-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="users.length === 0 || loading || validating" @click="handleInvite">
           {{ loading ? '邀請中...' : '送出邀請' }}
         </button>
       </div>
@@ -98,11 +92,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { searchUserByEmailApi } from '@/api/chatApi'
+import { searchUserByNameApi } from '@/api/chatApi'
 
-interface EmailEntry {
-  email: string
+interface InviteUserEntry {
+  /** 唯一使用者名稱 */
   name: string
+
+  /** 顯示名稱 */
+  displayName: string
 }
 
 const props = defineProps<{
@@ -112,88 +109,150 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  invite: [payload: { emails: string[] }]
+  invite: [payload: { names: string[] }]
 }>()
 
-const emailInput = ref('')
-const emails = ref<EmailEntry[]>([])
-const emailError = ref('')
+const usernameInput = ref('')
+const users = ref<InviteUserEntry[]>([])
+const usernameError = ref('')
 const validating = ref(false)
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+function normalizeUsernameInput(value: string): string {
+  return value.trim().replace(/[,;]$/, '')
 }
 
-async function addEmailFromInput(): Promise<void> {
-  const value = emailInput.value.trim().replace(/[,;]$/, '')
+function validateUsernameInput(value: string): string {
+  if (!value) {
+    return ''
+  }
 
-  if (!value) return
+  if (!value.startsWith('@')) {
+    return '請輸入 @使用者名稱'
+  }
 
-  if (!isValidEmail(value)) {
-    emailError.value = '信箱格式不正確'
+  const name = value.slice(1)
+
+  if (!name) {
+    return '請在 @ 後輸入使用者名稱'
+  }
+
+  if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+    return '使用者名稱僅能包含英文字母、數字與底線（_）'
+  }
+
+  if (name.length < 3) {
+    return '使用者名稱長度至少需要 3 碼'
+  }
+
+  if (name.length > 30) {
+    return '使用者名稱長度不可超過 30 碼'
+  }
+
+  return ''
+}
+
+async function addUserFromInput(): Promise<void> {
+  const value = normalizeUsernameInput(usernameInput.value)
+
+  if (!value) {
     return
   }
 
-  if (emails.value.some((e) => e.email === value)) {
-    emailError.value = '此信箱已加入'
-    emailInput.value = ''
+  const validationMessage = validateUsernameInput(value)
+
+  if (validationMessage) {
+    usernameError.value = validationMessage
     return
   }
 
-  if (validating.value) return
+  const name = value.slice(1)
+
+  if (
+    users.value.some(
+      (entry) => entry.name.toLowerCase() === name.toLowerCase(),
+    )
+  ) {
+    usernameError.value = '已加入清單'
+    usernameInput.value = ''
+    return
+  }
+
+  if (validating.value) {
+    return
+  }
 
   validating.value = true
-  emailError.value = ''
+  usernameError.value = ''
 
   try {
-    const result = await searchUserByEmailApi(value, props.roomId)
+    const result = await searchUserByNameApi(name, props.roomId)
 
     if (!result.found) {
-      emailError.value = '查無此人'
+      usernameError.value = '查無此人'
       return
     }
 
     if (result.isMember) {
-      emailError.value = '已是成員'
+      usernameError.value = '已是成員'
       return
     }
 
-    emails.value.push({ email: value, name: result.name })
-    emailInput.value = ''
-    emailError.value = ''
+    users.value.push({
+      name: result.name,
+      displayName: result.displayName || result.name,
+    })
+
+    usernameInput.value = ''
+    usernameError.value = ''
+  } catch {
+    usernameError.value = '查詢使用者失敗，請稍後再試'
   } finally {
     validating.value = false
   }
 }
 
-function removeEmail(email: string): void {
-  emails.value = emails.value.filter((e) => e.email !== email)
+function removeUser(name: string): void {
+  users.value = users.value.filter((entry) => entry.name !== name)
 }
 
 function handleDelete(): void {
-  if (emailInput.value) return
-  emails.value.pop()
-}
-
-function onEmailKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Enter' || event.key === 'Tab' || event.key === ',' || event.key === ';') {
-    event.preventDefault()
-    void addEmailFromInput()
+  if (usernameInput.value) {
     return
   }
 
-  if (event.key === 'Backspace') {
-    handleDelete()
+  users.value.pop()
+}
+
+function onUsernameKeydown(event: KeyboardEvent): void {
+  switch (event.key) {
+    case 'Enter':
+    case 'Tab':
+    case ',':
+    case ';':
+      event.preventDefault()
+      void addUserFromInput()
+      break
+
+    case 'Backspace':
+      handleDelete()
+      break
+
+    default:
+      break
   }
 }
 
-function handleInvite(): void {
-  void addEmailFromInput().then(() => {
-    if (emails.value.length === 0) return
+async function handleInvite(): Promise<void> {
+  if (usernameInput.value.trim()) {
+    await addUserFromInput()
+  }
 
-    emit('invite', {
-      emails: emails.value.map((e) => e.email),
-    })
+  if (users.value.length === 0) {
+    return
+  }
+
+  emit('invite', {
+    names: users.value.map((entry) => entry.name),
   })
 }
 </script>

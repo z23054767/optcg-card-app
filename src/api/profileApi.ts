@@ -11,8 +11,9 @@ export type AuthProvider = 'local' | 'google' | 'microsoft' | 'line'
 
 export interface UserProfile {
   id: number
-  account: string
   name: string
+  displayName: string
+  email: string | null
   avatarUrl: string | null
   bio: string | null
   authProvider: AuthProvider
@@ -30,7 +31,8 @@ export async function getMyProfileApi(): Promise<UserProfile> {
 }
 
 export async function updateMyProfileApi(input: {
-  name?: string
+  displayName?: string
+  email?: string | null
   bio?: string | null
 }): Promise<UserProfile> {
   const { data } = await http.patch<ProfileResponse>('/auth/me', input)
