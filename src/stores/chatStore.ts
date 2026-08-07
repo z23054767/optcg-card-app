@@ -344,7 +344,7 @@ export const useChatStore = defineStore('chat', {
     },
 
     clear(): void {
-      this.messages = []
+      this.$reset()
     },
 
     setLobbySnapshot(userIds: string[]): void {

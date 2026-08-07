@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useChatStore } from '@/stores/chatStore'
 
 export type AuthUser = {
   userId: string
@@ -58,8 +59,16 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     setAccessToken(token: string) {
+      const previousUserId = this.user?.userId ?? null
+      const nextUser = parseJwt(token)
+
+      if (previousUserId && previousUserId !== nextUser.userId) {
+        const chat = useChatStore()
+        chat.clear()
+      }
+
       this.token = token
-      this.user = parseJwt(token)
+      this.user = nextUser
 
       localStorage.setItem('token', token)
     },
@@ -74,8 +83,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     logout() {
+      const chat = useChatStore()
+
       this.token = ''
       this.user = null
+      chat.clear()
 
       localStorage.removeItem('token')
     },
