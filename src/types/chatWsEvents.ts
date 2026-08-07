@@ -202,6 +202,20 @@ export type UserProfileUpdatedEvent = BaseChatEvent<
 >
 
 /**
+ * 使用者輸入狀態事件
+ */
+export type UserTypingEvent = BaseChatEvent<
+  'USER_TYPING',
+  {
+    roomId: ChatRoomId
+    userId: string
+    username: string
+    displayName: string
+    isTyping: boolean
+  }
+>
+
+/**
  * Server → Client WebSocket 訊息格式
  */
 export type ChatWsEvent =
@@ -223,3 +237,4 @@ export type ChatWsEvent =
   | FriendRequestAcceptedEvent
   | FriendRequestRejectedEvent
   | UserProfileUpdatedEvent
+  | UserTypingEvent

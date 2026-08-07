@@ -20,18 +20,15 @@
         <div class="h-px flex-1 bg-gray-200"></div>
       </div>
 
-      <ChatMessage v-else :message="item.message" />
+      <ChatMessage
+        v-else
+        :message="item.message"
+        :scroll-to-message="scrollToMessage"
+        @view-user-profile="emit('view-user-profile', $event)"
+        @send-friend-request="emit('send-friend-request', $event)"
+      />
     </template>
 
-    <button
-      v-show="showScrollButton"
-      type="button"
-      aria-label="回到最新訊息"
-      class="fixed right-4 bottom-20 z-20 flex h-11 w-11 items-center justify-center rounded-full border bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95 sm:right-6 sm:bottom-6"
-      @click="$emit('scroll-button-click')"
-    >
-      <span class="text-lg">⬇️</span>
-    </button>
   </div>
 </template>
 
@@ -47,12 +44,25 @@ type TimelineItem =
 const props = defineProps<{
   messages: ChatMessageType[]
   loadingOlderMessages: boolean
-  showScrollButton: boolean
   dateAnchor: number
+  scrollToMessage?: (messageId: string) => Promise<void>
 }>()
 
-defineEmits<{
-  'scroll-button-click': []
+const emit = defineEmits<{
+  'view-user-profile': [
+    payload: {
+      userId: string
+      username: string
+      displayName: string
+    },
+  ]
+  'send-friend-request': [
+    payload: {
+      userId: string
+      username: string
+      displayName: string
+    },
+  ]
 }>()
 
 const timelineItems = computed<TimelineItem[]>(() => {

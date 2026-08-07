@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { getAvatarProps } from '@/utils/avatar'
 
 const props = withDefaults(
@@ -38,6 +38,7 @@ const props = withDefaults(
 
 const imageLoadFailed = ref(false)
 const imageRetryCount = ref(0)
+const retryTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const avatar = computed(() => getAvatarProps(props))
 const avatarImageUrl = computed(() => {
   const imageUrl = avatar.value.imageUrl
@@ -61,32 +62,63 @@ const placeholderStyle = computed(() => ({
 }))
 
 const ABSOLUTE_URL_RE = /^(?:https?:)?\/\//i
+const MAX_RETRY_COUNT = 6
+const RETRY_DELAY_MS = 1200
 
 function resetImageState(): void {
+  clearRetryTimer()
   imageLoadFailed.value = false
   imageRetryCount.value = 0
 }
 
 function handleImageLoad(): void {
+  clearRetryTimer()
   imageLoadFailed.value = false
 }
 
 function handleImageError(): void {
   if (!avatar.value.imageUrl) {
+    clearRetryTimer()
     imageLoadFailed.value = true
     return
   }
 
-  if (imageRetryCount.value === 0) {
-    imageRetryCount.value = 1
+  imageLoadFailed.value = true
+
+  if (imageRetryCount.value >= MAX_RETRY_COUNT) {
     return
   }
 
-  imageLoadFailed.value = true
+  scheduleRetry()
+}
+
+function scheduleRetry(): void {
+  if (retryTimer.value) {
+    return
+  }
+
+  retryTimer.value = setTimeout(() => {
+    retryTimer.value = null
+    imageRetryCount.value += 1
+    imageLoadFailed.value = false
+  }, RETRY_DELAY_MS)
+}
+
+function clearRetryTimer(): void {
+  if (!retryTimer.value) {
+    return
+  }
+
+  clearTimeout(retryTimer.value)
+  retryTimer.value = null
 }
 
 watch(
   () => avatar.value.imageUrl,
   resetImageState,
 )
+
+onBeforeUnmount(() => {
+  clearRetryTimer()
+})
 </script>

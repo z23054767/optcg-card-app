@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-3 flex w-full" :class="isMine ? 'justify-end' : 'justify-start'">
+  <div class="mb-3 flex w-full" :class="isMine ? 'justify-end' : 'justify-start'" :data-message-id="message.id">
     <div
       class="flex min-w-0 max-w-[86%] items-end gap-1.5 sm:max-w-[76%] lg:max-w-[64%]"
       :class="rowClass"
@@ -10,9 +10,24 @@
         </div>
 
         <div
+          ref="messageBubbleEl"
           class="w-fit max-w-full text-sm leading-relaxed sm:text-[15px]"
-          :class="[bubbleClass, bubblePaddingClass]"
+          :class="[bubbleClass, bubblePaddingClass, isReplyTarget ? 'ring-2 ring-blue-400/70' : '']"
+          @click="handleMessageBubbleClick"
+          @contextmenu.prevent="handleMessageContextMenu"
         >
+          <button
+            v-if="message.replyTo"
+            type="button"
+            class="mb-2 block w-full rounded-lg border border-gray-200/80 bg-gray-50/90 px-2.5 py-2 text-left text-xs transition hover:border-blue-200 hover:bg-blue-50/70"
+            @click="handleReplyReferenceClick"
+          >
+            <div class="truncate font-medium text-gray-600">↩ {{ replyPreviewName }}</div>
+            <div class="mt-1 line-clamp-2 text-gray-500">
+              {{ message.replyTo.content || '（空白訊息）' }}
+            </div>
+          </button>
+
           <!-- 純文字訊息 -->
           <div v-if="message.content" class="whitespace-pre-wrap wrap-break-word">
             {{ message.content }}
@@ -204,6 +219,31 @@
     </div>
   </div>
 
+  <Teleport to="body">
+    <div v-if="contextMenuOpen">
+      <div class="fixed inset-0 z-70" aria-hidden="true" @click="closeContextMenu"></div>
+      <div
+        ref="contextMenuEl"
+        class="fixed z-80 min-w-32 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl"
+        :style="contextMenuStyle"
+        role="menu"
+        aria-label="訊息操作選單"
+      >
+        <button
+          v-for="action in contextMenuActions"
+          :key="action.key"
+          type="button"
+          class="flex w-full items-center px-3 py-2 text-left text-sm transition hover:bg-gray-100"
+          :class="action.key === 'send-friend-request' ? 'text-indigo-600' : 'text-gray-700'"
+          role="menuitem"
+          @click="handleContextMenuAction(action.key)"
+        >
+          {{ action.label }}
+        </button>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- 全螢幕圖片預覽 -->
   <Teleport to="body">
     <div
@@ -257,7 +297,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { downloadChatAttachmentApi, getChatAttachmentBlobApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/authStore'
@@ -266,6 +306,24 @@ import type { ChatMessage } from '@/types/chat'
 
 const props = defineProps<{
   message: ChatMessage
+  scrollToMessage?: (messageId: string) => Promise<void>
+}>()
+
+const emit = defineEmits<{
+  'view-user-profile': [
+    payload: {
+      userId: string
+      username: string
+      displayName: string
+    },
+  ]
+  'send-friend-request': [
+    payload: {
+      userId: string
+      username: string
+      displayName: string
+    },
+  ]
 }>()
 
 const auth = useAuthStore()
@@ -276,9 +334,45 @@ const previewLoading = ref(false)
 const previewLoadFailed = ref(false)
 const imagePreviewOpen = ref(false)
 const urlPreviewImageFailed = ref(false)
+const messageBubbleEl = ref<HTMLElement | null>(null)
+const contextMenuEl = ref<HTMLElement | null>(null)
+const contextMenuOpen = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+
+type ContextMenuActionKey = 'reply' | 'view-profile' | 'send-friend-request'
+
+interface ContextMenuAction {
+  key: ContextMenuActionKey
+  label: string
+}
 
 const isMine = computed(() => {
   return auth.isAuthenticated && props.message.senderId === auth.userId
+})
+
+const isLobbyMessage = computed(() => {
+  return props.message.roomId === 'lobby' || chat.currentRoomId === 'lobby'
+})
+
+const senderActionPayload = computed(() => ({
+  userId: props.message.senderId,
+  username: props.message.senderUsername,
+  displayName: props.message.senderName || props.message.senderUsername || '使用者',
+}))
+
+const contextMenuActions = computed<ContextMenuAction[]>(() => {
+  const actions: ContextMenuAction[] = [{ key: 'reply', label: '回覆' }]
+
+  if (!isMine.value && props.message.senderId) {
+    actions.push({ key: 'view-profile', label: '檢視個人檔案' })
+
+    if (isLobbyMessage.value) {
+      actions.push({ key: 'send-friend-request', label: '發送好友申請' })
+    }
+  }
+
+  return actions
 })
 
 const displayName = computed(() => {
@@ -299,6 +393,24 @@ const displayName = computed(() => {
     'Unknown'
   )
 })
+
+const replyPreviewName = computed(() => {
+  if (isMine.value) {
+    return auth.userName || props.message.senderName || props.message.senderUsername || '使用者'
+  }
+
+  const user = chat.users.get(props.message.senderId)
+
+  return (
+    props.message.senderName ||
+    user?.displayName ||
+    props.message.senderUsername ||
+    user?.username ||
+    'Unknown'
+  )
+})
+
+const isReplyTarget = computed(() => chat.replyingToMessage?.messageId === props.message.id)
 
 const rowClass = computed(() => {
   return isMine.value ? 'flex-row-reverse' : 'flex-row'
@@ -480,6 +592,134 @@ const formattedTime = computed(() => {
   return formatMessageTime(props.message.createdAt)
 })
 
+const contextMenuStyle = computed(() => ({
+  left: `${contextMenuX.value}px`,
+  top: `${contextMenuY.value}px`,
+}))
+
+function setReplyTarget(): void {
+  chat.setReplyTarget({
+    messageId: props.message.id,
+    content: props.message.content || props.message.replyTo?.content || props.message.attachment?.name || '',
+    senderName: replyPreviewName.value,
+    senderUsername: props.message.senderUsername || props.message.senderName || '使用者',
+  })
+}
+
+function closeContextMenu(): void {
+  contextMenuOpen.value = false
+}
+
+async function openContextMenu(clientX: number, clientY: number): Promise<void> {
+  contextMenuX.value = clientX
+  contextMenuY.value = clientY
+  contextMenuOpen.value = true
+
+  await nextTick()
+  adjustContextMenuPosition()
+}
+
+function adjustContextMenuPosition(): void {
+  const menu = contextMenuEl.value
+
+  if (!menu) {
+    return
+  }
+
+  const padding = 8
+  const { innerWidth, innerHeight } = window
+  const { width, height } = menu.getBoundingClientRect()
+
+  contextMenuX.value = Math.min(contextMenuX.value, innerWidth - width - padding)
+  contextMenuY.value = Math.min(contextMenuY.value, innerHeight - height - padding)
+  contextMenuX.value = Math.max(contextMenuX.value, padding)
+  contextMenuY.value = Math.max(contextMenuY.value, padding)
+}
+
+function handleMessageContextMenu(event: MouseEvent): void {
+  void openContextMenu(event.clientX, event.clientY)
+}
+
+function handleMessageBubbleClick(event: MouseEvent): void {
+  const target = event.target as HTMLElement | null
+
+  if (target?.closest('button, a, input, textarea')) {
+    return
+  }
+
+  void openContextMenu(event.clientX, event.clientY)
+}
+
+function handleContextMenuAction(actionKey: ContextMenuActionKey): void {
+  switch (actionKey) {
+    case 'reply':
+      setReplyTarget()
+      break
+    case 'view-profile':
+      emit('view-user-profile', senderActionPayload.value)
+      break
+    case 'send-friend-request':
+      emit('send-friend-request', senderActionPayload.value)
+      break
+    default:
+      break
+  }
+
+  closeContextMenu()
+}
+
+async function handleReplyReferenceClick(): Promise<void> {
+  if (!props.message.replyTo?.messageId) {
+    return
+  }
+
+  await props.scrollToMessage?.(props.message.replyTo.messageId)
+}
+
+function handleDocumentPointerDown(event: PointerEvent): void {
+  if (!contextMenuOpen.value) {
+    return
+  }
+
+  const target = event.target as Node | null
+
+  if (target && contextMenuEl.value?.contains(target)) {
+    return
+  }
+
+  closeContextMenu()
+}
+
+function handleDocumentContextMenu(event: MouseEvent): void {
+  if (!contextMenuOpen.value) {
+    return
+  }
+
+  const target = event.target as Node | null
+
+  if (target && (contextMenuEl.value?.contains(target) || messageBubbleEl.value?.contains(target))) {
+    return
+  }
+
+  closeContextMenu()
+}
+
+function handleEscapeKey(event: KeyboardEvent): void {
+  if (event.key !== 'Escape') {
+    return
+  }
+
+  closeContextMenu()
+}
+
+function handleViewportChange(): void {
+  if (!contextMenuOpen.value) {
+    return
+  }
+
+  closeContextMenu()
+}
+
 async function loadAttachmentPreview(): Promise<void> {
   revokePreviewUrl()
 
@@ -586,11 +826,37 @@ watch(
   },
 )
 
+watch(contextMenuOpen, (isOpen) => {
+  if (isOpen) {
+    document.addEventListener('pointerdown', handleDocumentPointerDown)
+    document.addEventListener('contextmenu', handleDocumentContextMenu)
+    document.addEventListener('keydown', handleEscapeKey)
+    document.addEventListener('scroll', handleViewportChange, true)
+    window.addEventListener('resize', handleViewportChange)
+    window.addEventListener('blur', handleViewportChange)
+    return
+  }
+
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+  document.removeEventListener('contextmenu', handleDocumentContextMenu)
+  document.removeEventListener('keydown', handleEscapeKey)
+  document.removeEventListener('scroll', handleViewportChange, true)
+  window.removeEventListener('resize', handleViewportChange)
+  window.removeEventListener('blur', handleViewportChange)
+})
+
 onMounted(() => {
   void loadAttachmentPreview()
 })
 
 onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+  document.removeEventListener('contextmenu', handleDocumentContextMenu)
+  document.removeEventListener('keydown', handleEscapeKey)
+  document.removeEventListener('scroll', handleViewportChange, true)
+  window.removeEventListener('resize', handleViewportChange)
+  window.removeEventListener('blur', handleViewportChange)
+  closeContextMenu()
   closeImagePreview()
   revokePreviewUrl()
 })

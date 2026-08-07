@@ -161,6 +161,28 @@ export function useChatMessages() {
     await scrollToBottom(true)
   }
 
+  async function scrollToMessage(messageId: string): Promise<void> {
+    const container = messagesEl.value
+
+    if (!container) return
+
+    await nextTick()
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        resolve()
+      })
+    })
+
+    const target = Array.from(container.querySelectorAll<HTMLElement>('[data-message-id]')).find(
+      (element) => element.dataset.messageId === messageId,
+    )
+
+    if (!target) return
+
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
+
   function delay(milliseconds: number): Promise<void> {
     return new Promise((resolve) => {
       window.setTimeout(resolve, milliseconds)
@@ -225,6 +247,7 @@ export function useChatMessages() {
     loadOlderMessages,
     handleMessageScroll,
     scrollToBottom,
+    scrollToMessage,
     handleScrollButtonClick,
     startMidnightRefresh,
     stopMidnightRefresh,

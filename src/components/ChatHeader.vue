@@ -89,7 +89,7 @@
         <button
           v-if="showManageGroupButton"
           type="button"
-          class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          class="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700"
           @click="$emit('open-manage-group')"
         >
           群組管理
@@ -98,7 +98,7 @@
         <button
           v-if="showMembersButton"
           type="button"
-          class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          class="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
           @click="$emit('open-members')"
         >
           成員
@@ -168,7 +168,7 @@
       <button
         v-if="showManageGroupButton"
         type="button"
-        class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        class="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700"
         @click="$emit('open-manage-group')"
       >
         群組管理
@@ -177,7 +177,7 @@
       <button
         v-if="showMembersButton"
         type="button"
-        class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        class="shrink-0 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
         @click="$emit('open-members')"
       >
         成員

@@ -28,7 +28,21 @@ export interface ChatUrlPreview {
   /** 網站名稱 */
   siteName: string | null
 }
+ 
+export interface ChatReplyContext {
+  /** 被回覆訊息 ID */
+  messageId: string
 
+  /** 被回覆訊息內容 */
+  content: string
+
+  /** 被回覆訊息發送者顯示名稱 */
+  senderName: string
+
+  /** 被回覆訊息發送者 Username */
+  senderUsername: string
+}
+ 
 /**
  * 聊天訊息
  */
@@ -57,6 +71,9 @@ export interface ChatMessage {
   /** 網址預覽 */
   urlPreview?: ChatUrlPreview | null
 
+  /** 回覆關聯 */
+  replyTo?: ChatReplyContext | null
+
   /** 建立時間（ISO 8601） */
   createdAt: string
 }
@@ -70,6 +87,9 @@ export interface SendMessagePayload {
 
   /** 訊息內容 */
   content: string
+
+  /** 回覆關聯 */
+  replyTo?: ChatReplyContext | null
 }
 
 /**
@@ -103,6 +123,13 @@ export type ClientWsMessage =
   | {
     type: 'LEAVE_ROOM'
     payload: LeaveRoomPayload
+  }
+  | {
+    type: 'TYPING_STATUS'
+    payload: {
+      roomId: ChatRoomId
+      isTyping: boolean
+    }
   }
 
 /**

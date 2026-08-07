@@ -21,6 +21,7 @@ import {
 } from '@/api/chatApi'
 import type { UserProfile } from '@/api/profileApi'
 import type {
+  ChatFriendshipStatus,
   ChatFriendRequest,
   ChatInvitation,
   ChatRoomMember,
@@ -51,6 +52,10 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
   const showProfileSettings = ref(false)
   const userProfile = ref<UserProfile | null>(null)
+  const showMessageUserProfile = ref(false)
+  const messageProfileLoading = ref(false)
+  const sendingMessageUserFriendRequest = ref(false)
+  const messageProfileUser = ref<ChatUserSearchItem | null>(null)
 
   const showInvitations = ref(false)
   const showRoomMembers = ref(false)
@@ -71,6 +76,139 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   const processingFriendRequestId = ref<string | null>(null)
 
   const notificationCount = computed(() => chat.invitations.length + friendRequests.value.length)
+
+  function createMessageUserFallback(payload: {
+    userId: string
+    username: string
+    displayName: string
+  }): ChatUserSearchItem {
+    return {
+      userId: payload.userId,
+      name: payload.username,
+      displayName: payload.displayName || payload.username,
+      avatarUrl: null,
+      friendshipStatus: 'none',
+    }
+  }
+
+  function mergeMessageUserWithSearchResult(
+    fallback: ChatUserSearchItem,
+    searchResult?: ChatUserSearchItem,
+  ): ChatUserSearchItem {
+    if (!searchResult) {
+      return fallback
+    }
+
+    return {
+      userId: searchResult.userId || fallback.userId,
+      name: searchResult.name || fallback.name,
+      displayName: searchResult.displayName || fallback.displayName,
+      avatarUrl: searchResult.avatarUrl ?? fallback.avatarUrl,
+      friendshipStatus: searchResult.friendshipStatus,
+    }
+  }
+
+  async function resolveMessageUserProfile(
+    payload: {
+      userId: string
+      username: string
+      displayName: string
+    },
+  ): Promise<ChatUserSearchItem> {
+    const fallback = createMessageUserFallback(payload)
+
+    const response = await searchChatUsersApi(payload.username)
+    const normalizedUsername = payload.username.trim().toLowerCase()
+    const matchedUser = (response.users ?? []).find((item) => item.name.trim().toLowerCase() === normalizedUsername)
+
+    return mergeMessageUserWithSearchResult(fallback, matchedUser)
+  }
+
+  async function openMessageUserProfile(payload: {
+    userId: string
+    username: string
+    displayName: string
+  }): Promise<void> {
+    if (!payload.userId || !payload.username.trim() || String(payload.userId) === String(auth.userId)) {
+      return
+    }
+
+    messageProfileLoading.value = true
+    showMessageUserProfile.value = true
+    messageProfileUser.value = createMessageUserFallback(payload)
+
+    try {
+      messageProfileUser.value = await resolveMessageUserProfile(payload)
+    } catch {
+      deps.showToast('載入使用者資料失敗，請稍後再試', 'error')
+    } finally {
+      messageProfileLoading.value = false
+    }
+  }
+
+  function closeMessageUserProfile(): void {
+    showMessageUserProfile.value = false
+    messageProfileLoading.value = false
+    sendingMessageUserFriendRequest.value = false
+    messageProfileUser.value = null
+  }
+
+  function getFriendshipStatusLabel(status: ChatFriendshipStatus): string {
+    switch (status) {
+      case 'friend':
+        return '已是好友'
+      case 'incoming_pending':
+        return '對方已送出申請，請到通知中心接受'
+      case 'outgoing_pending':
+        return '好友邀請已送出'
+      default:
+        return '尚未成為好友'
+    }
+  }
+
+  async function sendFriendRequestToMessageUser(payload: {
+    userId: string
+    username?: string
+    name?: string
+    displayName: string
+  }): Promise<void> {
+    const username = String(payload.username ?? payload.name ?? '').trim()
+
+    if (
+      !payload.userId ||
+      !username ||
+      String(payload.userId) === String(auth.userId) ||
+      sendingMessageUserFriendRequest.value
+    ) {
+      return
+    }
+
+    sendingMessageUserFriendRequest.value = true
+
+    try {
+      const user = await resolveMessageUserProfile({
+        userId: payload.userId,
+        username,
+        displayName: payload.displayName,
+      })
+
+      if (user.friendshipStatus !== 'none') {
+        deps.showToast(getFriendshipStatusLabel(user.friendshipStatus))
+        messageProfileUser.value = user
+        return
+      }
+
+      await createFriendRequestApi(user.userId)
+
+      const updatedUser = { ...user, friendshipStatus: 'outgoing_pending' as const }
+      messageProfileUser.value = updatedUser
+      deps.showToast(`已向 @${user.name} 發送好友邀請`)
+    } catch {
+      deps.showToast('好友邀請發送失敗', 'error')
+    } finally {
+      sendingMessageUserFriendRequest.value = false
+    }
+  }
 
   async function loadRoomMembers(roomId: string): Promise<void> {
     loadingRoomMembers.value = true
@@ -463,6 +601,10 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     privateChatUsers,
     showProfileSettings,
     userProfile,
+    showMessageUserProfile,
+    messageProfileLoading,
+    sendingMessageUserFriendRequest,
+    messageProfileUser,
     showInvitations,
     showRoomMembers,
     showInviteMembers,
@@ -503,5 +645,8 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     openProfileSettings,
     handleProfileSaved,
     openInvitations,
+    openMessageUserProfile,
+    closeMessageUserProfile,
+    sendFriendRequestToMessageUser,
   }
 }

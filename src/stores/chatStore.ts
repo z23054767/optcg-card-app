@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia'
-import type { ChatFriendRequest, ChatInvitation, ChatMessage, ChatRoomListItem } from '@/types/chat'
+import type {
+  ChatFriendRequest,
+  ChatInvitation,
+  ChatMessage,
+  ChatReplyContext,
+  ChatRoomListItem,
+} from '@/types/chat'
 import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 interface WelcomePopup {
@@ -10,6 +16,8 @@ interface WelcomePopup {
 interface ChatState {
   messages: ChatMessage[]
   users: Map<string, { displayName: string; username: string }>
+  typingUsersByRoom: Map<string, Map<string, { displayName: string; username: string; updatedAt: number }>>
+  replyingToMessage: ChatReplyContext | null
   welcomePopup: WelcomePopup
   onlineUsers: Set<string>
   roomMembers: Map<string, Set<string>>
@@ -25,6 +33,8 @@ export const useChatStore = defineStore('chat', {
   state: (): ChatState => ({
     messages: [],
     users: new Map(),
+    typingUsersByRoom: new Map(),
+    replyingToMessage: null,
     welcomePopup: { visible: false, message: '' },
     onlineUsers: new Set(),
     roomMembers: new Map(),
@@ -109,6 +119,10 @@ export const useChatStore = defineStore('chat', {
 
         case 'USER_PROFILE_UPDATED':
           // ChatView 會重新取得聊天室與目前成員資料。
+          break
+
+        case 'USER_TYPING':
+          this.handleUserTyping(event.payload)
           break
 
         case 'ROOM_UPDATED':
@@ -209,6 +223,8 @@ export const useChatStore = defineStore('chat', {
     setCurrentRoom(roomId: string): void {
       this.currentRoomId = roomId
       this.messages = []
+      this.replyingToMessage = null
+      this.pruneTypingUsers()
     },
 
     setMessages(messages: ChatMessage[]): void {
@@ -221,6 +237,14 @@ export const useChatStore = defineStore('chat', {
       this.messages = Array.from(map.values()).sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       )
+    },
+
+    setReplyTarget(reply: ChatReplyContext | null): void {
+      this.replyingToMessage = reply
+    },
+
+    clearReplyTarget(): void {
+      this.replyingToMessage = null
     },
 
     prependMessages(messages: ChatMessage[]): void {
@@ -296,6 +320,7 @@ export const useChatStore = defineStore('chat', {
       const users = new Set(this.onlineUsers)
       users.delete(userId)
       this.onlineUsers = users
+      this.removeTypingUserFromAllRooms(userId)
     },
 
     /** 使用者加入房間（安全處理 Map / Set reactivity） */
@@ -350,6 +375,77 @@ export const useChatStore = defineStore('chat', {
     setLobbySnapshot(userIds: string[]): void {
       this.setRoomSnapshot('lobby', userIds)
     },
+
+    handleUserTyping(payload: {
+      roomId: string
+      userId: string
+      username: string
+      displayName: string
+      isTyping: boolean
+    }): void {
+      const nextTypingByRoom = new Map(this.typingUsersByRoom)
+      const roomTypingUsers = new Map(nextTypingByRoom.get(payload.roomId) ?? [])
+      const typingUserId = String(payload.userId)
+
+      if (!payload.isTyping) {
+        roomTypingUsers.delete(typingUserId)
+      } else {
+        roomTypingUsers.set(typingUserId, {
+          username: payload.username,
+          displayName: payload.displayName || payload.username,
+          updatedAt: Date.now(),
+        })
+      }
+
+      if (roomTypingUsers.size === 0) {
+        nextTypingByRoom.delete(payload.roomId)
+      } else {
+        nextTypingByRoom.set(payload.roomId, roomTypingUsers)
+      }
+
+      this.typingUsersByRoom = nextTypingByRoom
+      this.pruneTypingUsers()
+    },
+
+    pruneTypingUsers(): void {
+      const EXPIRE_MS = 6000
+      const now = Date.now()
+      const nextTypingByRoom = new Map<string, Map<string, { displayName: string; username: string; updatedAt: number }>>()
+
+      for (const [roomId, roomTypingUsers] of this.typingUsersByRoom.entries()) {
+        const nextRoomTypingUsers = new Map<string, { displayName: string; username: string; updatedAt: number }>()
+
+        for (const [userId, typingUser] of roomTypingUsers.entries()) {
+          if (now - typingUser.updatedAt <= EXPIRE_MS) {
+            nextRoomTypingUsers.set(userId, typingUser)
+          }
+        }
+
+        if (nextRoomTypingUsers.size > 0) {
+          nextTypingByRoom.set(roomId, nextRoomTypingUsers)
+        }
+      }
+
+      this.typingUsersByRoom = nextTypingByRoom
+    },
+
+    removeTypingUserFromAllRooms(userId: string): void {
+      const normalizedUserId = String(userId)
+      const nextTypingByRoom = new Map(this.typingUsersByRoom)
+
+      for (const [roomId, roomTypingUsers] of nextTypingByRoom.entries()) {
+        const nextRoomTypingUsers = new Map(roomTypingUsers)
+        nextRoomTypingUsers.delete(normalizedUserId)
+
+        if (nextRoomTypingUsers.size === 0) {
+          nextTypingByRoom.delete(roomId)
+        } else {
+          nextTypingByRoom.set(roomId, nextRoomTypingUsers)
+        }
+      }
+
+      this.typingUsersByRoom = nextTypingByRoom
+    },
     //# endregion
   },
 
@@ -360,6 +456,32 @@ export const useChatStore = defineStore('chat', {
 
     hasUnreadNotifications(state): boolean {
       return state.hasUnreadInvitationNotice || state.hasUnreadFriendRequestNotice
+    },
+
+    currentRoomTypingUsers(state): Array<{ userId: string; displayName: string; username: string }> {
+      const EXPIRE_MS = 6000
+      const now = Date.now()
+      const roomTypingUsers = state.typingUsersByRoom.get(state.currentRoomId)
+
+      if (!roomTypingUsers) {
+        return []
+      }
+
+      const users: Array<{ userId: string; displayName: string; username: string }> = []
+
+      for (const [userId, typingUser] of roomTypingUsers.entries()) {
+        if (now - typingUser.updatedAt > EXPIRE_MS) {
+          continue
+        }
+
+        users.push({
+          userId,
+          displayName: typingUser.displayName,
+          username: typingUser.username,
+        })
+      }
+
+      return users
     },
   },
 })

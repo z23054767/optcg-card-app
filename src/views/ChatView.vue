@@ -48,16 +48,35 @@
         @accept-friend-request="acceptFriendRequest" @reject-friend-request="rejectFriendRequest" />
       <RoomMembersModal v-if="showRoomMembers" :members="roomMembers" :loading="loadingRoomMembers"
         @close="showRoomMembers = false" />
+      <MessageUserProfileModal
+        v-if="showMessageUserProfile"
+        :user="messageProfileUser"
+        :loading="messageProfileLoading"
+        @close="closeMessageUserProfile"
+      />
 
       <main ref="messagesEl" class="relative min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50 sm:px-4"
         @scroll="handleMessageScroll">
         <ChatMessageTimeline :messages="filteredMessages" :loading-older-messages="loadingOlderMessages"
-          :show-scroll-button="showScrollButton" :date-anchor="dateLabelAnchor"
-          @scroll-button-click="handleScrollButtonClick" />
+          :date-anchor="dateLabelAnchor" :scroll-to-message="scrollToMessage"
+          @view-user-profile="openMessageUserProfile"
+          @send-friend-request="sendFriendRequestToMessageUser" />
       </main>
 
-      <footer class="border-t bg-white px-3 py-2">
-        <ChatInput />
+      <footer class="relative border-t bg-white px-3 py-2">
+        <div v-if="typingIndicatorText" class="mb-1 px-1 text-xs text-gray-500">
+          {{ typingIndicatorText }}
+        </div>
+        <button
+          v-show="showScrollButton"
+          type="button"
+          aria-label="回到最新訊息"
+          class="absolute right-4 -top-14 z-20 flex h-11 w-11 items-center justify-center rounded-full border bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95 sm:right-6"
+          @click="handleScrollButtonClick"
+        >
+          <span class="text-lg">⬇️</span>
+        </button>
+        <ChatInput :scroll-to-message="scrollToMessage" />
       </footer>
 
       <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
@@ -77,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
 import { useChatMessages } from '@/composables/useChatMessages'
@@ -97,6 +116,7 @@ import RoomMembersModal from '@/components/RoomMembersModal.vue'
 import GroupManageModal from '@/components/GroupManageModal.vue'
 import ProfileSettingsModal from '@/components/ProfileSettingsModal.vue'
 import PreferencesModal from '@/components/PreferencesModal.vue'
+import MessageUserProfileModal from '@/components/MessageUserProfileModal.vue'
 
 const auth = useAuthStore()
 const chat = useChatStore()
@@ -141,6 +161,29 @@ const canInviteMembers = session.canInviteMembers
 const canManageGroup = session.canManageGroup
 const resolvedUserAvatarUrl = session.resolvedUserAvatarUrl
 const notificationCount = modals.notificationCount
+const typingUsers = computed(() =>
+  chat.currentRoomTypingUsers.filter((item) => String(item.userId) !== String(auth.userId)),
+)
+const typingIndicatorText = computed(() => {
+  const users = typingUsers.value
+
+  if (users.length === 0) {
+    return ''
+  }
+
+  const first = users[0]?.displayName || users[0]?.username || '有人'
+
+  if (users.length === 1) {
+    return `${first} 輸入訊息中...`
+  }
+
+  if (users.length === 2) {
+    const second = users[1]?.displayName || users[1]?.username || '另一位'
+    return `${first}、${second} 輸入訊息中...`
+  }
+
+  return `${first} 等 ${users.length} 人輸入訊息中...`
+})
 
 const filteredMessages = messages.filteredMessages
 const messagesEl = messages.messagesEl
@@ -160,6 +203,9 @@ const invitingPrivateUserId = modals.invitingPrivateUserId
 const privateChatUsers = modals.privateChatUsers
 const showProfileSettings = modals.showProfileSettings
 const userProfile = modals.userProfile
+const showMessageUserProfile = modals.showMessageUserProfile
+const messageProfileLoading = modals.messageProfileLoading
+const messageProfileUser = modals.messageProfileUser
 const showInvitations = modals.showInvitations
 const showRoomMembers = modals.showRoomMembers
 const showInviteMembers = modals.showInviteMembers
@@ -179,6 +225,7 @@ const processingFriendRequestId = modals.processingFriendRequestId
 
 const handleMessageScroll = messages.handleMessageScroll
 const handleScrollButtonClick = messages.handleScrollButtonClick
+const scrollToMessage = messages.scrollToMessage
 
 const switchRoom = session.switchRoom
 const backToLobby = session.backToLobby
@@ -206,6 +253,9 @@ const deleteGroupRoom = modals.deleteGroupRoom
 const openProfileSettings = modals.openProfileSettings
 const handleProfileSaved = modals.handleProfileSaved
 const openInvitations = modals.openInvitations
+const openMessageUserProfile = modals.openMessageUserProfile
+const closeMessageUserProfile = modals.closeMessageUserProfile
+const sendFriendRequestToMessageUser = modals.sendFriendRequestToMessageUser
 
 function openPreferences(): void {
   showUserMenu.value = false

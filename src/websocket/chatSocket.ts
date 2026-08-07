@@ -1,4 +1,4 @@
-import type { ClientWsMessage } from '@/types/chat'
+import type { ChatReplyContext, ClientWsMessage } from '@/types/chat'
 import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 /**
@@ -278,17 +278,41 @@ export function connectChatSocket(
  * @param roomId 聊天室 Id
  * @param content 訊息內容
  */
-export function sendChatMessage(roomId: string, content: string): void {
+export function sendChatMessage(
+ roomId: string,
+ content: string,
+ replyTo?: ChatReplyContext | null,
+): void {
+ if (!socket || socket.readyState !== WebSocket.OPEN) {
+   console.warn('[WS] not connected')
+   return
+ }
+
+ const message: ClientWsMessage = {
+   type: 'SEND_MESSAGE',
+   payload: {
+     roomId,
+     content,
+     replyTo: replyTo ?? null,
+   },
+ }
+
+ socket.send(JSON.stringify(message))
+}
+
+/**
+ * 更新輸入狀態
+ */
+export function sendTypingStatus(roomId: string, isTyping: boolean): void {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    console.warn('[WS] not connected')
     return
   }
 
   const message: ClientWsMessage = {
-    type: 'SEND_MESSAGE',
+    type: 'TYPING_STATUS',
     payload: {
       roomId,
-      content,
+      isTyping,
     },
   }
 
