@@ -19,7 +19,7 @@
             Username
           </label>
 
-          <input v-model.trim="name" type="text" maxlength="30" autocomplete="username" placeholder="僅能包含英文字母、數字與底線"
+          <input v-model.trim="name" type="text" maxlength="30" autocomplete="username" placeholder="例如：player.one_01"
             class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2" :class="nameInputClass" required
             @input="scheduleNameCheck" />
 
@@ -40,7 +40,7 @@
           </p>
 
           <p v-else class="mt-1 text-xs text-gray-500">
-            僅能使用英文字母與數字，長度須為 3 至 30 碼
+            {{ USERNAME_RULES_HINT }}
           </p>
         </div>
 
@@ -125,6 +125,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { checkNameAvailabilityApi, registerApi } from '@/api/loginApi'
 import { resolveApiError } from '@/api/resolveApiError'
 import { showSuccessAlert } from '@/utils/alerts'
+import { USERNAME_RULES_HINT, normalizeUsername, validateUsername } from '@/utils/username'
 
 type NameStatus =
   | 'idle'
@@ -171,26 +172,6 @@ const canSubmit = computed(() => {
   return !loading.value && nameStatus.value === 'available'
 })
 
-function validateName(value: string): string {
-  if (!value) {
-    return ''
-  }
-
-  if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-    return 'Username 僅能包含英文字母、數字與底線'
-  }
-
-  if (value.length < 3) {
-    return 'Username 長度至少需要 3 碼'
-  }
-
-  if (value.length > 30) {
-    return 'Username 長度不可超過 30 碼'
-  }
-
-  return ''
-}
-
 function clearNameCheckTimer(): void {
   if (!nameCheckTimer) {
     return
@@ -206,8 +187,9 @@ function scheduleNameCheck(): void {
   errorMessage.value = ''
   nameValidationMessage.value = ''
 
-  const value = name.value.trim()
-  const validationMessage = validateName(value)
+  name.value = normalizeUsername(name.value)
+  const value = name.value
+  const validationMessage = validateUsername(value)
 
   if (!value) {
     nameStatus.value = 'idle'
@@ -281,11 +263,11 @@ function validatePassword(value: string): string {
 async function register(): Promise<void> {
   errorMessage.value = ''
 
-  const normalizedName = name.value.trim()
+  const normalizedName = normalizeUsername(name.value)
   const normalizedDisplayName = displayName.value.trim()
   const normalizedEmail = email.value.trim()
 
-  const nameError = validateName(normalizedName)
+  const nameError = validateUsername(normalizedName)
 
   if (nameError) {
     nameStatus.value = 'invalid'
