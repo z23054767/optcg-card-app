@@ -284,7 +284,7 @@ const isMine = computed(() => {
 const displayName = computed(() => {
   if (isMine.value) {
     const name =
-      auth.userName || props.message.senderName || props.message.senderAccount || '使用者'
+      auth.userName || props.message.senderName || props.message.senderUsername || '使用者'
 
     return `${name}（你）`
   }
@@ -293,9 +293,9 @@ const displayName = computed(() => {
 
   return (
     props.message.senderName ||
-    user?.name ||
-    props.message.senderAccount ||
-    user?.account ||
+    user?.displayName ||
+    props.message.senderUsername ||
+    user?.username ||
     'Unknown'
   )
 })

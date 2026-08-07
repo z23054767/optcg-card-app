@@ -49,8 +49,12 @@
                   ? 'bg-blue-50 font-semibold text-blue-700'
                   : 'text-gray-700 hover:bg-gray-100'
                 " :title="getRoomName(room)" @click="$emit('switch-room', room.id)">
-              <UserAvatar class="h-7 w-7 text-xs" :avatar-url="room.avatarUrl" :name="getRoomName(room)"
-                :user-id="room.id" />
+              <UserAvatar
+                class="h-7 w-7 text-xs"
+                :avatar-url="room.avatarUrl"
+                :display-name="getRoomName(room)"
+                :user-id="room.id"
+              />
 
               <span class="truncate">{{ getRoomName(room) }}</span>
             </button>

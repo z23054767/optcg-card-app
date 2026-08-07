@@ -48,10 +48,20 @@
           </div>
 
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700"> Username（不可修改） </label>
+            <label class="mb-1 block text-sm font-medium text-gray-700"> 帳號 ID（不可修改） </label>
 
             <input
               :value="`@${name}`"
+              disabled
+              class="w-full rounded-lg border bg-gray-50 px-3 py-2 text-sm text-gray-500"
+            />
+          </div>
+
+          <div>
+            <label class="mb-1 block text-sm font-medium text-gray-700"> Email </label>
+
+            <input
+              :value="email"
               disabled
               class="w-full rounded-lg border bg-gray-50 px-3 py-2 text-sm text-gray-500"
             />
@@ -130,6 +140,7 @@ const hasSelectedAvatarFile = ref(false)
 const removeCurrentAvatar = ref(false)
 
 const name = props.profile.name
+const email = props.profile.email?.trim() || '未設定'
 const displayName = ref(props.profile.displayName)
 const bio = ref(props.profile.bio ?? '')
 

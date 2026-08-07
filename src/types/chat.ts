@@ -42,10 +42,10 @@ export interface ChatMessage {
   /** 發送者 ID */
   senderId: string
 
-  /** 發送者帳號 */
-  senderAccount: string
+  /** 發送者 Username */
+  senderUsername: string
 
-  /** 發送者名稱 */
+  /** 發送者顯示名稱 */
   senderName: string
 
   /** 訊息內容 */

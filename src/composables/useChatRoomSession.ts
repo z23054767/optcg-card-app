@@ -34,8 +34,6 @@ type RoomSessionDeps = {
         name: string
         /** 顯示名稱 */
         displayName: string
-        /** 舊欄位，暫時保留相容 */
-        account: string
         role: 'manager' | 'member'
         avatarUrl?: string | null
       }>

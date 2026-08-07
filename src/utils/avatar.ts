@@ -2,9 +2,8 @@ import { resolveUserAvatarUrl } from '@/api/profileApi'
 
 export interface AvatarInput {
   avatarUrl?: string | null
-  name?: string | null
   displayName?: string | null
-  account?: string | null
+  username?: string | null
   userId?: string | number | null
 }
 
@@ -27,21 +26,21 @@ function normalize(value?: string | number | null): string {
 }
 
 export function getAvatarDisplayName(input: AvatarInput): string {
-  return normalize(input.displayName) || normalize(input.name) || normalize(input.account) || '使用者'
+  return normalize(input.displayName) || normalize(input.username) || '使用者'
 }
 
-export function getAvatarInitial(input: Pick<AvatarInput, 'displayName' | 'name' | 'account'>): string {
-  const displayName = normalize(input.displayName) || normalize(input.name) || normalize(input.account)
+export function getAvatarInitial(input: Pick<AvatarInput, 'displayName' | 'username'>): string {
+  const displayName = normalize(input.displayName) || normalize(input.username)
   return Array.from(displayName)[0]?.toLocaleUpperCase() || '?'
 }
 
 export function getAvatarBackgroundColor(
-  input: Pick<AvatarInput, 'account' | 'userId' | 'name'> | string | number,
+  input: Pick<AvatarInput, 'username' | 'userId' | 'displayName'> | string | number,
 ): string {
   const key =
     typeof input === 'string' || typeof input === 'number'
       ? normalize(input)
-      : normalize(input.name) || normalize(input.account) || normalize(input.userId)
+      : normalize(input.username) || normalize(input.userId) || normalize(input.displayName)
 
   let hash = 0
   for (const character of key || '?') {

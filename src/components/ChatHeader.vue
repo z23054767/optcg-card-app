@@ -15,7 +15,7 @@
           v-if="roomType === 'private'"
           class="h-10 w-10 text-sm"
           :avatar-url="avatarUrl"
-          :name="title"
+          :display-name="title"
         />
 
         <span
@@ -114,8 +114,8 @@
         <UserAvatar
           class="h-9 w-9 text-sm"
           :avatar-url="userAvatarUrl"
-          :name="userName"
-          :account="userAccount"
+          :display-name="userName"
+          :username="userAccount"
           :user-id="userId"
         />
 

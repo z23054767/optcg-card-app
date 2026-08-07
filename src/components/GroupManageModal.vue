@@ -65,8 +65,13 @@
           <div v-else class="space-y-2">
             <div v-for="member in members" :key="member.userId"
               class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5">
-              <UserAvatar class="h-9 w-9 shrink-0 text-sm" :avatar-url="member.avatarUrl"
-                :name="member.displayName || member.name" :account="member.name" :user-id="member.userId" />
+              <UserAvatar
+                class="h-9 w-9 shrink-0 text-sm"
+                :avatar-url="member.avatarUrl"
+                :display-name="member.displayName || member.name"
+                :username="member.name"
+                :user-id="member.userId"
+              />
 
               <div class="min-w-0 flex-1">
                 <div class="truncate text-sm font-medium text-gray-800">
@@ -185,9 +190,13 @@
           <div v-else class="space-y-2">
             <div v-for="invitation in invitations" :key="invitation.invitationId"
               class="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5">
-              <UserAvatar class="h-9 w-9 shrink-0 text-sm" :avatar-url="invitation.inviteeAvatarUrl"
-                :name="invitation.inviteeDisplayName || invitation.inviteeName" :account="invitation.inviteeName"
-                :user-id="invitation.inviteeId" />
+              <UserAvatar
+                class="h-9 w-9 shrink-0 text-sm"
+                :avatar-url="invitation.inviteeAvatarUrl"
+                :display-name="invitation.inviteeDisplayName || invitation.inviteeName"
+                :username="invitation.inviteeName"
+                :user-id="invitation.inviteeId"
+              />
 
               <div class="min-w-0 flex-1">
                 <div class="truncate text-sm font-medium text-gray-800">

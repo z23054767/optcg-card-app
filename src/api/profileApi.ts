@@ -51,10 +51,37 @@ export async function deleteMyAvatarApi(): Promise<UserProfile> {
   return data.user
 }
 
+const ABSOLUTE_URL_RE = /^(?:https?:)?\/\//i
+
+function getApiBaseUrl(): string {
+  return (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
+}
+
+function joinUrl(base: string, path: string): string {
+  return `${base.replace(/\/$/, '')}/${path.replace(/^\/+/, '')}`
+}
+
 export function resolveUserAvatarUrl(path?: string | null): string | null {
-  if (!path) return null
-  if (/^https?:\/\//i.test(path)) return path
-  const fileName = path.replace(/\\/g, '/').split('/').pop()
+  const rawPath = String(path ?? '').trim()
+
+  if (!rawPath) return null
+  if (ABSOLUTE_URL_RE.test(rawPath) || rawPath.startsWith('data:') || rawPath.startsWith('blob:')) {
+    return rawPath
+  }
+
+  const normalizedPath = rawPath.replace(/\\/g, '/')
+  const match = normalizedPath.match(/^([^?#]+)([?#].*)?$/)
+  const pathname = match?.[1] ?? normalizedPath
+  const suffix = match?.[2] ?? ''
+  const userAvatarPathIndex = pathname.indexOf('auth/user-avatars/')
+
+  if (userAvatarPathIndex >= 0) {
+    return `${joinUrl(getApiBaseUrl(), pathname.slice(userAvatarPathIndex))}${suffix}`
+  }
+
+  const fileName = pathname.split('/').pop()
+
   if (!fileName) return null
-  return `${import.meta.env.VITE_API_BASE_URL}/auth/user-avatars/${encodeURIComponent(fileName)}`
+
+  return `${joinUrl(getApiBaseUrl(), `auth/user-avatars/${encodeURIComponent(fileName)}`)}${suffix}`
 }

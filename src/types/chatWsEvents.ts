@@ -15,8 +15,8 @@ export type UserOnlineEvent = BaseChatEvent<
   'USER_ONLINE',
   {
     userId: string
-    account: string
-    name: string
+    username: string
+    displayName: string
   }
 >
 
@@ -98,7 +98,7 @@ export type InvitationAcceptedEvent = BaseChatEvent<
     roomId: ChatRoomId
     invitationId: string
     inviteeId: string
-    inviteeAccount: string
+    inviteeUsername: string
   }
 >
 
@@ -111,7 +111,7 @@ export type InvitationRejectedEvent = BaseChatEvent<
     roomId: ChatRoomId
     invitationId: string
     inviteeId: string
-    inviteeAccount: string
+    inviteeUsername: string
   }
 >
 
@@ -196,6 +196,7 @@ export type UserProfileUpdatedEvent = BaseChatEvent<
   {
     userId: string
     name: string
+    displayName: string
     avatarUrl: string | null
   }
 >

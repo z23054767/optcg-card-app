@@ -64,8 +64,13 @@
 
         <div v-for="user in users" :key="user.userId"
           class="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-3 transition hover:border-indigo-200 hover:bg-gray-50">
-          <UserAvatar class="h-10 w-10 shrink-0 text-sm" :avatar-url="user.avatarUrl"
-            :name="user.displayName || user.name" :account="user.name" :user-id="user.userId" />
+          <UserAvatar
+            class="h-10 w-10 shrink-0 text-sm"
+            :avatar-url="user.avatarUrl"
+            :display-name="user.displayName || user.name"
+            :username="user.name"
+            :user-id="user.userId"
+          />
 
           <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-semibold text-gray-800">

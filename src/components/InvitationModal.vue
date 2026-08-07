@@ -24,8 +24,13 @@
 
           <div v-for="request in friendRequests" :key="request.requestId" class="mb-3 rounded-lg border p-4 last:mb-0">
             <div class="flex items-center gap-3">
-              <UserAvatar class="h-10 w-10 shrink-0 text-sm" :avatar-url="request.requesterAvatarUrl"
-                :name="request.requesterDisplayName" :account="request.requesterName" :user-id="request.requesterId" />
+              <UserAvatar
+                class="h-10 w-10 shrink-0 text-sm"
+                :avatar-url="request.requesterAvatarUrl"
+                :display-name="request.requesterDisplayName"
+                :username="request.requesterName"
+                :user-id="request.requesterId"
+              />
 
               <div class="min-w-0 flex-1">
                 <div class="truncate font-medium text-gray-800">

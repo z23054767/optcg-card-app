@@ -9,7 +9,7 @@ interface WelcomePopup {
 
 interface ChatState {
   messages: ChatMessage[]
-  users: Map<string, { name: string; account: string }>
+  users: Map<string, { displayName: string; username: string }>
   welcomePopup: WelcomePopup
   onlineUsers: Set<string>
   roomMembers: Map<string, Set<string>>
@@ -45,17 +45,17 @@ export const useChatStore = defineStore('chat', {
           break
 
         case 'USER_ONLINE': {
-          const { userId, name, account } = event.payload
+          const { userId, displayName, username } = event.payload
           const id = String(userId)
 
           const map = new Map(this.users)
-          map.set(id, { name, account })
+          map.set(id, { displayName, username })
           this.users = map
 
           this.handleUserOnline({
             userId: id,
-            name,
-            account,
+            displayName,
+            username,
           })
 
           break
@@ -284,7 +284,7 @@ export const useChatStore = defineStore('chat', {
       )
     },
 
-    handleUserOnline(payload: { userId: string; name: string; account: string }): void {
+    handleUserOnline(payload: { userId: string; displayName: string; username: string }): void {
       if (!this.onlineUsers.has(payload.userId)) {
         const users = new Set(this.onlineUsers)
         users.add(payload.userId)
@@ -332,10 +332,10 @@ export const useChatStore = defineStore('chat', {
       }, 3000)
     },
 
-    showWelcome(name: string, account: string): void {
+    showWelcome(displayName: string, username: string): void {
       this.welcomePopup = {
         visible: true,
-        message: `🎉 歡迎 ${name} (${account}) 來到聊天室`,
+        message: `🎉 歡迎 ${displayName} (${username}) 來到聊天室`,
       }
 
       setTimeout(() => {
