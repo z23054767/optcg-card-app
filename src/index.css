@@ -1,1 +1,106 @@
 @import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #f3f4f6;
+}
+
+#app-shell {
+  min-height: 100vh;
+}
+
+#app-shell.theme-dark {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+#app-shell.theme-light {
+  background-color: #f3f4f6;
+  color: #0f172a;
+}
+
+.theme-dark {
+  color-scheme: dark;
+}
+
+.theme-dark .bg-white {
+  background-color: #111827 !important;
+}
+
+.theme-dark .bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+.theme-dark .bg-gray-100 {
+  background-color: #111827 !important;
+}
+
+.theme-dark .bg-gray-200 {
+  background-color: #1f2937 !important;
+}
+
+.theme-dark .bg-gray-300 {
+  background-color: #334155 !important;
+}
+
+.theme-dark .text-gray-900 {
+  color: #f8fafc !important;
+}
+
+.theme-dark .text-gray-800 {
+  color: #f8fafc !important;
+}
+
+.theme-dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+.theme-dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.theme-dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+.theme-dark .text-gray-400 {
+  color: #64748b !important;
+}
+
+.theme-dark .text-gray-300 {
+  color: #475569 !important;
+}
+
+.theme-dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+.theme-dark .border-gray-100,
+.theme-dark .border-gray-200,
+.theme-dark .border-gray-300 {
+  border-color: #334155 !important;
+}
+
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark select {
+  background-color: #111827;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+.theme-dark .hover\:bg-gray-100:hover,
+.theme-dark .hover\:bg-gray-50:hover {
+  background-color: #1f2937 !important;
+}

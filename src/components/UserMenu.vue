@@ -38,6 +38,10 @@
       ⚙ 個人設定
     </button>
 
+    <button class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100" @click="$emit('open-preferences')">
+      🌙 偏好設定
+    </button>
+
     <button class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" @click="$emit('logout')">
       🚪 登出
     </button>
@@ -60,5 +64,6 @@ defineEmits<{
   logout: []
   'open-invitations': []
   'open-settings': []
+  'open-preferences': []
 }>()
 </script>

@@ -19,7 +19,9 @@
       <UserMenu :open="showUserMenu" :display-name="auth.user?.displayName || auth.user?.name || '使用者'"
         :name="auth.user?.name || ''" :avatar-url="resolvedUserAvatarUrl" :invitation-count="notificationCount"
         @close="showUserMenu = false" @logout="logout" @open-invitations="openInvitations"
-        @open-settings="openProfileSettings" />
+        @open-settings="openProfileSettings" @open-preferences="openPreferences" />
+
+      <PreferencesModal v-if="showPreferences" @close="showPreferences = false" />
 
       <ProfileSettingsModal v-if="showProfileSettings && userProfile" :profile="userProfile"
         @close="showProfileSettings = false" @saved="handleProfileSaved" />
@@ -94,6 +96,7 @@ import PrivateChatModal from '@/components/PrivateChatModal.vue'
 import RoomMembersModal from '@/components/RoomMembersModal.vue'
 import GroupManageModal from '@/components/GroupManageModal.vue'
 import ProfileSettingsModal from '@/components/ProfileSettingsModal.vue'
+import PreferencesModal from '@/components/PreferencesModal.vue'
 
 const auth = useAuthStore()
 const chat = useChatStore()
@@ -144,6 +147,8 @@ const messagesEl = messages.messagesEl
 const loadingOlderMessages = messages.loadingOlderMessages
 const showScrollButton = messages.showScrollButton
 const dateLabelAnchor = messages.dateLabelAnchor
+
+const showPreferences = ref(false)
 
 const showCreateRoom = modals.showCreateRoom
 const creatingRoom = modals.creatingRoom
@@ -201,4 +206,9 @@ const deleteGroupRoom = modals.deleteGroupRoom
 const openProfileSettings = modals.openProfileSettings
 const handleProfileSaved = modals.handleProfileSaved
 const openInvitations = modals.openInvitations
+
+function openPreferences(): void {
+  showUserMenu.value = false
+  showPreferences.value = true
+}
 </script>
