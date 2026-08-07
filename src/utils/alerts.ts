@@ -38,4 +38,20 @@ const showWarningAlert = (text: string) => {
   })
 }
 
-export { showErrorAlert, showSuccessAlert, showWarningAlert }
+/**
+ * @description 用於顯示確認操作的 Alert
+ * @param text 要顯示的確認訊息
+ */
+const showConfirmAlert = (text: string) => {
+  return SweetAlert.fire({
+    icon: "warning",
+    title: "確認操作",
+    text,
+    showCancelButton: true,
+    confirmButtonText: "確定",
+    cancelButtonText: "取消",
+    reverseButtons: true,
+  });
+};
+
+export { showErrorAlert, showSuccessAlert, showWarningAlert, showConfirmAlert }

@@ -89,6 +89,7 @@ export function useChatRoomSession() {
   const canStartPrivateChat = computed(() => chat.currentRoomId === 'lobby')
   const canInviteMembers = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
   const canManageGroup = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
+  const canLeaveGroup = computed(() => isCurrentGroupRoom.value && !isCurrentRoomManager.value)
   const resolvedUserAvatarUrl = computed(() => resolveUserAvatarUrl(auth.user?.avatarUrl))
   const notificationCount = computed<number>(() => {
     return chat.invitations.length + (deps.value?.modals.friendRequests.value.length ?? 0)
@@ -355,6 +356,7 @@ export function useChatRoomSession() {
     canStartPrivateChat,
     canInviteMembers,
     canManageGroup,
+    canLeaveGroup,
     resolvedUserAvatarUrl,
     notificationCount,
     loadMyProfile,

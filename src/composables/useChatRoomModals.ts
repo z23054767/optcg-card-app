@@ -27,6 +27,7 @@ import type {
   ChatRoomMember,
   ChatUserSearchItem,
 } from '@/types/chat'
+import { showConfirmAlert, showErrorAlert, showSuccessAlert } from '@/utils/alerts'
 
 type ChatRoomModalsDeps = {
   showUserMenu: Ref<boolean>
@@ -67,6 +68,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   const deletingGroupRoom = ref(false)
   const removingMemberUserId = ref<string | null>(null)
   const transferringManagerUserId = ref<string | null>(null)
+  const leavingGroupRoom = ref(false)
   const reInvitingInviteeId = ref<string | null>(null)
   const loadingRoomMembers = ref(false)
   const loadingRoomInvitations = ref(false)
@@ -566,6 +568,38 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     }
   }
 
+  async function leaveCurrentGroupRoom(): Promise<void> {
+    if (!chat.currentRoomId || leavingGroupRoom.value) return;
+
+    if (!auth.userId) return;
+
+    const roomId = chat.currentRoomId;
+
+    const result = await showConfirmAlert("確定要退出這個群組聊天室嗎？");
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    leavingGroupRoom.value = true;
+
+    try {
+      await removeChatRoomMemberApi(roomId, String(auth.userId));
+
+      showGroupManage.value = false;
+      showRoomMembers.value = false;
+
+      await deps.loadMyRooms();
+      await deps.switchRoom("lobby");
+
+      await showSuccessAlert("已退出群組聊天室");
+    } catch {
+      await showErrorAlert("退出群組聊天室失敗，請稍後再試");
+    } finally {
+      leavingGroupRoom.value = false;
+    }
+  }
+
   async function openProfileSettings(): Promise<void> {
     deps.showUserMenu.value = false
 
@@ -612,6 +646,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     invitingMembers,
     updatingGroupInfo,
     deletingGroupRoom,
+    leavingGroupRoom,
     removingMemberUserId,
     transferringManagerUserId,
     reInvitingInviteeId,
@@ -642,6 +677,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     removeMember,
     transferManager,
     deleteGroupRoom,
+    leaveCurrentGroupRoom,
     openProfileSettings,
     handleProfileSaved,
     openInvitations,

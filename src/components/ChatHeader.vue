@@ -50,7 +50,7 @@
 
             <span v-if="currentRoomId !== 'lobby'" class="text-gray-300"> | </span>
 
-            <span class="inline-flex items-center gap-1 text-emerald-600">
+            <span v-if="roomType !== 'private'" class="inline-flex items-center gap-1 text-emerald-600">
               <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
               {{ onlineCount }} 人在線
             </span>
@@ -103,6 +103,16 @@
         >
           成員
         </button>
+
+        <button
+          v-if="showLeaveGroupButton"
+          type="button"
+          class="rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="leavingGroup"
+          @click="$emit('leave-group')"
+        >
+          {{ leavingGroup ? '退出中…' : '退出群組' }}
+        </button>
       </div>
 
       <button
@@ -134,7 +144,8 @@
         showPrivateChatButton ||
         showInviteMembersButton ||
         showManageGroupButton ||
-        showMembersButton
+        showMembersButton ||
+        showLeaveGroupButton
       "
       class="flex gap-2 overflow-x-auto border-t border-gray-100 px-3 py-2 sm:hidden"
     >
@@ -182,6 +193,16 @@
       >
         成員
       </button>
+
+      <button
+        v-if="showLeaveGroupButton"
+        type="button"
+        class="shrink-0 rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+        :disabled="leavingGroup"
+        @click="$emit('leave-group')"
+      >
+        {{ leavingGroup ? '退出中…' : '退出群組' }}
+      </button>
     </div>
   </header>
 </template>
@@ -208,6 +229,8 @@ const props = defineProps<{
   showInviteMembersButton: boolean
   showManageGroupButton: boolean
   showMembersButton: boolean
+  showLeaveGroupButton: boolean
+  leavingGroup: boolean
 }>()
 
 const avatarLoadFailed = ref(false)
@@ -281,5 +304,6 @@ defineEmits<{
   'back-to-lobby': []
   'toggle-user-menu': []
   'open-members': []
+  'leave-group': []
 }>()
 </script>

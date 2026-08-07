@@ -11,9 +11,11 @@
         :unread-notification-count="notificationCount" :show-create-button="canCreateRoom"
         :show-private-chat-button="canStartPrivateChat" :show-invite-members-button="canInviteMembers"
         :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
+        :show-leave-group-button="canLeaveGroup" :leaving-group="leavingGroupRoom"
         @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
         @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
-        @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage" />
+        @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage"
+        @leave-group="leaveCurrentGroupRoom" />
 
       <div v-if="showUserMenu" class="fixed inset-0 z-40" @click="showUserMenu = false"></div>
       <UserMenu :open="showUserMenu" :display-name="auth.user?.displayName || auth.user?.name || '使用者'"
@@ -159,6 +161,7 @@ const canCreateRoom = session.canCreateRoom
 const canStartPrivateChat = session.canStartPrivateChat
 const canInviteMembers = session.canInviteMembers
 const canManageGroup = session.canManageGroup
+const canLeaveGroup = session.canLeaveGroup
 const resolvedUserAvatarUrl = session.resolvedUserAvatarUrl
 const notificationCount = modals.notificationCount
 const typingUsers = computed(() =>
@@ -213,6 +216,7 @@ const showGroupManage = modals.showGroupManage
 const invitingMembers = modals.invitingMembers
 const updatingGroupInfo = modals.updatingGroupInfo
 const deletingGroupRoom = modals.deletingGroupRoom
+const leavingGroupRoom = modals.leavingGroupRoom
 const removingMemberUserId = modals.removingMemberUserId
 const transferringManagerUserId = modals.transferringManagerUserId
 const reInvitingInviteeId = modals.reInvitingInviteeId
@@ -250,6 +254,7 @@ const saveGroupInfo = modals.saveGroupInfo
 const removeMember = modals.removeMember
 const transferManager = modals.transferManager
 const deleteGroupRoom = modals.deleteGroupRoom
+const leaveCurrentGroupRoom = modals.leaveCurrentGroupRoom
 const openProfileSettings = modals.openProfileSettings
 const handleProfileSaved = modals.handleProfileSaved
 const openInvitations = modals.openInvitations
