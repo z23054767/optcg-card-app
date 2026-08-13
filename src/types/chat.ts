@@ -279,6 +279,7 @@ export interface ChatFriendRequestListResponse {
  * 使用者搜尋結果
  */
 export type ChatFriendshipStatus = 'none' | 'outgoing_pending' | 'incoming_pending' | 'friend'
+export type ChatBlockStatus = 'none' | 'blocked_by_me' | 'blocked_me'
 
 export interface ChatUserSearchItem {
   /** 使用者 ID */
@@ -295,4 +296,7 @@ export interface ChatUserSearchItem {
 
   /** 與目前登入使用者的好友關係狀態 */
   friendshipStatus: ChatFriendshipStatus
+
+  /** 與目前登入使用者的封鎖狀態 */
+  blockStatus: ChatBlockStatus
 }

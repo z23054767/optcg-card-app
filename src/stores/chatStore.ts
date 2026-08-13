@@ -101,6 +101,9 @@ export const useChatStore = defineStore('chat', {
           this.removeFriendRequest(event.payload.requestId)
           break
 
+        case 'PRIVATE_RELATIONSHIP_UPDATED':
+          break
+
         case 'ROOM_SNAPSHOT':
           this.setRoomSnapshot(event.payload.roomId, event.payload.userIds)
           break
@@ -123,6 +126,10 @@ export const useChatStore = defineStore('chat', {
 
         case 'USER_TYPING':
           this.handleUserTyping(event.payload)
+          break
+
+        case 'ERROR':
+          console.warn('[ChatStore] WebSocket error:', event.payload.message)
           break
 
         case 'ROOM_UPDATED':

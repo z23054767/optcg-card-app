@@ -188,6 +188,15 @@ export type FriendRequestRejectedEvent = BaseChatEvent<
   }
 >
 
+export type PrivateRelationshipUpdatedEvent = BaseChatEvent<
+  'PRIVATE_RELATIONSHIP_UPDATED',
+  {
+    otherUserId: string
+    friendshipStatus: 'none'
+    blockStatus: 'none' | 'blocked_by_me' | 'blocked_me'
+  }
+>
+
 /**
  * 好友個人資料已更新事件
  */
@@ -216,6 +225,16 @@ export type UserTypingEvent = BaseChatEvent<
 >
 
 /**
+ * WebSocket 錯誤事件
+ */
+export type ErrorEvent = BaseChatEvent<
+  'ERROR',
+  {
+    message: string
+  }
+>
+
+/**
  * Server → Client WebSocket 訊息格式
  */
 export type ChatWsEvent =
@@ -236,5 +255,7 @@ export type ChatWsEvent =
   | FriendRequestReceivedEvent
   | FriendRequestAcceptedEvent
   | FriendRequestRejectedEvent
+  | PrivateRelationshipUpdatedEvent
   | UserProfileUpdatedEvent
   | UserTypingEvent
+  | ErrorEvent

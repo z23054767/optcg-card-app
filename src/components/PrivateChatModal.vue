@@ -298,6 +298,30 @@
                 </div>
 
                 <span
+                  v-if="user.blockStatus === 'blocked_by_me'"
+                  class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  :class="
+                    preferences.isDark
+                      ? 'bg-slate-500/12 text-slate-300'
+                      : 'bg-slate-100 text-slate-700'
+                  "
+                >
+                  已封鎖
+                </span>
+
+                <span
+                  v-else-if="user.blockStatus === 'blocked_me'"
+                  class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  :class="
+                    preferences.isDark
+                      ? 'bg-red-500/12 text-red-300'
+                      : 'bg-red-100 text-red-700'
+                  "
+                >
+                  已被封鎖
+                </span>
+
+                <span
                   v-if="user.friendshipStatus === 'friend'"
                   class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                   :class="
@@ -334,7 +358,7 @@
                 </span>
 
                 <button
-                  v-else
+                  v-else-if="user.blockStatus === 'none'"
                   type="button"
                   class="shrink-0 rounded-xl bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
                   :disabled="inviting"
@@ -342,6 +366,18 @@
                 >
                   {{ invitingUserId === user.userId ? '邀請中…' : '發送邀請' }}
                 </button>
+
+                <span
+                  v-else
+                  class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  :class="
+                    preferences.isDark
+                      ? 'bg-slate-500/12 text-slate-300'
+                      : 'bg-slate-100 text-slate-700'
+                  "
+                >
+                  封鎖中
+                </span>
               </div>
             </div>
           </div>

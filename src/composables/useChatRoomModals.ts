@@ -11,17 +11,20 @@ import {
   getChatRoomMembersApi,
   getRoomInvitationsApi,
   inviteChatRoomMembersApi,
+  blockUserApi,
   removeChatRoomMemberApi,
   rejectChatInvitationApi,
   rejectFriendRequestApi,
   searchChatUsersApi,
   transferChatRoomManagerApi,
+  unblockUserApi,
   updateGroupChatRoomApi,
   uploadGroupChatRoomAvatarApi,
 } from '@/api/chatApi'
 import type { UserProfile } from '@/api/profileApi'
 import type {
   ChatFriendshipStatus,
+  ChatBlockStatus,
   ChatFriendRequest,
   ChatInvitation,
   ChatRoomMember,
@@ -69,6 +72,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   const removingMemberUserId = ref<string | null>(null)
   const transferringManagerUserId = ref<string | null>(null)
   const leavingGroupRoom = ref(false)
+  const removingFriend = ref(false)
   const reInvitingInviteeId = ref<string | null>(null)
   const loadingRoomMembers = ref(false)
   const loadingRoomInvitations = ref(false)
@@ -76,6 +80,8 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   const roomInvitations = ref<ChatInvitation[]>([])
   const friendRequests = ref<ChatFriendRequest[]>([])
   const processingFriendRequestId = ref<string | null>(null)
+  const currentPrivateFriendshipStatus = ref<ChatFriendshipStatus | null>(null)
+  const currentPrivateBlockStatus = ref<ChatBlockStatus>('none')
 
   const notificationCount = computed(() => chat.invitations.length + friendRequests.value.length)
 
@@ -90,6 +96,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
       displayName: payload.displayName || payload.username,
       avatarUrl: null,
       friendshipStatus: 'none',
+      blockStatus: 'none',
     }
   }
 
@@ -107,6 +114,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
       displayName: searchResult.displayName || fallback.displayName,
       avatarUrl: searchResult.avatarUrl ?? fallback.avatarUrl,
       friendshipStatus: searchResult.friendshipStatus,
+      blockStatus: searchResult.blockStatus,
     }
   }
 
@@ -200,6 +208,18 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
         return
       }
 
+      if (user.blockStatus === 'blocked_by_me') {
+        deps.showToast('你已封鎖此使用者', 'error')
+        messageProfileUser.value = user
+        return
+      }
+
+      if (user.blockStatus === 'blocked_me') {
+        deps.showToast('你已被此使用者封鎖', 'error')
+        messageProfileUser.value = user
+        return
+      }
+
       await createFriendRequestApi(user.userId)
 
       const updatedUser = { ...user, friendshipStatus: 'outgoing_pending' as const }
@@ -218,6 +238,32 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     try {
       const response = await getChatRoomMembersApi(roomId)
       roomMembers.value = response.members ?? []
+
+      if (chat.currentRoomId !== roomId) {
+        return
+      }
+
+      if (chat.rooms.find((room) => room.id === roomId)?.type !== 'private') {
+        currentPrivateFriendshipStatus.value = null
+        currentPrivateBlockStatus.value = 'none'
+        return
+      }
+
+      const otherMember = roomMembers.value.find((member) => String(member.userId) !== String(auth.userId))
+
+      if (!otherMember?.name) {
+        currentPrivateFriendshipStatus.value = null
+        currentPrivateBlockStatus.value = 'none'
+        return
+      }
+
+      const matchedUser = await searchChatUsersApi(otherMember.name)
+      const exactUser = (matchedUser.users ?? []).find(
+        (user) => user.userId === otherMember.userId || user.name === otherMember.name,
+      )
+
+      currentPrivateFriendshipStatus.value = exactUser?.friendshipStatus ?? null
+      currentPrivateBlockStatus.value = exactUser?.blockStatus ?? 'none'
     } finally {
       loadingRoomMembers.value = false
     }
@@ -318,7 +364,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   }
 
   async function createPrivateChat(user: ChatUserSearchItem): Promise<void> {
-    if (user.friendshipStatus !== 'none' || creatingPrivateChat.value) {
+    if (user.friendshipStatus !== 'none' || user.blockStatus !== 'none' || creatingPrivateChat.value) {
       return
     }
 
@@ -329,7 +375,9 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
       await createFriendRequestApi(user.userId)
 
       privateChatUsers.value = privateChatUsers.value.map((item) =>
-        item.userId === user.userId ? { ...item, friendshipStatus: 'outgoing_pending' } : item,
+        item.userId === user.userId
+          ? { ...item, friendshipStatus: 'outgoing_pending', blockStatus: 'none' }
+          : item,
       )
 
       deps.showToast(`已向 ${user.name} 發送好友邀請`)
@@ -600,6 +648,89 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     }
   }
 
+  async function sendFriendRequestToCurrentPrivateUser(): Promise<void> {
+    if (!chat.currentRoomId || sendingMessageUserFriendRequest.value) return
+
+    const otherMember = roomMembers.value.find(
+      (member) => String(member.userId) !== String(auth.userId),
+    )
+
+    if (!otherMember) return
+
+    if (currentPrivateBlockStatus.value !== 'none') {
+      await showErrorAlert('此使用者目前無法發送好友申請')
+      return
+    }
+
+    sendingMessageUserFriendRequest.value = true
+
+    try {
+      await createFriendRequestApi(otherMember.userId)
+      await loadRoomMembers(chat.currentRoomId)
+      await showSuccessAlert('已發送好友申請')
+    } catch {
+      await showErrorAlert('好友申請發送失敗，請稍後再試')
+    } finally {
+      sendingMessageUserFriendRequest.value = false
+    }
+  }
+
+  async function blockCurrentUser(): Promise<void> {
+    if (!chat.currentRoomId || currentPrivateBlockStatus.value !== 'none') return
+
+    const otherMember = roomMembers.value.find(
+      (member) => String(member.userId) !== String(auth.userId),
+    )
+
+    if (!otherMember) return
+
+    const result = await showConfirmAlert('確定要封鎖這個使用者嗎？')
+    if (!result.isConfirmed) {
+      return
+    }
+
+    removingFriend.value = true
+
+    try {
+      await blockUserApi(otherMember.userId)
+      await loadRoomMembers(chat.currentRoomId)
+      await deps.loadMyRooms()
+      await showSuccessAlert('已封鎖使用者')
+    } catch {
+      await showErrorAlert('封鎖失敗，請稍後再試')
+    } finally {
+      removingFriend.value = false
+    }
+  }
+
+  async function unblockCurrentUser(): Promise<void> {
+    if (!chat.currentRoomId || currentPrivateBlockStatus.value !== 'blocked_by_me') return
+
+    const otherMember = roomMembers.value.find(
+      (member) => String(member.userId) !== String(auth.userId),
+    )
+
+    if (!otherMember) return
+
+    const result = await showConfirmAlert('確定要解除封鎖嗎？')
+    if (!result.isConfirmed) {
+      return
+    }
+
+    removingFriend.value = true
+
+    try {
+      await unblockUserApi(otherMember.userId)
+      await loadRoomMembers(chat.currentRoomId)
+      await deps.loadMyRooms()
+      await showSuccessAlert('已解除封鎖')
+    } catch {
+      await showErrorAlert('解除封鎖失敗，請稍後再試')
+    } finally {
+      removingFriend.value = false
+    }
+  }
+
   async function openProfileSettings(): Promise<void> {
     deps.showUserMenu.value = false
 
@@ -647,6 +778,8 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     updatingGroupInfo,
     deletingGroupRoom,
     leavingGroupRoom,
+    currentPrivateFriendshipStatus,
+    currentPrivateBlockStatus,
     removingMemberUserId,
     transferringManagerUserId,
     reInvitingInviteeId,
@@ -678,6 +811,9 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     transferManager,
     deleteGroupRoom,
     leaveCurrentGroupRoom,
+    sendFriendRequestToCurrentPrivateUser,
+    blockCurrentUser,
+    unblockCurrentUser,
     openProfileSettings,
     handleProfileSaved,
     openInvitations,

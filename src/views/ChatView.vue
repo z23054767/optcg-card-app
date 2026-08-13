@@ -12,10 +12,13 @@
         :show-private-chat-button="canStartPrivateChat" :show-invite-members-button="canInviteMembers"
         :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
         :show-leave-group-button="canLeaveGroup" :leaving-group="leavingGroupRoom"
+        :show-add-friend-button="canAddFriend" :show-block-user-button="canBlockUser"
+        :show-unblock-user-button="canUnblockUser" :private-blocked-by-other="privateBlockedByOther"
         @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
         @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
         @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage"
-        @leave-group="leaveCurrentGroupRoom" />
+        @leave-group="leaveCurrentGroupRoom" @add-friend="sendFriendRequestToCurrentPrivateUser"
+        @block-user="blockCurrentUser" @unblock-user="unblockCurrentUser" />
 
       <div v-if="showUserMenu" class="fixed inset-0 z-40" @click="showUserMenu = false"></div>
       <UserMenu :open="showUserMenu" :display-name="auth.user?.displayName || auth.user?.name || '使用者'"
@@ -78,7 +81,7 @@
         >
           <span class="text-lg">⬇️</span>
         </button>
-        <ChatInput :scroll-to-message="scrollToMessage" />
+        <ChatInput :scroll-to-message="scrollToMessage" :send-disabled-reason="privateBlockedReason" />
       </footer>
 
       <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
@@ -162,6 +165,10 @@ const canStartPrivateChat = session.canStartPrivateChat
 const canInviteMembers = session.canInviteMembers
 const canManageGroup = session.canManageGroup
 const canLeaveGroup = session.canLeaveGroup
+const canAddFriend = session.canAddFriend
+const canBlockUser = session.canBlockUser
+const canUnblockUser = session.canUnblockUser
+const privateBlockedByOther = session.privateBlockedByOther
 const resolvedUserAvatarUrl = session.resolvedUserAvatarUrl
 const notificationCount = modals.notificationCount
 const typingUsers = computed(() =>
@@ -226,6 +233,7 @@ const roomMembers = modals.roomMembers
 const roomInvitations = modals.roomInvitations
 const friendRequests = modals.friendRequests
 const processingFriendRequestId = modals.processingFriendRequestId
+const currentPrivateBlockStatus = modals.currentPrivateBlockStatus
 
 const handleMessageScroll = messages.handleMessageScroll
 const handleScrollButtonClick = messages.handleScrollButtonClick
@@ -255,6 +263,9 @@ const removeMember = modals.removeMember
 const transferManager = modals.transferManager
 const deleteGroupRoom = modals.deleteGroupRoom
 const leaveCurrentGroupRoom = modals.leaveCurrentGroupRoom
+const sendFriendRequestToCurrentPrivateUser = modals.sendFriendRequestToCurrentPrivateUser
+const blockCurrentUser = modals.blockCurrentUser
+const unblockCurrentUser = modals.unblockCurrentUser
 const openProfileSettings = modals.openProfileSettings
 const handleProfileSaved = modals.handleProfileSaved
 const openInvitations = modals.openInvitations
@@ -266,4 +277,18 @@ function openPreferences(): void {
   showUserMenu.value = false
   showPreferences.value = true
 }
+
+const privateBlockedReason = computed(() => {
+  if (currentRoomType.value !== 'private') return ''
+
+  if (privateBlockedByOther.value) {
+    return '你已被此使用者封鎖，無法傳送訊息'
+  }
+
+  if (currentPrivateBlockStatus.value === 'blocked_by_me') {
+    return '你已封鎖此使用者，無法傳送訊息'
+  }
+
+  return ''
+})
 </script>

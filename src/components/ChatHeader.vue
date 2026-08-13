@@ -38,6 +38,13 @@
             {{ title }}
           </h1>
 
+          <div
+            v-if="privateBlockedByOther"
+            class="mt-1 inline-flex rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-medium text-red-700"
+          >
+            已被對方封鎖
+          </div>
+
           <div class="mt-0.5 flex items-center gap-2 text-xs">
             <button
               v-if="currentRoomId !== 'lobby'"
@@ -59,6 +66,15 @@
       </div>
 
       <div class="hidden shrink-0 items-center gap-2 sm:flex">
+        <button
+          v-if="showAddFriendButton"
+          type="button"
+          class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+          @click="$emit('add-friend')"
+        >
+          加好友
+        </button>
+
         <button
           v-if="showCreateButton"
           type="button"
@@ -113,6 +129,24 @@
         >
           {{ leavingGroup ? '退出中…' : '退出群組' }}
         </button>
+
+        <button
+          v-if="showBlockUserButton"
+          type="button"
+          class="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900"
+          @click="$emit('block-user')"
+        >
+          封鎖
+        </button>
+
+        <button
+          v-if="showUnblockUserButton"
+          type="button"
+          class="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
+          @click="$emit('unblock-user')"
+        >
+          解除封鎖
+        </button>
       </div>
 
       <button
@@ -145,10 +179,22 @@
         showInviteMembersButton ||
         showManageGroupButton ||
         showMembersButton ||
-        showLeaveGroupButton
+        showLeaveGroupButton ||
+        showAddFriendButton ||
+        showBlockUserButton ||
+        showUnblockUserButton
       "
       class="flex gap-2 overflow-x-auto border-t border-gray-100 px-3 py-2 sm:hidden"
     >
+      <button
+        v-if="showAddFriendButton"
+        type="button"
+        class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+        @click="$emit('add-friend')"
+      >
+        加好友
+      </button>
+
       <button
         v-if="showCreateButton"
         type="button"
@@ -203,6 +249,24 @@
       >
         {{ leavingGroup ? '退出中…' : '退出群組' }}
       </button>
+
+      <button
+        v-if="showBlockUserButton"
+        type="button"
+        class="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900"
+        @click="$emit('block-user')"
+      >
+        封鎖
+      </button>
+
+      <button
+        v-if="showUnblockUserButton"
+        type="button"
+        class="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
+        @click="$emit('unblock-user')"
+      >
+        解除封鎖
+      </button>
     </div>
   </header>
 </template>
@@ -231,6 +295,10 @@ const props = defineProps<{
   showMembersButton: boolean
   showLeaveGroupButton: boolean
   leavingGroup: boolean
+  showAddFriendButton: boolean
+  showBlockUserButton: boolean
+  showUnblockUserButton: boolean
+  privateBlockedByOther: boolean
 }>()
 
 const avatarLoadFailed = ref(false)
@@ -305,5 +373,8 @@ defineEmits<{
   'toggle-user-menu': []
   'open-members': []
   'leave-group': []
+  'add-friend': []
+  'block-user': []
+  'unblock-user': []
 }>()
 </script>

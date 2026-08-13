@@ -347,8 +347,12 @@ interface ContextMenuAction {
   label: string
 }
 
+const isSystemMessage = computed(() => {
+  return props.message.senderUsername === 'system'
+})
+
 const isMine = computed(() => {
-  return auth.isAuthenticated && props.message.senderId === auth.userId
+  return !isSystemMessage.value && auth.isAuthenticated && props.message.senderId === auth.userId
 })
 
 const isLobbyMessage = computed(() => {
@@ -362,6 +366,10 @@ const senderActionPayload = computed(() => ({
 }))
 
 const contextMenuActions = computed<ContextMenuAction[]>(() => {
+  if (isSystemMessage.value) {
+    return []
+  }
+
   const actions: ContextMenuAction[] = [{ key: 'reply', label: '回覆' }]
 
   if (!isMine.value && props.message.senderId) {
@@ -376,6 +384,10 @@ const contextMenuActions = computed<ContextMenuAction[]>(() => {
 })
 
 const displayName = computed(() => {
+  if (isSystemMessage.value) {
+    return props.message.senderName || '系統'
+  }
+
   if (isMine.value) {
     const name =
       auth.userName || props.message.senderName || props.message.senderUsername || '使用者'
@@ -395,6 +407,10 @@ const displayName = computed(() => {
 })
 
 const replyPreviewName = computed(() => {
+  if (isSystemMessage.value) {
+    return props.message.senderName || '系統'
+  }
+
   if (isMine.value) {
     return auth.userName || props.message.senderName || props.message.senderUsername || '使用者'
   }

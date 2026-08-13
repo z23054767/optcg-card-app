@@ -6,7 +6,13 @@ import { refreshAccessToken } from '@/api/http'
 import { getMyProfileApi, resolveUserAvatarUrl, type UserProfile } from '@/api/profileApi'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
-import type { ChatFriendRequest, ChatInvitation } from '@/types/chat'
+import type {
+  ChatBlockStatus,
+  ChatFriendRequest,
+  ChatFriendshipStatus,
+  ChatInvitation,
+  ChatUserSearchItem,
+} from '@/types/chat'
 
 type RoomSessionDeps = {
   messages: {
@@ -38,6 +44,10 @@ type RoomSessionDeps = {
         avatarUrl?: string | null
       }>
     }
+    currentPrivateFriendshipStatus: { value: ChatFriendshipStatus | null }
+    currentPrivateBlockStatus: { value: ChatBlockStatus }
+    privateChatUsers: { value: ChatUserSearchItem[] }
+    messageProfileUser: { value: ChatUserSearchItem | null }
     loadRoomMembers: (roomId: string) => Promise<void>
     loadRoomInvitations: (roomId: string) => Promise<void>
   }
@@ -90,6 +100,24 @@ export function useChatRoomSession() {
   const canInviteMembers = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
   const canManageGroup = computed(() => isCurrentGroupRoom.value && isCurrentRoomManager.value)
   const canLeaveGroup = computed(() => isCurrentGroupRoom.value && !isCurrentRoomManager.value)
+  const canAddFriend = computed(() => {
+    if (currentRoomType.value !== 'private') return false
+    return (
+      deps.value?.modals.currentPrivateFriendshipStatus.value === 'none' &&
+      deps.value?.modals.currentPrivateBlockStatus.value === 'none'
+    )
+  })
+  const canBlockUser = computed(() => {
+    if (currentRoomType.value !== 'private') return false
+    return deps.value?.modals.currentPrivateBlockStatus.value === 'none'
+  })
+  const canUnblockUser = computed(() => {
+    if (currentRoomType.value !== 'private') return false
+    return deps.value?.modals.currentPrivateBlockStatus.value === 'blocked_by_me'
+  })
+  const privateBlockedByOther = computed(
+    () => deps.value?.modals.currentPrivateBlockStatus.value === 'blocked_me',
+  )
   const resolvedUserAvatarUrl = computed(() => resolveUserAvatarUrl(auth.user?.avatarUrl))
   const notificationCount = computed<number>(() => {
     return chat.invitations.length + (deps.value?.modals.friendRequests.value.length ?? 0)
@@ -152,7 +180,7 @@ export function useChatRoomSession() {
 
       await nextDeps.messages.loadLatestMessages(roomId)
 
-      if (isCurrentGroupRoom.value) {
+      if (currentRoomType.value === 'group' || currentRoomType.value === 'private') {
         await nextDeps.modals.loadRoomMembers(roomId)
       } else {
         nextDeps.modals.roomMembers.value = []
@@ -211,6 +239,41 @@ export function useChatRoomSession() {
     }
 
     return deps.value
+  }
+
+  function syncPrivateRelationshipState(input: {
+    otherUserId: string
+    friendshipStatus: ChatFriendshipStatus
+    blockStatus: ChatBlockStatus
+  }): void {
+    const nextDeps = depsSafe()
+
+    nextDeps.modals.privateChatUsers.value = nextDeps.modals.privateChatUsers.value.map((user) =>
+      String(user.userId) === String(input.otherUserId)
+        ? {
+            ...user,
+            friendshipStatus: input.friendshipStatus,
+            blockStatus: input.blockStatus,
+          }
+        : user,
+    )
+
+    if (nextDeps.modals.messageProfileUser.value && String(nextDeps.modals.messageProfileUser.value.userId) === String(input.otherUserId)) {
+      nextDeps.modals.messageProfileUser.value = {
+        ...nextDeps.modals.messageProfileUser.value,
+        friendshipStatus: input.friendshipStatus,
+        blockStatus: input.blockStatus,
+      }
+    }
+
+    const currentPrivateMember = nextDeps.modals.roomMembers.value.find(
+      (member) => String(member.userId) !== String(auth.userId),
+    )
+
+    if (currentRoomType.value === 'private' && currentPrivateMember && String(currentPrivateMember.userId) === String(input.otherUserId)) {
+      nextDeps.modals.currentPrivateFriendshipStatus.value = input.friendshipStatus
+      nextDeps.modals.currentPrivateBlockStatus.value = input.blockStatus
+    }
   }
 
   onMounted(async () => {
@@ -306,6 +369,11 @@ export function useChatRoomSession() {
             }
             break
           }
+          case 'PRIVATE_RELATIONSHIP_UPDATED': {
+            chat.applyEvent(message)
+            syncPrivateRelationshipState(message.payload)
+            break
+          }
           default:
             chat.applyEvent(message)
             break
@@ -357,6 +425,10 @@ export function useChatRoomSession() {
     canInviteMembers,
     canManageGroup,
     canLeaveGroup,
+    canAddFriend,
+    canBlockUser,
+    canUnblockUser,
+    privateBlockedByOther,
     resolvedUserAvatarUrl,
     notificationCount,
     loadMyProfile,

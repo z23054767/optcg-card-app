@@ -318,6 +318,10 @@ export interface SearchUserByNameResponse {
   avatarUrl: string | null
 }
 
+export interface BlockUserResponse {
+  success: boolean
+}
+
 /**
  * 刪除聊天室
  */
@@ -403,6 +407,28 @@ export async function acceptFriendRequestApi(requestId: string): Promise<{ roomI
 export async function rejectFriendRequestApi(requestId: string): Promise<{ success: boolean }> {
   const { data } = await http.post<{ success: boolean }>(
     `/chat/friend-requests/${encodeURIComponent(requestId)}/reject`,
+  )
+
+  return data
+}
+
+/**
+ * 封鎖使用者
+ */
+export async function blockUserApi(blockedUserId: string): Promise<BlockUserResponse> {
+  const { data } = await http.post<BlockUserResponse>(
+    `/chat/blocks/${encodeURIComponent(blockedUserId)}`,
+  )
+
+  return data
+}
+
+/**
+ * 解除封鎖使用者
+ */
+export async function unblockUserApi(blockedUserId: string): Promise<BlockUserResponse> {
+  const { data } = await http.delete<BlockUserResponse>(
+    `/chat/blocks/${encodeURIComponent(blockedUserId)}`,
   )
 
   return data

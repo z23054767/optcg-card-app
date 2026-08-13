@@ -19,13 +19,16 @@
         </button>
       </div>
     </div>
+    <div v-if="sendDisabledReason" class="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+      {{ sendDisabledReason }}
+    </div>
 
     <div class="flex items-end gap-2">
       <input ref="fileInput" type="file" multiple class="hidden" @change="handleFiles" />
       <button
         type="button"
         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-xl hover:bg-gray-50 disabled:opacity-50"
-        :disabled="uploading"
+        :disabled="uploading || Boolean(sendDisabledReason)"
         title="上傳檔案"
         @click="fileInput?.click()"
       >
@@ -36,12 +39,13 @@
         rows="1"
         placeholder="輸入訊息..."
         class="max-h-32 min-h-10 flex-1 resize-none rounded-lg border px-3 py-2"
+        :disabled="Boolean(sendDisabledReason)"
         @keydown.enter.exact.prevent="send"
       />
       <button
         type="button"
         class="h-10 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white disabled:opacity-50"
-        :disabled="uploading || !text.trim()"
+        :disabled="uploading || !text.trim() || Boolean(sendDisabledReason)"
         @click="send"
       >
         傳送
@@ -60,6 +64,7 @@ import { uploadChatAttachmentApi } from '@/api/chatApi'
 
 const props = defineProps<{
   scrollToMessage?: (messageId: string) => Promise<void>
+  sendDisabledReason?: string
 }>()
 
 const chat = useChatStore()

@@ -131,6 +131,14 @@ defineEmits<{
 const preferences = usePreferencesStore()
 
 const friendshipStatusLabel = computed(() => {
+  if (props.user?.blockStatus === 'blocked_by_me') {
+    return '已封鎖'
+  }
+
+  if (props.user?.blockStatus === 'blocked_me') {
+    return '已被封鎖'
+  }
+
   switch (props.user?.friendshipStatus) {
     case 'outgoing_pending':
       return '邀請待回覆'
@@ -144,6 +152,14 @@ const friendshipStatusLabel = computed(() => {
 })
 
 const friendshipStatusHint = computed(() => {
+  if (props.user?.blockStatus === 'blocked_by_me') {
+    return '你已封鎖這位使用者，無法傳送訊息。'
+  }
+
+  if (props.user?.blockStatus === 'blocked_me') {
+    return '你已被這位使用者封鎖，無法傳送訊息。'
+  }
+
   switch (props.user?.friendshipStatus) {
     case 'outgoing_pending':
       return '你已發出好友申請，等待對方回覆。'
@@ -157,6 +173,14 @@ const friendshipStatusHint = computed(() => {
 })
 
 const friendshipBadgeClass = computed(() => {
+  if (props.user?.blockStatus === 'blocked_by_me') {
+    return preferences.isDark ? 'bg-slate-500/12 text-slate-300' : 'bg-slate-100 text-slate-700'
+  }
+
+  if (props.user?.blockStatus === 'blocked_me') {
+    return preferences.isDark ? 'bg-red-500/12 text-red-300' : 'bg-red-100 text-red-700'
+  }
+
   switch (props.user?.friendshipStatus) {
     case 'outgoing_pending':
       return preferences.isDark ? 'bg-amber-500/12 text-amber-300' : 'bg-amber-100 text-amber-700'
