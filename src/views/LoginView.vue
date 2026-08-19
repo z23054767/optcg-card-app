@@ -122,6 +122,21 @@
             <span aria-hidden="true"></span>
           </span>
         </button>
+
+        <!-- Discord -->
+        <button type="button" :disabled="oauthLoadingProvider !== null"
+          class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          @click="startOAuthLogin('discord')">
+          <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
+            <img :src="DiscordIcon" alt="Discord" class="h-5 w-5 justify-self-center object-contain" />
+
+            <span class="whitespace-nowrap text-center">
+              {{ oauthLoadingProvider === 'discord' ? '前往 Discord...' : '使用 Discord 登入' }}
+            </span>
+
+            <span aria-hidden="true"></span>
+          </span>
+        </button>
       </div>
     </div>
   </div>
@@ -139,6 +154,7 @@ import { refreshAccessToken } from '@/api/http'
 import GoogleIcon from '@/assets/icons/google.svg'
 import LineIcon from '@/assets/icons/line.svg'
 import MicrosoftIcon from '@/assets/icons/microsoft.svg'
+import DiscordIcon from '@/assets/icons/discord.svg'
 
 const authStore = useAuthStore()
 

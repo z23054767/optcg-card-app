@@ -76,10 +76,18 @@
           v-show="showScrollButton"
           type="button"
           aria-label="回到最新訊息"
-          class="absolute right-4 -top-14 z-20 flex h-11 w-11 items-center justify-center rounded-full border bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95 sm:right-6"
+          class="group absolute right-4 -top-14 z-20 inline-flex h-10 items-center gap-2 rounded-full border border-indigo-400/30 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 text-sm font-medium text-white shadow-lg shadow-indigo-900/20 transition-all duration-200 hover:-translate-y-0.5 hover:from-indigo-500 hover:to-violet-500 hover:shadow-xl hover:shadow-indigo-900/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.97] sm:right-6"
           @click="handleScrollButtonClick"
         >
-          <span class="text-lg">⬇️</span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+            class="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5"
+          >
+            <path d="M10 3.5v12m0 0 4.5-4.5M10 15.5 5.5 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>最新訊息</span>
         </button>
         <ChatInput :scroll-to-message="scrollToMessage" :send-disabled-reason="privateBlockedReason" />
       </footer>

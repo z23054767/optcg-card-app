@@ -1,6 +1,6 @@
 import { http } from '@/api/http'
 
-export type OAuthProvider = 'google' | 'microsoft' | 'line'
+export type OAuthProvider = 'google' | 'microsoft' | 'line' | 'discord'
 
 /**
  * 登入請求

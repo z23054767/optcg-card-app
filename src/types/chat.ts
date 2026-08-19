@@ -188,6 +188,9 @@ export interface ChatInvitation {
   /** 聊天室名稱 */
   roomName: string | null
 
+  /** 聊天室頭像 */
+  roomAvatarUrl: string | null
+
   /** 聊天室類型 */
   roomType: 'group'
 

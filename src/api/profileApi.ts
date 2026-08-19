@@ -6,8 +6,9 @@ import { http } from '@/api/http'
  * google: Google OAuth
  * microsoft: Microsoft OAuth
  * line: LINE OAuth
+ * discord: Discord OAuth
  */
-export type AuthProvider = 'local' | 'google' | 'microsoft' | 'line'
+export type AuthProvider = 'local' | 'google' | 'microsoft' | 'line' | 'discord'
 
 export interface UserProfile {
   id: number
