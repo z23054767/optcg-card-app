@@ -65,6 +65,10 @@ export interface RejectChatInvitationResponse {
   success: boolean
 }
 
+export interface MarkChatRoomAsReadResponse {
+  success: boolean
+}
+
 /**
  * 取得聊天室訊息紀錄請求
  */
@@ -143,6 +147,17 @@ export async function createChatRoomApi(input: CreateChatRoomRequest): Promise<C
  */
 export async function getMyChatRoomsApi(): Promise<MyChatRoomsResponse> {
   const { data } = await http.get<MyChatRoomsResponse>('/chat/rooms/my')
+
+  return data
+}
+
+/**
+ * 標記聊天室已讀
+ */
+export async function markChatRoomAsReadApi(roomId: string): Promise<MarkChatRoomAsReadResponse> {
+  const { data } = await http.post<MarkChatRoomAsReadResponse>(
+    `/chat/rooms/${encodeURIComponent(roomId)}/read`,
+  )
 
   return data
 }

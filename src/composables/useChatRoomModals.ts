@@ -27,6 +27,7 @@ import type {
   ChatBlockStatus,
   ChatFriendRequest,
   ChatInvitation,
+  ChatRoomListItem,
   ChatRoomMember,
   ChatUserSearchItem,
 } from '@/types/chat'
@@ -65,6 +66,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   const showRoomMembers = ref(false)
   const showInviteMembers = ref(false)
   const showGroupManage = ref(false)
+  const groupManageRoom = ref<ChatRoomListItem | null>(null)
 
   const invitingMembers = ref(false)
   const updatingGroupInfo = ref(false)
@@ -84,6 +86,10 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   const currentPrivateBlockStatus = ref<ChatBlockStatus>('none')
 
   const notificationCount = computed(() => chat.invitations.length + friendRequests.value.length)
+
+  function cloneRoom(room: ChatRoomListItem): ChatRoomListItem {
+    return { ...room }
+  }
 
   function createMessageUserFallback(payload: {
     userId: string
@@ -497,6 +503,11 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
   async function openGroupManage(): Promise<void> {
     if (!chat.currentRoomId) return
+    const currentRoom = chat.rooms.find((room) => room.id === chat.currentRoomId)
+
+    if (!currentRoom) return
+
+    groupManageRoom.value = cloneRoom(currentRoom)
 
     showGroupManage.value = true
     await Promise.all([
@@ -533,6 +544,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   async function saveGroupInfo(payload: {
     roomName: string
     avatarFile: File | null
+    hadSelectedAvatarFile: boolean
     removeAvatar: boolean
   }): Promise<void> {
     if (!chat.currentRoomId) return
@@ -541,17 +553,60 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     updatingGroupInfo.value = true
 
     try {
-      await updateGroupChatRoomApi(chat.currentRoomId, {
-        roomName: payload.roomName,
-      })
+      if (payload.hadSelectedAvatarFile && !payload.avatarFile) {
+        throw new Error('GROUP_AVATAR_FILE_GENERATION_FAILED')
+      }
 
-      if (payload.removeAvatar) {
+      const currentRoom =
+        groupManageRoom.value ?? chat.rooms.find((room) => room.id === chat.currentRoomId) ?? null
+      const originalRoomName = currentRoom?.name?.trim() ?? ''
+      const nextRoomName = payload.roomName.trim()
+
+      if (nextRoomName !== originalRoomName) {
+        await updateGroupChatRoomApi(chat.currentRoomId, {
+          roomName: nextRoomName,
+        })
+
+        if (currentRoom) {
+          groupManageRoom.value = {
+            ...currentRoom,
+            name: nextRoomName,
+          }
+        }
+      }
+
+      if (payload.avatarFile) {
+        const response = await uploadGroupChatRoomAvatarApi(chat.currentRoomId, payload.avatarFile)
+        const baseRoom = groupManageRoom.value ?? currentRoom
+
+        if (baseRoom) {
+          groupManageRoom.value = {
+            ...baseRoom,
+            avatarUrl: response.avatarPath,
+          }
+        }
+
+        chat.updateRoomInfo(chat.currentRoomId, undefined, response.avatarPath)
+      } else if (payload.removeAvatar) {
         await deleteGroupChatRoomAvatarApi(chat.currentRoomId)
-      } else if (payload.avatarFile) {
-        await uploadGroupChatRoomAvatarApi(chat.currentRoomId, payload.avatarFile)
+        const baseRoom = groupManageRoom.value ?? currentRoom
+
+        if (baseRoom) {
+          groupManageRoom.value = {
+            ...baseRoom,
+            avatarUrl: null,
+          }
+        }
+
+        chat.updateRoomInfo(chat.currentRoomId, undefined, null)
       }
 
       await deps.loadMyRooms()
+      const refreshedRoom = chat.rooms.find((room) => room.id === chat.currentRoomId)
+
+      if (refreshedRoom) {
+        groupManageRoom.value = cloneRoom(refreshedRoom)
+      }
 
       deps.showToast(payload.removeAvatar ? '群組頭像已刪除' : '群組資訊已更新')
     } catch {
@@ -774,6 +829,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     showRoomMembers,
     showInviteMembers,
     showGroupManage,
+    groupManageRoom,
     invitingMembers,
     updatingGroupInfo,
     deletingGroupRoom,

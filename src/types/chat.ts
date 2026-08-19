@@ -153,6 +153,9 @@ export interface ChatRoomListItem {
 
   /** 建立者 ID */
   ownerId: string
+
+  /** 未讀訊息數量 */
+  unreadMessageCount?: number
 }
 
 /**

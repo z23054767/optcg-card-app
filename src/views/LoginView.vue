@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-100 px-4 py-6 sm:flex sm:items-center sm:justify-center">
-    <div class="mx-auto w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8">
+    <div class="mx-auto w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8 relative">
+      <button type="button" @click="preferences.setThemeMode(preferences.isDark ? 'light' : 'dark')"
+        :title="preferences.isDark ? '切換到淺色模式' : '切換到深色模式'" :aria-label="preferences.isDark ? '切換到淺色模式' : '切換到深色模式'"
+        class="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-lg shadow-sm shadow-slate-200/60 transition hover:scale-105 hover:shadow-md">
+        <span>{{ preferences.isDark ? '☀️' : '🌙' }}</span>
+      </button>
+
       <!-- Login Logo -->
       <div class="mb-6 flex flex-col items-center">
         <img src="/images/login-logo.png" alt="Login Logo" class="h-20 w-20 object-contain drop-shadow-sm" />
@@ -147,6 +153,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { buildOAuthLoginUrl, loginApi, type OAuthProvider } from '@/api/loginApi'
 import { useAuthStore } from '@/stores/authStore'
+import { usePreferencesStore } from '@/stores/preferencesStore'
 import { resolveApiError } from '@/api/resolveApiError'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { showWarningAlert } from '@/utils/alerts'
@@ -157,6 +164,7 @@ import MicrosoftIcon from '@/assets/icons/microsoft.svg'
 import DiscordIcon from '@/assets/icons/discord.svg'
 
 const authStore = useAuthStore()
+const preferences = usePreferencesStore()
 
 const name = ref('')
 const password = ref('')

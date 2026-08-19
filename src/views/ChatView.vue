@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen overflow-hidden bg-gray-100 relative">
     <ChatSidebar :open="sidebarOpen" :rooms="chat.rooms" :current-room-id="chat.currentRoomId"
-      @close="sidebarOpen = false" @switch-room="switchRoom" />
+      :unread-counts="roomUnreadCounts" @close="sidebarOpen = false" @switch-room="switchRoom" />
 
     <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId" :room-type="currentRoomType"
@@ -39,7 +39,7 @@
         @invite="createPrivateChat" />
       <InviteMembersModal v-if="showInviteMembers" :room-id="chat.currentRoomId" :loading="invitingMembers"
         @close="showInviteMembers = false" @invite="inviteMembers" />
-      <GroupManageModal v-if="showGroupManage && currentRoom" :room="currentRoom" :members="roomMembers"
+      <GroupManageModal v-if="showGroupManage && groupManageRoom" :room="groupManageRoom" :members="roomMembers"
         :loading-members="loadingRoomMembers" :updating-info="updatingGroupInfo" :deleting-room="deletingGroupRoom"
         :removing-user-id="removingMemberUserId" :transferring-user-id="transferringManagerUserId"
         :invitations="roomInvitations" :loading-invitations="loadingRoomInvitations"
@@ -53,39 +53,27 @@
         @accept-friend-request="acceptFriendRequest" @reject-friend-request="rejectFriendRequest" />
       <RoomMembersModal v-if="showRoomMembers" :members="roomMembers" :loading="loadingRoomMembers"
         @close="showRoomMembers = false" />
-      <MessageUserProfileModal
-        v-if="showMessageUserProfile"
-        :user="messageProfileUser"
-        :loading="messageProfileLoading"
-        @close="closeMessageUserProfile"
-      />
+      <MessageUserProfileModal v-if="showMessageUserProfile" :user="messageProfileUser" :loading="messageProfileLoading"
+        @close="closeMessageUserProfile" />
 
       <main ref="messagesEl" class="relative min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50 sm:px-4"
         @scroll="handleMessageScroll">
         <ChatMessageTimeline :messages="filteredMessages" :loading-older-messages="loadingOlderMessages"
           :date-anchor="dateLabelAnchor" :scroll-to-message="scrollToMessage"
-          @view-user-profile="openMessageUserProfile"
-          @send-friend-request="sendFriendRequestToMessageUser" />
+          @view-user-profile="openMessageUserProfile" @send-friend-request="sendFriendRequestToMessageUser" />
       </main>
 
       <footer class="relative border-t bg-white px-3 py-2">
         <div v-if="typingIndicatorText" class="mb-1 px-1 text-xs text-gray-500">
           {{ typingIndicatorText }}
         </div>
-        <button
-          v-show="showScrollButton"
-          type="button"
-          aria-label="回到最新訊息"
+        <button v-show="showScrollButton" type="button" aria-label="回到最新訊息"
           class="group absolute right-4 -top-14 z-20 inline-flex h-10 items-center gap-2 rounded-full border border-indigo-400/30 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 text-sm font-medium text-white shadow-lg shadow-indigo-900/20 transition-all duration-200 hover:-translate-y-0.5 hover:from-indigo-500 hover:to-violet-500 hover:shadow-xl hover:shadow-indigo-900/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.97] sm:right-6"
-          @click="handleScrollButtonClick"
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            fill="none"
-            class="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5"
-          >
-            <path d="M10 3.5v12m0 0 4.5-4.5M10 15.5 5.5 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          @click="handleScrollButtonClick">
+          <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"
+            class="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5">
+            <path d="M10 3.5v12m0 0 4.5-4.5M10 15.5 5.5 11" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <span>最新訊息</span>
         </button>
@@ -163,7 +151,6 @@ session.initializeSession({
 
 const sidebarOpen = session.sidebarOpen
 const showUserMenu = session.showUserMenu
-const currentRoom = session.currentRoom
 const currentRoomTitle = session.currentRoomTitle
 const currentRoomType = session.currentRoomType
 const currentRoomAvatarUrl = session.currentRoomAvatarUrl
@@ -179,6 +166,7 @@ const canUnblockUser = session.canUnblockUser
 const privateBlockedByOther = session.privateBlockedByOther
 const resolvedUserAvatarUrl = session.resolvedUserAvatarUrl
 const notificationCount = modals.notificationCount
+const roomUnreadCounts = computed<Record<string, number>>(() => chat.unreadMessageCountsByRoom)
 const typingUsers = computed(() =>
   chat.currentRoomTypingUsers.filter((item) => String(item.userId) !== String(auth.userId)),
 )
@@ -228,6 +216,7 @@ const showInvitations = modals.showInvitations
 const showRoomMembers = modals.showRoomMembers
 const showInviteMembers = modals.showInviteMembers
 const showGroupManage = modals.showGroupManage
+const groupManageRoom = modals.groupManageRoom
 const invitingMembers = modals.invitingMembers
 const updatingGroupInfo = modals.updatingGroupInfo
 const deletingGroupRoom = modals.deletingGroupRoom

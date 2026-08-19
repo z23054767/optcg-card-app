@@ -574,6 +574,7 @@ const emit = defineEmits<{
     payload: {
       roomName: string
       avatarFile: File | null
+      hadSelectedAvatarFile: boolean
       removeAvatar: boolean
     },
   ]
@@ -634,20 +635,18 @@ async function saveGroupInfo(): Promise<void> {
   emit('save-info', {
     roomName: editRoomName.value.trim(),
     avatarFile,
+    hadSelectedAvatarFile: hasSelectedAvatarFile.value,
     removeAvatar: removeAvatar.value,
   })
 }
 
 watch(
-  () => props.room,
-  (room) => {
-    editRoomName.value = room.name ?? ''
+  () => [props.room.id, props.room.name ?? '', props.room.avatarUrl ?? null] as const,
+  ([, roomName]) => {
+    editRoomName.value = roomName
     removeAvatar.value = false
     hasSelectedAvatarFile.value = false
     avatarCropper.value?.reset()
-  },
-  {
-    deep: true,
   },
 )
 </script>

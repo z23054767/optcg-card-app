@@ -28,7 +28,7 @@
             :src="resolvedAvatarUrl"
             :alt="`${title} 頭像`"
             class="h-full w-full object-cover"
-            @error="avatarLoadFailed = true"
+            @error="handleAvatarLoadError"
           />
           <span v-else>{{ defaultAvatar }}</span>
         </span>
@@ -302,6 +302,7 @@ const props = defineProps<{
 }>()
 
 const avatarLoadFailed = ref(false)
+const avatarRetryCount = ref(0)
 
 const resolvedAvatarUrl = computed<string | null>(() => {
   switch (props.roomType) {
@@ -359,8 +360,23 @@ watch(
   () => [props.roomType, props.avatarUrl],
   () => {
     avatarLoadFailed.value = false
+    avatarRetryCount.value = 0
   },
 )
+
+function handleAvatarLoadError(): void {
+  if (avatarRetryCount.value >= 2) {
+    avatarLoadFailed.value = true
+    return
+  }
+
+  avatarRetryCount.value += 1
+  avatarLoadFailed.value = true
+
+  setTimeout(() => {
+    avatarLoadFailed.value = false
+  }, 800)
+}
 
 
 defineEmits<{

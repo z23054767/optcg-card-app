@@ -28,6 +28,12 @@
           </span>
 
           <span class="truncate">大廳</span>
+          <span
+            v-if="getUnreadCount('lobby') > 0"
+            class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
+          >
+            {{ formatUnreadCount(getUnreadCount('lobby')) }}
+          </span>
         </button>
       </div>
 
@@ -57,6 +63,12 @@
               />
 
               <span class="truncate">{{ getRoomName(room) }}</span>
+              <span
+                v-if="getUnreadCount(room.id) > 0"
+                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
+              >
+                {{ formatUnreadCount(getUnreadCount(room.id)) }}
+              </span>
             </button>
             <div v-if="privateRooms.length === 0" class="px-3 py-2 text-xs text-gray-400">
               尚無朋友聊天室
@@ -90,6 +102,12 @@
               <span class="truncate">
                 {{ getRoomName(room) }}
               </span>
+              <span
+                v-if="getUnreadCount(room.id) > 0"
+                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
+              >
+                {{ formatUnreadCount(getUnreadCount(room.id)) }}
+              </span>
             </button>
 
             <div v-if="groupRooms.length === 0" class="px-3 py-2 text-xs text-gray-400">
@@ -104,7 +122,7 @@
   <div v-if="open" class="fixed inset-0 z-30 bg-black/40 sm:hidden" @click="$emit('close')"></div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { resolveChatRoomAvatarUrl } from '@/utils/chatRoomAvatar'
 import UserAvatar from '@/components/base/UserAvatar.vue'
 import type { ChatRoomListItem } from '@/types/chat'
@@ -113,6 +131,7 @@ const props = defineProps<{
   open: boolean
   rooms: ChatRoomListItem[]
   currentRoomId: string
+  unreadCounts?: Record<string, number>
 }>()
 
 const privateCollapsed = ref(false)
@@ -139,9 +158,30 @@ function getRoomAvatarUrl(room: ChatRoomListItem): string | null {
 
 function markAvatarLoadFailed(roomId: string): void {
   failedAvatarRoomIds.value = new Set([...failedAvatarRoomIds.value, roomId])
+
+  setTimeout(() => {
+    const next = new Set(failedAvatarRoomIds.value)
+    next.delete(roomId)
+    failedAvatarRoomIds.value = next
+  }, 1200)
+}
+
+function getUnreadCount(roomId: string): number {
+  return props.unreadCounts?.[String(roomId)] ?? 0
+}
+
+function formatUnreadCount(count: number): string {
+  return count > 99 ? '99+' : String(count)
 }
 
 const privateRooms = computed(() => props.rooms.filter((room) => room.type === 'private'))
 
 const groupRooms = computed(() => props.rooms.filter((room) => room.type === 'group'))
+
+watch(
+  () => props.rooms,
+  () => {
+    failedAvatarRoomIds.value = new Set()
+  },
+)
 </script>

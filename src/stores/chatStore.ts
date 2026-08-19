@@ -27,6 +27,7 @@ interface ChatState {
   friendRequests: ChatFriendRequest[]
   hasUnreadInvitationNotice: boolean
   hasUnreadFriendRequestNotice: boolean
+  unreadMessageCountsByRoom: Record<string, number>
 }
 
 export const useChatStore = defineStore('chat', {
@@ -44,15 +45,27 @@ export const useChatStore = defineStore('chat', {
     friendRequests: [],
     hasUnreadInvitationNotice: false,
     hasUnreadFriendRequestNotice: false,
+    unreadMessageCountsByRoom: {},
   }),
 
   actions: {
     // #region 處理來自 WebSocket 的事件
-    applyEvent(event: ChatWsEvent): void {
+    applyEvent(event: ChatWsEvent, options?: { currentUserId?: string }): void {
       switch (event.type) {
-        case 'NEW_MESSAGE':
-          this.appendMessage(event.payload.message)
+        case 'NEW_MESSAGE': {
+          const roomId = String(event.payload.roomId)
+          const senderId = String(event.payload.message.senderId)
+          const currentUserId = options?.currentUserId ? String(options.currentUserId) : ''
+
+          if (roomId === String(this.currentRoomId)) {
+            this.appendMessage(event.payload.message)
+          }
+
+          if (roomId !== String(this.currentRoomId) && senderId !== currentUserId) {
+            this.incrementUnreadMessageCount(roomId)
+          }
           break
+        }
 
         case 'USER_ONLINE': {
           const { userId, displayName, username } = event.payload
@@ -219,6 +232,28 @@ export const useChatStore = defineStore('chat', {
       this.hasUnreadFriendRequestNotice = false
     },
 
+    incrementUnreadMessageCount(roomId: string): void {
+      const normalizedRoomId = String(roomId)
+      const currentCount = this.unreadMessageCountsByRoom[normalizedRoomId] ?? 0
+
+      this.unreadMessageCountsByRoom = {
+        ...this.unreadMessageCountsByRoom,
+        [normalizedRoomId]: currentCount + 1,
+      }
+    },
+
+    markRoomMessagesAsRead(roomId: string): void {
+      const normalizedRoomId = String(roomId)
+
+      if (!(normalizedRoomId in this.unreadMessageCountsByRoom)) {
+        return
+      }
+
+      const nextCounts = { ...this.unreadMessageCountsByRoom }
+      delete nextCounts[normalizedRoomId]
+      this.unreadMessageCountsByRoom = nextCounts
+    },
+
     setRoomSnapshot(roomId: string, userIds: string[]): void {
       const map = new Map(this.roomMembers)
 
@@ -231,6 +266,7 @@ export const useChatStore = defineStore('chat', {
       this.currentRoomId = roomId
       this.messages = []
       this.replyingToMessage = null
+      this.markRoomMessagesAsRead(roomId)
       this.pruneTypingUsers()
     },
 
@@ -280,6 +316,26 @@ export const useChatStore = defineStore('chat', {
 
     setRooms(rooms: ChatRoomListItem[]): void {
       this.rooms = rooms
+
+      const nextUnreadCounts: Record<string, number> = {}
+      const currentRoomId = String(this.currentRoomId)
+
+      for (const room of rooms) {
+        const roomId = String(room.id)
+        const unreadCount = Number(room.unreadMessageCount ?? 0)
+
+        if (unreadCount > 0 && roomId !== currentRoomId) {
+          nextUnreadCounts[roomId] = unreadCount
+        }
+      }
+
+      const lobbyUnreadCount = this.unreadMessageCountsByRoom.lobby ?? 0
+
+      if (lobbyUnreadCount > 0 && currentRoomId !== 'lobby') {
+        nextUnreadCounts.lobby = lobbyUnreadCount
+      }
+
+      this.unreadMessageCountsByRoom = nextUnreadCounts
     },
 
     upsertRoom(room: ChatRoomListItem): void {
@@ -290,6 +346,7 @@ export const useChatStore = defineStore('chat', {
 
     removeRoom(roomId: string): void {
       this.rooms = this.rooms.filter((item) => item.id !== roomId)
+      this.markRoomMessagesAsRead(roomId)
     },
 
     updateRoomOwner(roomId: string, ownerId: string): void {
@@ -308,8 +365,8 @@ export const useChatStore = defineStore('chat', {
         room.id === roomId
           ? {
               ...room,
-              name: roomName,
-              avatarUrl,
+              ...(roomName === undefined ? {} : { name: roomName }),
+              ...(avatarUrl === undefined ? {} : { avatarUrl }),
             }
           : room,
       )
@@ -378,6 +435,7 @@ export const useChatStore = defineStore('chat', {
     clear(): void {
       this.$reset()
     },
+
 
     setLobbySnapshot(userIds: string[]): void {
       this.setRoomSnapshot('lobby', userIds)

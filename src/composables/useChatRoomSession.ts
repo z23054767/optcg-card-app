@@ -1,6 +1,11 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getMyChatInvitationsApi, getMyChatRoomsApi, getMyFriendRequestsApi } from '@/api/chatApi'
+import {
+  getMyChatInvitationsApi,
+  getMyChatRoomsApi,
+  getMyFriendRequestsApi,
+  markChatRoomAsReadApi,
+} from '@/api/chatApi'
 import { connectChatSocket, disconnectChatSocket, joinRoom } from '@/websocket/chatSocket'
 import { refreshAccessToken } from '@/api/http'
 import { getMyProfileApi, resolveUserAvatarUrl, type UserProfile } from '@/api/profileApi'
@@ -54,6 +59,13 @@ type RoomSessionDeps = {
   showToast: (message: string, type?: 'success' | 'error') => void
 }
 
+type RoomReadSyncMessage = {
+  type: 'ROOM_READ'
+  roomId: string
+  userId: string
+  sourceTabId: string
+}
+
 export function useChatRoomSession() {
   const auth = useAuthStore()
   const chat = useChatStore()
@@ -66,6 +78,12 @@ export function useChatRoomSession() {
   const deps = shallowRef<RoomSessionDeps | null>(null)
   const invitationSyncTimer = ref<ReturnType<typeof setInterval> | null>(null)
   const currentProfile = ref<UserProfile | null>(null)
+  const markingCurrentRoomAsRead = ref(false)
+  const roomReadSyncChannel =
+    typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('optcg-chat-room-read-sync')
+      : null
+  const roomReadSyncTabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
 
   const currentRoom = computed(() => chat.rooms.find((room) => room.id === chat.currentRoomId))
 
@@ -140,6 +158,25 @@ export function useChatRoomSession() {
     return profile
   }
 
+  function applyRoomReadSync(roomId: string): void {
+    chat.markRoomMessagesAsRead(String(roomId))
+  }
+
+  function broadcastRoomRead(roomId: string): void {
+    if (!roomReadSyncChannel || !auth.userId) {
+      return
+    }
+
+    const message: RoomReadSyncMessage = {
+      type: 'ROOM_READ',
+      roomId: String(roomId),
+      userId: String(auth.userId),
+      sourceTabId: roomReadSyncTabId,
+    }
+
+    roomReadSyncChannel.postMessage(message)
+  }
+
   async function loadMyRooms(): Promise<void> {
     const response = await getMyChatRoomsApi()
     chat.setRooms(response.rooms ?? [])
@@ -179,6 +216,11 @@ export function useChatRoomSession() {
       joinRoom(roomId)
 
       await nextDeps.messages.loadLatestMessages(roomId)
+
+      applyRoomReadSync(roomId)
+      broadcastRoomRead(roomId)
+      await markChatRoomAsReadApi(roomId)
+      await loadMyRooms()
 
       if (currentRoomType.value === 'group' || currentRoomType.value === 'private') {
         await nextDeps.modals.loadRoomMembers(roomId)
@@ -222,7 +264,7 @@ export function useChatRoomSession() {
     if (invitationSyncTimer.value) return
 
     invitationSyncTimer.value = setInterval(() => {
-      void loadMyInvitations()
+      void Promise.all([loadMyInvitations(), loadMyRooms()])
     }, 3000)
   }
 
@@ -239,6 +281,42 @@ export function useChatRoomSession() {
     }
 
     return deps.value
+  }
+
+  async function syncCurrentRoomReadState(roomId: string): Promise<void> {
+    const normalizedRoomId = String(roomId)
+
+    if (normalizedRoomId === 'lobby' || markingCurrentRoomAsRead.value) {
+      return
+    }
+
+    markingCurrentRoomAsRead.value = true
+
+    try {
+      applyRoomReadSync(normalizedRoomId)
+      broadcastRoomRead(normalizedRoomId)
+      await markChatRoomAsReadApi(normalizedRoomId)
+    } catch (error) {
+      console.warn('[ChatRoomSession] Failed to sync current room read state:', error)
+    } finally {
+      markingCurrentRoomAsRead.value = false
+    }
+  }
+
+  function handleRoomReadSyncMessage(event: MessageEvent<RoomReadSyncMessage>): void {
+    const message = event.data
+
+    if (
+      !message ||
+      message.type !== 'ROOM_READ' ||
+      !auth.userId ||
+      String(message.userId) !== String(auth.userId) ||
+      message.sourceTabId === roomReadSyncTabId
+    ) {
+      return
+    }
+
+    applyRoomReadSync(message.roomId)
   }
 
   function syncPrivateRelationshipState(input: {
@@ -280,6 +358,8 @@ export function useChatRoomSession() {
     if (!deps.value) return
     if (!auth.isAuthenticated) return
 
+    roomReadSyncChannel?.addEventListener('message', handleRoomReadSyncMessage)
+
     const roomId = String(route.query.roomId ?? 'lobby')
 
     await Promise.all([loadMyProfile(), loadMyRooms(), loadMyInvitations(false)])
@@ -293,7 +373,7 @@ export function useChatRoomSession() {
 
         switch (message.type) {
           case 'ROOM_DELETED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             const { roomId: deletedRoomId } = message.payload
             if (chat.currentRoomId === deletedRoomId) {
               nextDeps.modals.showGroupManage.value = false
@@ -302,7 +382,7 @@ export function useChatRoomSession() {
             break
           }
           case 'MEMBER_REMOVED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             const { roomId: removedRoomId } = message.payload
             if (chat.currentRoomId === removedRoomId) {
               void switchRoom('lobby')
@@ -311,7 +391,7 @@ export function useChatRoomSession() {
             break
           }
           case 'ROOM_MANAGER_TRANSFERRED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             const { roomId: transferredRoomId, ownerId } = message.payload
             if (chat.currentRoomId === transferredRoomId) {
               void nextDeps.modals.loadRoomMembers(transferredRoomId)
@@ -325,7 +405,7 @@ export function useChatRoomSession() {
             break
           }
           case 'USER_PROFILE_UPDATED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             void loadMyRooms()
             if (chat.currentRoomId !== 'lobby') {
               void nextDeps.modals.loadRoomMembers(chat.currentRoomId)
@@ -333,7 +413,7 @@ export function useChatRoomSession() {
             break
           }
           case 'INVITATION_ACCEPTED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             const { roomId: acceptedRoomId } = message.payload
             if (nextDeps.modals.showGroupManage.value && chat.currentRoomId === acceptedRoomId) {
               void Promise.all([
@@ -344,7 +424,7 @@ export function useChatRoomSession() {
             break
           }
           case 'INVITATION_REJECTED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             const { roomId: rejectedRoomId, invitationId } = message.payload
             nextDeps.modals.roomInvitations.value = nextDeps.modals.roomInvitations.value.map(
               (invitation) =>
@@ -358,7 +438,7 @@ export function useChatRoomSession() {
             break
           }
           case 'FRIEND_REQUEST_ACCEPTED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             const { requestId } = message.payload
             nextDeps.modals.friendRequests.value = nextDeps.modals.friendRequests.value.filter(
               (item) => item.requestId !== requestId,
@@ -370,12 +450,21 @@ export function useChatRoomSession() {
             break
           }
           case 'PRIVATE_RELATIONSHIP_UPDATED': {
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
             syncPrivateRelationshipState(message.payload)
             break
           }
           default:
-            chat.applyEvent(message)
+            chat.applyEvent(message, { currentUserId: auth.userId })
+
+            if (
+              message.type === 'NEW_MESSAGE' &&
+              String(message.payload.roomId) === String(chat.currentRoomId) &&
+              String(message.payload.message.senderId) !== String(auth.userId)
+            ) {
+              void syncCurrentRoomReadState(String(message.payload.roomId))
+            }
+
             break
         }
       },
@@ -408,6 +497,8 @@ export function useChatRoomSession() {
   onUnmounted(() => {
     stopInvitationSync()
     disconnectChatSocket()
+    roomReadSyncChannel?.removeEventListener('message', handleRoomReadSyncMessage)
+    roomReadSyncChannel?.close()
   })
 
   return {
