@@ -1,4 +1,5 @@
 import { http } from '@/api/http'
+import type { AvatarUploadPayload } from '@/types/avatarUpload'
 import type {
   ChatInvitation,
   ChatMessage,
@@ -121,6 +122,11 @@ export interface UploadGroupChatRoomAvatarResponse {
   avatarPath: string
 }
 
+export interface RecallChatMessageResponse {
+  success: true
+  message: ChatMessage
+}
+
 /**
  * 轉讓管理員請求
  */
@@ -221,6 +227,20 @@ export async function getChatRoomMessagesApi(
 }
 
 /**
+ * 收回聊天室訊息
+ */
+export async function recallChatRoomMessageApi(
+  roomId: string,
+  messageId: string,
+): Promise<RecallChatMessageResponse> {
+  const { data } = await http.post<RecallChatMessageResponse>(
+    `/chat/rooms/${encodeURIComponent(roomId)}/messages/${encodeURIComponent(messageId)}/recall`,
+  )
+
+  return data
+}
+
+/**
  * 取得聊天室成員列表
  */
 export async function getChatRoomMembersApi(roomId: string): Promise<ChatRoomMembersResponse> {
@@ -266,10 +286,14 @@ export async function updateGroupChatRoomApi(
  */
 export async function uploadGroupChatRoomAvatarApi(
   roomId: string,
-  file: File,
+  input: AvatarUploadPayload,
 ): Promise<UploadGroupChatRoomAvatarResponse> {
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', input.file)
+  formData.append('cropLeft', String(input.crop.left))
+  formData.append('cropTop', String(input.crop.top))
+  formData.append('cropSize', String(input.crop.size))
+  formData.append('outputSize', String(input.crop.outputSize))
 
   const { data } = await http.post<UploadGroupChatRoomAvatarResponse>(
     `/chat/rooms/${encodeURIComponent(roomId)}/avatar`,

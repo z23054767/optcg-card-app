@@ -19,23 +19,44 @@
           <button
             v-if="message.replyTo"
             type="button"
-            class="mb-2 block w-full rounded-lg border border-gray-200/80 bg-gray-50/90 px-2.5 py-2 text-left text-xs transition hover:border-blue-200 hover:bg-blue-50/70"
+            class="mb-2 block w-full rounded-lg px-2.5 py-2 text-left text-xs transition"
+            :class="
+              isReplyPreviewRecalled
+                ? 'border border-gray-200 bg-gray-100/90 hover:border-gray-200 hover:bg-gray-100/90'
+                : 'border border-gray-200/80 bg-gray-50/90 hover:border-blue-200 hover:bg-blue-50/70'
+            "
             @click="handleReplyReferenceClick"
           >
-            <div class="truncate font-medium text-gray-600">↩ {{ replyPreviewName }}</div>
-            <div class="mt-1 line-clamp-2 text-gray-500">
-              {{ message.replyTo.content || '（空白訊息）' }}
+            <div
+              class="truncate font-medium"
+              :class="isReplyPreviewRecalled ? 'text-gray-500' : 'text-gray-600'"
+            >
+              ↩ {{ replyPreviewName }}
+            </div>
+            <div
+              class="mt-1 line-clamp-2"
+              :class="isReplyPreviewRecalled ? 'italic text-gray-400' : 'text-gray-500'"
+            >
+              {{ replyPreviewContent }}
             </div>
           </button>
 
+          <div
+            v-if="message.isRecalled"
+            class="italic"
+            :class="isMine ? 'text-blue-100/90' : 'text-gray-500'"
+          >
+            {{ recalledMessageText }}
+          </div>
+
           <!-- 純文字訊息 -->
-          <div v-if="message.content" class="whitespace-pre-wrap wrap-break-word">
+          <div v-else-if="message.content" class="whitespace-pre-wrap wrap-break-word">
             {{ message.content }}
           </div>
 
           <!-- 網址預覽 -->
           <a
-            v-if="message.urlPreview"
+            v-if="!message.isRecalled && message.urlPreview"
             :href="message.urlPreview.url"
             target="_blank"
             rel="noopener noreferrer"
@@ -94,7 +115,7 @@
 
           <!-- 圖片載入中 -->
           <div
-            v-if="message.attachment && isImageAttachment && previewLoading"
+            v-if="!message.isRecalled && message.attachment && isImageAttachment && previewLoading"
             class="flex h-36 w-52 max-w-[70vw] items-center justify-center overflow-hidden rounded-xl bg-gray-100 sm:h-48 sm:w-72"
             :class="message.content ? 'mt-2' : ''"
           >
@@ -108,7 +129,7 @@
 
           <!-- 圖片附件 -->
           <div
-            v-else-if="message.attachment && isImageAttachment && previewUrl && !previewLoadFailed"
+            v-else-if="!message.isRecalled && message.attachment && isImageAttachment && previewUrl && !previewLoadFailed"
             class="overflow-hidden rounded-xl border shadow-sm"
             :class="[
               message.content ? 'mt-2' : '',
@@ -169,7 +190,7 @@
 
           <!-- 不支援預覽的附件 -->
           <button
-            v-else-if="message.attachment"
+            v-else-if="!message.isRecalled && message.attachment"
             type="button"
             class="group flex w-[min(76vw,320px)] max-w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-3 text-left text-gray-800 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99]"
             :class="message.content ? 'mt-2' : ''"
@@ -200,7 +221,7 @@
 
           <!-- 預覽失敗 -->
           <div
-            v-if="message.attachment && isImageAttachment && previewLoadFailed"
+            v-if="!message.isRecalled && message.attachment && isImageAttachment && previewLoadFailed"
             class="mt-1 text-xs"
             :class="isMine ? 'text-blue-100' : 'text-red-600'"
           >
@@ -302,7 +323,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { downloadChatAttachmentApi, getChatAttachmentBlobApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
-import type { ChatMessage } from '@/types/chat'
+import { RECALL_MESSAGE_PLACEHOLDER, type ChatMessage } from '@/types/chat'
 
 const props = defineProps<{
   message: ChatMessage
@@ -324,6 +345,7 @@ const emit = defineEmits<{
       displayName: string
     },
   ]
+  'recall-message': [payload: { messageId: string }]
 }>()
 
 const auth = useAuthStore()
@@ -340,7 +362,7 @@ const contextMenuOpen = ref(false)
 const contextMenuX = ref(0)
 const contextMenuY = ref(0)
 
-type ContextMenuActionKey = 'reply' | 'view-profile' | 'send-friend-request'
+type ContextMenuActionKey = 'reply' | 'recall' | 'view-profile' | 'send-friend-request'
 
 interface ContextMenuAction {
   key: ContextMenuActionKey
@@ -370,7 +392,15 @@ const contextMenuActions = computed<ContextMenuAction[]>(() => {
     return []
   }
 
-  const actions: ContextMenuAction[] = [{ key: 'reply', label: '回覆' }]
+  const actions: ContextMenuAction[] = []
+
+  if (!props.message.isRecalled) {
+    actions.push({ key: 'reply', label: '回覆' })
+  }
+
+  if (isMine.value && !props.message.isRecalled) {
+    actions.push({ key: 'recall', label: '收回訊息' })
+  }
 
   if (!isMine.value && props.message.senderId) {
     actions.push({ key: 'view-profile', label: '檢視個人檔案' })
@@ -426,6 +456,24 @@ const replyPreviewName = computed(() => {
   )
 })
 
+const isReplyPreviewRecalled = computed(() => {
+  const content = props.message.replyTo?.content?.trim()
+
+  return (
+    content === RECALL_MESSAGE_PLACEHOLDER ||
+    content === '訊息已收回' ||
+    content === '已收回訊息'
+  )
+})
+
+const replyPreviewContent = computed(() => {
+  if (isReplyPreviewRecalled.value) {
+    return RECALL_MESSAGE_PLACEHOLDER
+  }
+
+  return props.message.replyTo?.content || '（空白訊息）'
+})
+
 const isReplyTarget = computed(() => chat.replyingToMessage?.messageId === props.message.id)
 
 const rowClass = computed(() => {
@@ -436,7 +484,17 @@ const isAttachmentOnlyMessage = computed(() => {
   return Boolean(props.message.attachment) && !props.message.content
 })
 
+const recalledMessageText = computed(() => {
+  return RECALL_MESSAGE_PLACEHOLDER
+})
+
 const bubbleClass = computed(() => {
+  if (props.message.isRecalled) {
+    return isMine.value
+      ? 'rounded-2xl rounded-br-md border border-blue-200/60 bg-blue-400/15 text-blue-100'
+      : 'rounded-2xl rounded-bl-md border border-gray-200 bg-gray-100 text-gray-500'
+  }
+
   if (isAttachmentOnlyMessage.value) {
     return ''
   }
@@ -449,6 +507,10 @@ const bubbleClass = computed(() => {
 })
 
 const bubblePaddingClass = computed(() => {
+  if (props.message.isRecalled) {
+    return 'px-3 py-2'
+  }
+
   if (isAttachmentOnlyMessage.value) {
     return ''
   }
@@ -673,6 +735,9 @@ function handleContextMenuAction(actionKey: ContextMenuActionKey): void {
       break
     case 'view-profile':
       emit('view-user-profile', senderActionPayload.value)
+      break
+    case 'recall':
+      emit('recall-message', { messageId: props.message.id })
       break
     case 'send-friend-request':
       emit('send-friend-request', senderActionPayload.value)

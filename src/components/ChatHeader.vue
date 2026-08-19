@@ -133,7 +133,7 @@
         <button
           v-if="showBlockUserButton"
           type="button"
-          class="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900"
+          class="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
           @click="$emit('block-user')"
         >
           封鎖
@@ -253,7 +253,7 @@
       <button
         v-if="showBlockUserButton"
         type="button"
-        class="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900"
+        class="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
         @click="$emit('block-user')"
       >
         封鎖

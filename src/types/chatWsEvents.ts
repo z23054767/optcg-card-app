@@ -63,6 +63,14 @@ export type NewMessageEvent = BaseChatEvent<
   }
 >
 
+export type MessageRecalledEvent = BaseChatEvent<
+  'MESSAGE_RECALLED',
+  {
+    roomId: ChatRoomId
+    message: ChatMessage
+  }
+>
+
 /**
  * 大廳在線使用者快照事件
  */
@@ -243,6 +251,7 @@ export type ChatWsEvent =
   | RoomJoinedEvent
   | RoomLeftEvent
   | NewMessageEvent
+  | MessageRecalledEvent
   | LobbySnapshotEvent
   | RoomSnapshotEvent
   | InvitationReceivedEvent

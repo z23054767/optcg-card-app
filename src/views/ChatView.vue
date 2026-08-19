@@ -60,7 +60,8 @@
         @scroll="handleMessageScroll">
         <ChatMessageTimeline :messages="filteredMessages" :loading-older-messages="loadingOlderMessages"
           :date-anchor="dateLabelAnchor" :scroll-to-message="scrollToMessage"
-          @view-user-profile="openMessageUserProfile" @send-friend-request="sendFriendRequestToMessageUser" />
+          @view-user-profile="openMessageUserProfile" @send-friend-request="sendFriendRequestToMessageUser"
+          @recall-message="handleRecallMessage" />
       </main>
 
       <footer class="relative border-t bg-white px-3 py-2">
@@ -98,6 +99,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { recallChatRoomMessageApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
 import { useChatMessages } from '@/composables/useChatMessages'
@@ -235,12 +237,14 @@ const currentPrivateBlockStatus = modals.currentPrivateBlockStatus
 const handleMessageScroll = messages.handleMessageScroll
 const handleScrollButtonClick = messages.handleScrollButtonClick
 const scrollToMessage = messages.scrollToMessage
+const loadLatestMessages = messages.loadLatestMessages
 
 const switchRoom = session.switchRoom
 const backToLobby = session.backToLobby
 const toggleSidebar = session.toggleSidebar
 const toggleUserMenu = session.toggleUserMenu
 const logout = session.logout
+const broadcastMessageRecall = session.broadcastMessageRecall
 
 const createRoom = modals.createRoom
 const searchPrivateUsers = modals.searchPrivateUsers
@@ -273,6 +277,27 @@ const sendFriendRequestToMessageUser = modals.sendFriendRequestToMessageUser
 function openPreferences(): void {
   showUserMenu.value = false
   showPreferences.value = true
+}
+
+async function handleRecallMessage(payload: { messageId: string }): Promise<void> {
+  const roomId = chat.currentRoomId
+
+  if (!roomId || !payload.messageId) {
+    return
+  }
+
+  chat.markMessageAsRecalled(payload.messageId)
+
+  try {
+    const response = await recallChatRoomMessageApi(roomId, payload.messageId)
+    chat.applyMessageRecalled(response.message)
+    broadcastMessageRecall(roomId, payload.messageId)
+    showToast('訊息已收回')
+  } catch (error) {
+    console.error('收回訊息失敗', error)
+    await loadLatestMessages(roomId)
+    showToast('收回訊息失敗', 'error')
+  }
 }
 
 const privateBlockedReason = computed(() => {

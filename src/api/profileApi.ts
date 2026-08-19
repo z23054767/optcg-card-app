@@ -1,4 +1,5 @@
 import { http } from '@/api/http'
+import type { AvatarUploadPayload } from '@/types/avatarUpload'
 
 /**
  * 使用者驗證提供者
@@ -40,9 +41,13 @@ export async function updateMyProfileApi(input: {
   return data.user
 }
 
-export async function uploadMyAvatarApi(file: File): Promise<UserProfile> {
+export async function uploadMyAvatarApi(input: AvatarUploadPayload): Promise<UserProfile> {
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', input.file)
+  formData.append('cropLeft', String(input.crop.left))
+  formData.append('cropTop', String(input.crop.top))
+  formData.append('cropSize', String(input.crop.size))
+  formData.append('outputSize', String(input.crop.outputSize))
   const { data } = await http.post<ProfileResponse>('/auth/me/avatar', formData)
   return data.user
 }

@@ -20,7 +20,10 @@ export function useChatMessages() {
 
   const filteredMessages = computed(() =>
     chat.messages.filter(
-      (message) => message && String(message.roomId) === String(chat.currentRoomId),
+      (message) =>
+        message &&
+        !message.isRecalled &&
+        String(message.roomId) === String(chat.currentRoomId),
     ),
   )
 

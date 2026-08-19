@@ -42,6 +42,8 @@ export interface ChatReplyContext {
   /** 被回覆訊息發送者 Username */
   senderUsername: string
 }
+
+export const RECALL_MESSAGE_PLACEHOLDER = '此訊息已被收回'
  
 /**
  * 聊天訊息
@@ -73,6 +75,12 @@ export interface ChatMessage {
 
   /** 回覆關聯 */
   replyTo?: ChatReplyContext | null
+
+  /** 是否已被收回 */
+  isRecalled: boolean
+
+  /** 收回時間 */
+  recalledAt: string | null
 
   /** 建立時間（ISO 8601） */
   createdAt: string

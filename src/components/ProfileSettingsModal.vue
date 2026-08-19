@@ -186,6 +186,7 @@ import { usePreferencesStore } from '@/stores/preferencesStore'
 
 import AvatarCropper from '@/components/base/AvatarCropper.vue'
 import type { AvatarCropperExpose } from '@/components/base/avatarCropper'
+import type { AvatarUploadPayload } from '@/types/avatarUpload'
 
 import {
   deleteMyAvatarApi,
@@ -238,14 +239,15 @@ async function save(): Promise<void> {
     })
 
     if (hasSelectedAvatarFile.value) {
-      const avatarFile = (await avatarCropper.value?.createCroppedAvatarFile()) ?? null
+      const avatarUpload: AvatarUploadPayload | null =
+        (await avatarCropper.value?.createAvatarUploadPayload()) ?? null
 
-      if (!avatarFile) {
-        errorMessage.value = '無法產生裁切後的頭像'
+      if (!avatarUpload) {
+        errorMessage.value = '無法取得頭像裁切資料'
         return
       }
 
-      profile = await uploadMyAvatarApi(avatarFile)
+      profile = await uploadMyAvatarApi(avatarUpload)
     } else if (removeCurrentAvatar.value && props.profile.avatarUrl) {
       profile = await deleteMyAvatarApi()
     }

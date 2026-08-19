@@ -1,4 +1,6 @@
+import type { AvatarUploadPayload } from '@/types/avatarUpload'
+
 export interface AvatarCropperExpose {
-  createCroppedAvatarFile(): Promise<File | null>
+  createAvatarUploadPayload(): Promise<AvatarUploadPayload | null>
   reset(): void
 }

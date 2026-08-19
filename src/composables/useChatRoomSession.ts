@@ -66,6 +66,14 @@ type RoomReadSyncMessage = {
   sourceTabId: string
 }
 
+type MessageRecallSyncMessage = {
+  type: 'MESSAGE_RECALLED'
+  roomId: string
+  messageId: string
+  userId: string
+  sourceTabId: string
+}
+
 export function useChatRoomSession() {
   const auth = useAuthStore()
   const chat = useChatStore()
@@ -84,6 +92,11 @@ export function useChatRoomSession() {
       ? new BroadcastChannel('optcg-chat-room-read-sync')
       : null
   const roomReadSyncTabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  const messageRecallSyncChannel =
+    typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('optcg-chat-message-recall-sync')
+      : null
+  const messageRecallSyncTabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
 
   const currentRoom = computed(() => chat.rooms.find((room) => room.id === chat.currentRoomId))
 
@@ -175,6 +188,22 @@ export function useChatRoomSession() {
     }
 
     roomReadSyncChannel.postMessage(message)
+  }
+
+  function broadcastMessageRecall(roomId: string, messageId: string): void {
+    if (!messageRecallSyncChannel || !auth.userId) {
+      return
+    }
+
+    const message: MessageRecallSyncMessage = {
+      type: 'MESSAGE_RECALLED',
+      roomId: String(roomId),
+      messageId: String(messageId),
+      userId: String(auth.userId),
+      sourceTabId: messageRecallSyncTabId,
+    }
+
+    messageRecallSyncChannel.postMessage(message)
   }
 
   async function loadMyRooms(): Promise<void> {
@@ -319,6 +348,26 @@ export function useChatRoomSession() {
     applyRoomReadSync(message.roomId)
   }
 
+  function handleMessageRecallSyncMessage(event: MessageEvent<MessageRecallSyncMessage>): void {
+    const message = event.data
+
+    if (
+      !message ||
+      message.type !== 'MESSAGE_RECALLED' ||
+      !auth.userId ||
+      String(message.userId) !== String(auth.userId) ||
+      message.sourceTabId === messageRecallSyncTabId
+    ) {
+      return
+    }
+
+    if (String(message.roomId) !== String(chat.currentRoomId)) {
+      return
+    }
+
+    chat.markMessageAsRecalled(String(message.messageId))
+  }
+
   function syncPrivateRelationshipState(input: {
     otherUserId: string
     friendshipStatus: ChatFriendshipStatus
@@ -359,6 +408,7 @@ export function useChatRoomSession() {
     if (!auth.isAuthenticated) return
 
     roomReadSyncChannel?.addEventListener('message', handleRoomReadSyncMessage)
+    messageRecallSyncChannel?.addEventListener('message', handleMessageRecallSyncMessage)
 
     const roomId = String(route.query.roomId ?? 'lobby')
 
@@ -499,6 +549,8 @@ export function useChatRoomSession() {
     disconnectChatSocket()
     roomReadSyncChannel?.removeEventListener('message', handleRoomReadSyncMessage)
     roomReadSyncChannel?.close()
+    messageRecallSyncChannel?.removeEventListener('message', handleMessageRecallSyncMessage)
+    messageRecallSyncChannel?.close()
   })
 
   return {
@@ -525,6 +577,7 @@ export function useChatRoomSession() {
     loadMyProfile,
     loadMyRooms,
     loadMyInvitations,
+    broadcastMessageRecall,
     switchRoom,
     backToLobby,
     toggleSidebar,

@@ -25,6 +25,7 @@
         :message="item.message"
         :scroll-to-message="scrollToMessage"
         @view-user-profile="emit('view-user-profile', $event)"
+        @recall-message="emit('recall-message', $event)"
         @send-friend-request="emit('send-friend-request', $event)"
       />
     </template>
@@ -63,6 +64,7 @@ const emit = defineEmits<{
       displayName: string
     },
   ]
+  'recall-message': [payload: { messageId: string }]
 }>()
 
 const timelineItems = computed<TimelineItem[]>(() => {

@@ -1,17 +1,34 @@
 <template>
   <div>
-    <div v-if="chat.replyingToMessage" class="mb-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+    <div
+      v-if="chat.replyingToMessage"
+      class="mb-2 rounded-lg px-3 py-2"
+      :class="
+        isReplyingToRecalledMessage
+          ? 'border border-gray-200 bg-gray-100'
+          : 'border border-blue-200 bg-blue-50'
+      "
+    >
       <div class="flex items-start justify-between gap-2">
         <button type="button" class="min-w-0 flex-1 text-left" @click="handleReplyPreviewClick">
-          <div class="text-[11px] font-semibold text-blue-700">回覆 {{ chat.replyingToMessage.senderName }}</div>
-          <div class="mt-1 line-clamp-2 text-sm text-gray-700">
-            {{ chat.replyingToMessage.content || '（空白訊息）' }}
+          <div
+            class="text-[11px] font-semibold"
+            :class="isReplyingToRecalledMessage ? 'text-gray-500' : 'text-blue-700'"
+          >
+            回覆 {{ chat.replyingToMessage.senderName }}
+          </div>
+          <div
+            class="mt-1 line-clamp-2 text-sm"
+            :class="isReplyingToRecalledMessage ? 'italic text-gray-400' : 'text-gray-700'"
+          >
+            {{ replyPreviewContent }}
           </div>
         </button>
 
         <button
           type="button"
-          class="shrink-0 rounded-full p-1 text-sm text-gray-500 hover:bg-blue-100 hover:text-gray-700"
+          class="shrink-0 rounded-full p-1 text-sm text-gray-500 hover:text-gray-700"
+          :class="isReplyingToRecalledMessage ? 'hover:bg-gray-200' : 'hover:bg-blue-100'"
           aria-label="取消回覆"
           @click="chat.clearReplyTarget()"
         >
@@ -57,10 +74,11 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { sendChatMessage, sendTypingStatus } from '@/websocket/chatSocket'
 import { useChatStore } from '@/stores/chatStore'
 import { uploadChatAttachmentApi } from '@/api/chatApi'
+import { RECALL_MESSAGE_PLACEHOLDER } from '@/types/chat'
 
 const props = defineProps<{
   scrollToMessage?: (messageId: string) => Promise<void>
@@ -78,6 +96,24 @@ const typingStopTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const MAX_FILE_SIZE = 25 * 1024 * 1024
 const MAX_FILES = 10
 const TYPING_IDLE_MS = 1400
+
+const isReplyingToRecalledMessage = computed(() => {
+  const content = chat.replyingToMessage?.content?.trim()
+
+  return (
+    content === RECALL_MESSAGE_PLACEHOLDER ||
+    content === '訊息已收回' ||
+    content === '已收回訊息'
+  )
+})
+
+const replyPreviewContent = computed(() => {
+  if (isReplyingToRecalledMessage.value) {
+    return RECALL_MESSAGE_PLACEHOLDER
+  }
+
+  return chat.replyingToMessage?.content || '（空白訊息）'
+})
 
 function send(): void {
   const content = text.value.trim()

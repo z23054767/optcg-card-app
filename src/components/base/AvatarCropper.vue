@@ -187,6 +187,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch, type CSSProperties } from 'vue'
 import type { AvatarCropperExpose } from '@/components/base/avatarCropper'
+import type { AvatarUploadPayload } from '@/types/avatarUpload'
 
 const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024
 const DEFAULT_OUTPUT_SIZE = 512
@@ -506,6 +507,29 @@ function drawCroppedAvatar(canvas: HTMLCanvasElement): void {
   context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, outputSize, outputSize)
 }
 
+function getAvatarCropArea(): AvatarUploadPayload['crop'] | null {
+  const image = avatarImage.value
+  const viewport = cropViewport.value
+
+  if (!image || !viewport) {
+    return null
+  }
+
+  const viewportSize = viewport.clientWidth
+  const baseScale = Math.max(viewportSize / image.naturalWidth, viewportSize / image.naturalHeight)
+  const finalScale = baseScale * avatarZoom.value
+  const size = viewportSize / finalScale
+  const unclampedLeft = image.naturalWidth / 2 - avatarOffsetX.value / finalScale - size / 2
+  const unclampedTop = image.naturalHeight / 2 - avatarOffsetY.value / finalScale - size / 2
+
+  return {
+    left: Math.max(0, Math.min(image.naturalWidth - size, unclampedLeft)),
+    top: Math.max(0, Math.min(image.naturalHeight - size, unclampedTop)),
+    size: Math.min(size, image.naturalWidth, image.naturalHeight),
+    outputSize: props.outputSize,
+  }
+}
+
 function renderCirclePreview(): void {
   const canvas = circlePreviewCanvas.value
 
@@ -530,34 +554,23 @@ function renderCirclePreview(): void {
   context.restore()
 }
 
-async function createCroppedAvatarFile(): Promise<File | null> {
+async function createAvatarUploadPayload(): Promise<AvatarUploadPayload | null> {
   const sourceFile = selectedAvatarFile.value
 
   if (!sourceFile || !avatarImage.value) {
     return null
   }
+  const crop = getAvatarCropArea()
 
-  const canvas = document.createElement('canvas')
-
-  canvas.width = props.outputSize
-  canvas.height = props.outputSize
-
-  drawCroppedAvatar(canvas)
-
-  const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, 'image/png', 0.92)
-  })
-
-  if (!blob) {
-    setErrorMessage('無法產生裁切後的圖片')
+  if (!crop) {
+    setErrorMessage('無法取得裁切範圍')
     return null
   }
 
-  const baseName = sourceFile.name.replace(/\.[^.]+$/, '') || props.outputFileName
-
-  return new File([blob], `${baseName}.png`, {
-    type: 'image/png',
-  })
+  return {
+    file: sourceFile,
+    crop,
+  }
 }
 
 function markAvatarForRemoval(): void {
@@ -593,7 +606,7 @@ onBeforeUnmount(() => {
 })
 
 defineExpose<AvatarCropperExpose>({
-  createCroppedAvatarFile,
+  createAvatarUploadPayload,
   reset,
 })
 </script>

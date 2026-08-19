@@ -573,7 +573,7 @@ const emit = defineEmits<{
   'save-info': [
     payload: {
       roomName: string
-      avatarFile: File | null
+      avatarUpload: import('@/types/avatarUpload').AvatarUploadPayload | null
       hadSelectedAvatarFile: boolean
       removeAvatar: boolean
     },
@@ -629,12 +629,12 @@ function confirmDelete(): void {
 }
 
 async function saveGroupInfo(): Promise<void> {
-  const avatarFile =
-    (await avatarCropper.value?.createCroppedAvatarFile()) ?? null
+  const avatarUpload =
+    (await avatarCropper.value?.createAvatarUploadPayload()) ?? null
 
   emit('save-info', {
     roomName: editRoomName.value.trim(),
-    avatarFile,
+    avatarUpload,
     hadSelectedAvatarFile: hasSelectedAvatarFile.value,
     removeAvatar: removeAvatar.value,
   })

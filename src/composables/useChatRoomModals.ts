@@ -22,6 +22,7 @@ import {
   uploadGroupChatRoomAvatarApi,
 } from '@/api/chatApi'
 import type { UserProfile } from '@/api/profileApi'
+import type { AvatarUploadPayload } from '@/types/avatarUpload'
 import type {
   ChatFriendshipStatus,
   ChatBlockStatus,
@@ -543,7 +544,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
   async function saveGroupInfo(payload: {
     roomName: string
-    avatarFile: File | null
+    avatarUpload: AvatarUploadPayload | null
     hadSelectedAvatarFile: boolean
     removeAvatar: boolean
   }): Promise<void> {
@@ -553,8 +554,8 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     updatingGroupInfo.value = true
 
     try {
-      if (payload.hadSelectedAvatarFile && !payload.avatarFile) {
-        throw new Error('GROUP_AVATAR_FILE_GENERATION_FAILED')
+      if (payload.hadSelectedAvatarFile && !payload.avatarUpload) {
+        throw new Error('GROUP_AVATAR_UPLOAD_PAYLOAD_GENERATION_FAILED')
       }
 
       const currentRoom =
@@ -575,8 +576,8 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
         }
       }
 
-      if (payload.avatarFile) {
-        const response = await uploadGroupChatRoomAvatarApi(chat.currentRoomId, payload.avatarFile)
+      if (payload.avatarUpload) {
+        const response = await uploadGroupChatRoomAvatarApi(chat.currentRoomId, payload.avatarUpload)
         const baseRoom = groupManageRoom.value ?? currentRoom
 
         if (baseRoom) {

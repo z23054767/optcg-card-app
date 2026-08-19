@@ -6,6 +6,7 @@ import type {
   ChatReplyContext,
   ChatRoomListItem,
 } from '@/types/chat'
+import { RECALL_MESSAGE_PLACEHOLDER } from '@/types/chat'
 import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 interface WelcomePopup {
@@ -66,6 +67,10 @@ export const useChatStore = defineStore('chat', {
           }
           break
         }
+
+        case 'MESSAGE_RECALLED':
+          this.applyMessageRecalled(event.payload.message)
+          break
 
         case 'USER_ONLINE': {
           const { userId, displayName, username } = event.payload
@@ -312,6 +317,76 @@ export const useChatStore = defineStore('chat', {
       if (exists) return
 
       this.messages = [...this.messages, message]
+    },
+
+    markMessageAsRecalled(messageId: string): void {
+      const recalledAt = new Date().toISOString()
+
+      const updateReplyContext = (
+        replyTo?: ChatReplyContext | null,
+      ): ChatReplyContext | null | undefined => {
+        if (!replyTo || replyTo.messageId !== messageId) {
+          return replyTo
+        }
+
+        return {
+          ...replyTo,
+          content: RECALL_MESSAGE_PLACEHOLDER,
+        }
+      }
+
+      this.messages = this.messages.map((item) => {
+        if (item.id === messageId) {
+          return {
+            ...item,
+            content: RECALL_MESSAGE_PLACEHOLDER,
+            attachment: null,
+            urlPreview: null,
+            isRecalled: true,
+            recalledAt,
+          }
+        }
+
+        return {
+          ...item,
+          replyTo: updateReplyContext(item.replyTo),
+        }
+      })
+
+      if (this.replyingToMessage?.messageId === messageId) {
+        this.replyingToMessage = null
+      }
+    },
+
+    applyMessageRecalled(message: ChatMessage): void {
+      const updateReplyContext = (replyTo?: ChatReplyContext | null): ChatReplyContext | null | undefined => {
+        if (!replyTo || replyTo.messageId !== message.id) {
+          return replyTo
+        }
+
+        return {
+          ...replyTo,
+          content: RECALL_MESSAGE_PLACEHOLDER,
+        }
+      }
+
+      this.messages = this.messages.map((item) => {
+        if (item.id === message.id) {
+          return {
+            ...item,
+            ...message,
+          }
+        }
+
+        return {
+          ...item,
+          replyTo: updateReplyContext(item.replyTo),
+        }
+      })
+
+      if (this.replyingToMessage?.messageId === message.id) {
+        this.replyingToMessage = null
+      }
     },
 
     setRooms(rooms: ChatRoomListItem[]): void {
