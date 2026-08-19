@@ -82,17 +82,6 @@
       </footer>
 
       <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
-
-      <!-- Toast 通知 -->
-      <Transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 translate-y-2"
-        enter-to-class="opacity-100 translate-y-0" leave-active-class="transition-all duration-200"
-        leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-2">
-        <div v-if="toast"
-          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-100 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white pointer-events-none"
-          :class="toast.type === 'success' ? 'bg-gray-800' : 'bg-red-600'">
-          {{ toast.type === 'success' ? '✓ ' : '✕ ' }}{{ toast.message }}
-        </div>
-      </Transition>
     </div>
   </div>
 </template>
@@ -120,19 +109,15 @@ import GroupManageModal from '@/components/GroupManageModal.vue'
 import ProfileSettingsModal from '@/components/ProfileSettingsModal.vue'
 import PreferencesModal from '@/components/PreferencesModal.vue'
 import MessageUserProfileModal from '@/components/MessageUserProfileModal.vue'
+import { showToast as showGlobalToast } from '@/utils/alerts'
 
 const auth = useAuthStore()
 const chat = useChatStore()
-const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
 
 function showToast(message: string, type: 'success' | 'error' = 'success'): void {
-  if (toastTimer) clearTimeout(toastTimer)
-  toast.value = { message, type }
-  toastTimer = setTimeout(() => {
-    toast.value = null
-    toastTimer = null
-  }, 3000)
+  showGlobalToast(message, {
+    variant: type,
+  })
 }
 
 const session = useChatRoomSession()

@@ -1,11 +1,15 @@
 <template>
-  <div class="mb-3 flex w-full" :class="isMine ? 'justify-end' : 'justify-start'" :data-message-id="message.id">
+  <div
+    class="mb-3 flex w-full"
+    :class="message.isRecalled ? 'justify-center' : isMine ? 'justify-end' : 'justify-start'"
+    :data-message-id="message.id"
+  >
     <div
       class="flex min-w-0 max-w-[86%] items-end gap-1.5 sm:max-w-[76%] lg:max-w-[64%]"
       :class="rowClass"
     >
       <div class="min-w-0">
-        <div v-if="!isMine" class="mb-1 px-1 text-[11px] leading-none text-gray-500">
+        <div v-if="!isMine && !message.isRecalled" class="mb-1 px-1 text-[11px] leading-none text-gray-500">
           {{ displayName }}
         </div>
 
@@ -17,9 +21,9 @@
           @contextmenu.prevent="handleMessageContextMenu"
         >
           <button
-            v-if="message.replyTo"
+            v-if="showStandaloneReplyPreview"
             type="button"
-            class="mb-2 block w-full rounded-lg px-2.5 py-2 text-left text-xs transition"
+            class="mb-2 inline-flex max-w-full flex-col rounded-lg px-2.5 py-2 text-left text-xs transition"
             :class="
               isReplyPreviewRecalled
                 ? 'border border-gray-200 bg-gray-100/90 hover:border-gray-200 hover:bg-gray-100/90'
@@ -28,23 +32,35 @@
             @click="handleReplyReferenceClick"
           >
             <div
-              class="truncate font-medium"
-              :class="isReplyPreviewRecalled ? 'text-gray-500' : 'text-gray-600'"
+              v-if="!isReplyPreviewRecalled"
+              class="truncate font-medium text-gray-600"
             >
               ↩ {{ replyPreviewName }}
             </div>
             <div
-              class="mt-1 line-clamp-2"
-              :class="isReplyPreviewRecalled ? 'italic text-gray-400' : 'text-gray-500'"
+              class="line-clamp-2"
+              :class="[
+                isReplyPreviewRecalled ? 'text-center italic text-gray-400' : 'mt-1 text-gray-500',
+              ]"
             >
               {{ replyPreviewContent }}
+            </div>
+
+            <div
+              v-if="replyPreviewAttachmentLabel && !isReplyPreviewRecalled"
+              class="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-[11px]"
+              :class="replyAttachmentBadgeClass"
+            >
+              <span aria-hidden="true">{{ replyPreviewAttachmentIcon }}</span>
+              <span class="truncate">{{ replyPreviewAttachmentLabel }}</span>
+              <span class="text-[10px] opacity-75">{{ replyPreviewAttachmentSize }}</span>
             </div>
           </button>
 
           <div
             v-if="message.isRecalled"
-            class="italic"
-            :class="isMine ? 'text-blue-100/90' : 'text-gray-500'"
+            class="text-center text-[13px] leading-6 font-medium"
+            :class="preferences.isDark ? 'text-slate-400' : 'text-slate-400'"
           >
             {{ recalledMessageText }}
           </div>
@@ -119,33 +135,93 @@
             class="flex h-36 w-52 max-w-[70vw] items-center justify-center overflow-hidden rounded-xl bg-gray-100 sm:h-48 sm:w-72"
             :class="message.content ? 'mt-2' : ''"
           >
-            <div class="flex flex-col items-center gap-2 text-gray-400">
-              <span
-                class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500"
-              ></span>
-              <span class="text-xs">圖片載入中</span>
+            <div class="flex h-full w-full flex-col">
+              <button
+                v-if="showInlineAttachmentReplyPreview"
+                type="button"
+                class="mx-2 mb-2 mt-2 inline-flex max-w-[calc(100%-1rem)] flex-col self-start rounded-lg px-2.5 py-2 text-left text-xs transition"
+                :class="inlineReplyPreviewClass"
+                @click="handleReplyReferenceClick"
+              >
+                <div v-if="!isReplyPreviewRecalled" class="truncate font-medium text-gray-600">
+                  ↩ {{ replyPreviewName }}
+                </div>
+                <div
+                  class="line-clamp-2"
+                  :class="[
+                    isReplyPreviewRecalled ? 'text-center italic text-gray-400' : 'mt-1 text-gray-500',
+                  ]"
+                >
+                  {{ replyPreviewContent }}
+                </div>
+                <div
+                  v-if="replyPreviewAttachmentLabel && !isReplyPreviewRecalled"
+                  class="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-[11px]"
+                  :class="replyAttachmentBadgeClass"
+                >
+                  <span aria-hidden="true">{{ replyPreviewAttachmentIcon }}</span>
+                  <span class="truncate">{{ replyPreviewAttachmentLabel }}</span>
+                  <span class="text-[10px] opacity-75">{{ replyPreviewAttachmentSize }}</span>
+                </div>
+              </button>
+
+              <div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-gray-400">
+                <span
+                  class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500"
+                ></span>
+                <span class="text-xs">圖片載入中</span>
+              </div>
             </div>
           </div>
 
           <!-- 圖片附件 -->
           <div
             v-else-if="!message.isRecalled && message.attachment && isImageAttachment && previewUrl && !previewLoadFailed"
-            class="overflow-hidden rounded-xl border shadow-sm"
+            class="inline-block w-fit max-w-full overflow-hidden rounded-xl border shadow-sm"
             :class="[
               message.content ? 'mt-2' : '',
               isMine ? 'border-blue-400/50 bg-blue-600' : 'border-gray-200 bg-white',
             ]"
           >
             <button
+              v-if="showInlineAttachmentReplyPreview"
               type="button"
-              class="group relative block max-w-full overflow-hidden bg-gray-100"
+              class="m-2 inline-flex max-w-[calc(100%-1rem)] flex-col rounded-lg px-2.5 py-2 text-left text-xs transition"
+              :class="inlineReplyPreviewClass"
+              @click="handleReplyReferenceClick"
+            >
+              <div v-if="!isReplyPreviewRecalled" class="truncate font-medium text-gray-600">
+                ↩ {{ replyPreviewName }}
+              </div>
+              <div
+                class="line-clamp-2"
+                :class="[
+                  isReplyPreviewRecalled ? 'text-center italic text-gray-400' : 'mt-1 text-gray-500',
+                ]"
+              >
+                {{ replyPreviewContent }}
+              </div>
+              <div
+                v-if="replyPreviewAttachmentLabel && !isReplyPreviewRecalled"
+                class="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-[11px]"
+                :class="replyAttachmentBadgeClass"
+              >
+                <span aria-hidden="true">{{ replyPreviewAttachmentIcon }}</span>
+                <span class="truncate">{{ replyPreviewAttachmentLabel }}</span>
+                <span class="text-[10px] opacity-75">{{ replyPreviewAttachmentSize }}</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="group relative flex max-w-full justify-center overflow-hidden bg-gray-100"
               title="開啟圖片預覽"
               @click="openImagePreview"
             >
               <img
                 :src="previewUrl"
                 :alt="message.attachment.name"
-                class="block h-auto max-h-65 max-w-[70vw] object-contain sm:max-h-95 sm:max-w-105 lg:max-h-110 lg:max-w-130"
+                class="mx-auto block h-auto max-h-65 max-w-[70vw] object-contain sm:max-h-95 sm:max-w-105 lg:max-h-110 lg:max-w-130"
                 @error="handlePreviewError"
               />
 
@@ -189,35 +265,67 @@
           </div>
 
           <!-- 不支援預覽的附件 -->
-          <button
+          <div
             v-else-if="!message.isRecalled && message.attachment"
-            type="button"
-            class="group flex w-[min(76vw,320px)] max-w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-3 text-left text-gray-800 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99]"
+            class="inline-flex w-[min(76vw,320px)] max-w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-left text-gray-800 shadow-sm"
             :class="message.content ? 'mt-2' : ''"
-            @click="downloadAttachment"
           >
-            <span
-              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl"
+            <button
+              v-if="showInlineAttachmentReplyPreview"
+              type="button"
+              class="m-2 inline-flex max-w-[calc(100%-1rem)] flex-col self-start rounded-lg px-2.5 py-2 text-left text-xs transition"
+              :class="inlineReplyPreviewClass"
+              @click="handleReplyReferenceClick"
             >
-              {{ attachmentIcon }}
-            </span>
+              <div v-if="!isReplyPreviewRecalled" class="truncate font-medium text-gray-600">
+                ↩ {{ replyPreviewName }}
+              </div>
+              <div
+                class="line-clamp-2"
+                :class="[
+                  isReplyPreviewRecalled ? 'text-center italic text-gray-400' : 'mt-1 text-gray-500',
+                ]"
+              >
+                {{ replyPreviewContent }}
+              </div>
+              <div
+                v-if="replyPreviewAttachmentLabel && !isReplyPreviewRecalled"
+                class="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-[11px]"
+                :class="replyAttachmentBadgeClass"
+              >
+                <span aria-hidden="true">{{ replyPreviewAttachmentIcon }}</span>
+                <span class="truncate">{{ replyPreviewAttachmentLabel }}</span>
+              </div>
+            </button>
 
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-gray-800">
-                {{ message.attachment.name }}
+            <button
+              type="button"
+              class="group flex w-full items-center gap-3 px-3 py-3 text-left text-gray-800 transition hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99]"
+              @click="downloadAttachment"
+            >
+              <span
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl"
+              >
+                {{ attachmentIcon }}
               </span>
 
-              <span class="mt-0.5 block text-xs text-gray-500">
-                {{ attachmentTypeLabel }}・{{ formattedFileSize }}
-              </span>
-            </span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium text-gray-800">
+                  {{ message.attachment.name }}
+                </span>
 
-            <span
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition group-hover:bg-gray-200"
-            >
-              ↓
-            </span>
-          </button>
+                <span class="mt-0.5 block text-xs text-gray-500">
+                  {{ attachmentTypeLabel }}・{{ formattedFileSize }}
+                </span>
+              </span>
+
+              <span
+                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition group-hover:bg-gray-200"
+              >
+                ↓
+              </span>
+            </button>
+          </div>
 
           <!-- 預覽失敗 -->
           <div
@@ -232,7 +340,7 @@
         <!-- 時間改到氣泡下方，手機比較不會擠壓 -->
         <div
           class="mt-1 px-1 text-[10px] leading-none text-gray-400"
-          :class="isMine ? 'text-right' : 'text-left'"
+          :class="message.isRecalled ? 'text-center' : isMine ? 'text-right' : 'text-left'"
         >
           {{ formattedTime }}
         </div>
@@ -321,9 +429,20 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { downloadChatAttachmentApi, getChatAttachmentBlobApi } from '@/api/chatApi'
+import { usePreferencesStore } from '@/stores/preferencesStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
-import { RECALL_MESSAGE_PLACEHOLDER, type ChatMessage } from '@/types/chat'
+import {
+  RECALL_MESSAGE_PLACEHOLDER,
+  RECALL_REPLY_UNAVAILABLE_TEXT,
+  type ChatMessage,
+} from '@/types/chat'
+import {
+  getReplyAttachmentPreviewIcon,
+  getReplyAttachmentPreviewLabel,
+  getReplyAttachmentPreviewToneClass,
+  getReplyAttachmentPreviewSizeText,
+} from '@/utils/chatReplyPreview'
 
 const props = defineProps<{
   message: ChatMessage
@@ -350,6 +469,7 @@ const emit = defineEmits<{
 
 const auth = useAuthStore()
 const chat = useChatStore()
+const preferences = usePreferencesStore()
 
 const previewUrl = ref('')
 const previewLoading = ref(false)
@@ -413,6 +533,14 @@ const contextMenuActions = computed<ContextMenuAction[]>(() => {
   return actions
 })
 
+const showStandaloneReplyPreview = computed(() => {
+  return Boolean(props.message.replyTo && !props.message.isRecalled && !props.message.attachment)
+})
+
+const showInlineAttachmentReplyPreview = computed(() => {
+  return Boolean(props.message.replyTo && !props.message.isRecalled && props.message.attachment)
+})
+
 const displayName = computed(() => {
   if (isSystemMessage.value) {
     return props.message.senderName || '系統'
@@ -461,6 +589,7 @@ const isReplyPreviewRecalled = computed(() => {
 
   return (
     content === RECALL_MESSAGE_PLACEHOLDER ||
+    content === RECALL_REPLY_UNAVAILABLE_TEXT ||
     content === '訊息已收回' ||
     content === '已收回訊息'
   )
@@ -468,10 +597,42 @@ const isReplyPreviewRecalled = computed(() => {
 
 const replyPreviewContent = computed(() => {
   if (isReplyPreviewRecalled.value) {
-    return RECALL_MESSAGE_PLACEHOLDER
+    return RECALL_REPLY_UNAVAILABLE_TEXT
   }
 
-  return props.message.replyTo?.content || '（空白訊息）'
+  if (props.message.replyTo?.content) {
+    return props.message.replyTo.content
+  }
+
+  if (props.message.replyTo?.attachment) {
+    return ''
+  }
+
+  return '（空白訊息）'
+})
+
+const replyPreviewAttachmentLabel = computed(() => {
+  if (isReplyPreviewRecalled.value) {
+    return ''
+  }
+
+  return getReplyAttachmentPreviewLabel(props.message.replyTo?.attachment)
+})
+
+const replyPreviewAttachmentIcon = computed(() => {
+  if (isReplyPreviewRecalled.value) {
+    return ''
+  }
+
+  return getReplyAttachmentPreviewIcon(props.message.replyTo?.attachment)
+})
+
+const replyPreviewAttachmentSize = computed(() => {
+  if (isReplyPreviewRecalled.value) {
+    return ''
+  }
+
+  return getReplyAttachmentPreviewSizeText(props.message.replyTo?.attachment)
 })
 
 const isReplyTarget = computed(() => chat.replyingToMessage?.messageId === props.message.id)
@@ -485,14 +646,32 @@ const isAttachmentOnlyMessage = computed(() => {
 })
 
 const recalledMessageText = computed(() => {
-  return RECALL_MESSAGE_PLACEHOLDER
+  if (isMine.value) {
+    return '你已收回訊息'
+  }
+
+  return `${displayName.value}已收回訊息`
+})
+
+const inlineReplyPreviewClass = computed(() => {
+  if (isReplyPreviewRecalled.value) {
+    return 'border border-gray-200 bg-gray-100/90 hover:border-gray-200 hover:bg-gray-100/90'
+  }
+
+  return isMine.value
+    ? 'border border-white/12 bg-white/88 hover:border-white/18 hover:bg-white'
+    : 'border border-gray-200/80 bg-gray-50/90 hover:border-blue-200 hover:bg-blue-50/70'
+})
+
+const replyAttachmentBadgeClass = computed(() => {
+  return getReplyAttachmentPreviewToneClass(props.message.replyTo?.attachment)
 })
 
 const bubbleClass = computed(() => {
   if (props.message.isRecalled) {
-    return isMine.value
-      ? 'rounded-2xl rounded-br-md border border-blue-200/60 bg-blue-400/15 text-blue-100'
-      : 'rounded-2xl rounded-bl-md border border-gray-200 bg-gray-100 text-gray-500'
+    return preferences.isDark
+      ? 'rounded-full bg-white/[0.04] text-slate-400'
+      : 'rounded-full bg-slate-100 text-slate-400'
   }
 
   if (isAttachmentOnlyMessage.value) {
@@ -678,7 +857,14 @@ const contextMenuStyle = computed(() => ({
 function setReplyTarget(): void {
   chat.setReplyTarget({
     messageId: props.message.id,
-    content: props.message.content || props.message.replyTo?.content || props.message.attachment?.name || '',
+    content: props.message.content || '',
+    attachment: props.message.attachment
+      ? {
+          name: props.message.attachment.name,
+          mimeType: props.message.attachment.mimeType,
+        size: props.message.attachment.size,
+      }
+      : null,
     senderName: replyPreviewName.value,
     senderUsername: props.message.senderUsername || props.message.senderName || '使用者',
   })

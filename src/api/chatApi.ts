@@ -8,6 +8,7 @@ import type {
   ChatRoomMember,
   ChatUserSearchItem,
   ChatFriendRequestListResponse,
+  ChatReplyContext,
 } from '@/types/chat'
 
 /**
@@ -479,9 +480,22 @@ export async function unblockUserApi(blockedUserId: string): Promise<BlockUserRe
 export async function uploadChatAttachmentApi(
   roomId: string,
   file: File,
+  replyTo?: ChatReplyContext | null,
 ): Promise<{ message: ChatMessage }> {
   const formData = new FormData()
   formData.append('file', file)
+  if (replyTo) {
+    formData.append('replyToMessageId', replyTo.messageId)
+    formData.append('replyToContent', replyTo.content || '')
+    formData.append('replyToSenderName', replyTo.senderName)
+    formData.append('replyToSenderUsername', replyTo.senderUsername)
+
+    if (replyTo.attachment) {
+      formData.append('replyToAttachmentName', replyTo.attachment.name)
+      formData.append('replyToAttachmentMimeType', replyTo.attachment.mimeType)
+      formData.append('replyToAttachmentSize', String(replyTo.attachment.size))
+    }
+  }
 
   const { data } = await http.post<{ message: ChatMessage }>(
     `/chat/rooms/${encodeURIComponent(roomId)}/attachments`,

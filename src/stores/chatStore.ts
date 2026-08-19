@@ -6,7 +6,7 @@ import type {
   ChatReplyContext,
   ChatRoomListItem,
 } from '@/types/chat'
-import { RECALL_MESSAGE_PLACEHOLDER } from '@/types/chat'
+import { RECALL_MESSAGE_PLACEHOLDER, RECALL_REPLY_UNAVAILABLE_TEXT } from '@/types/chat'
 import type { ChatWsEvent } from '@/types/chatWsEvents'
 
 interface WelcomePopup {
@@ -331,7 +331,8 @@ export const useChatStore = defineStore('chat', {
 
         return {
           ...replyTo,
-          content: RECALL_MESSAGE_PLACEHOLDER,
+          content: RECALL_REPLY_UNAVAILABLE_TEXT,
+          attachment: null,
         }
       }
 
@@ -354,7 +355,11 @@ export const useChatStore = defineStore('chat', {
       })
 
       if (this.replyingToMessage?.messageId === messageId) {
-        this.replyingToMessage = null
+        this.replyingToMessage = {
+          ...this.replyingToMessage,
+          content: RECALL_REPLY_UNAVAILABLE_TEXT,
+          attachment: null,
+        }
       }
     },
 
@@ -366,7 +371,8 @@ export const useChatStore = defineStore('chat', {
 
         return {
           ...replyTo,
-          content: RECALL_MESSAGE_PLACEHOLDER,
+          content: RECALL_REPLY_UNAVAILABLE_TEXT,
+          attachment: null,
         }
       }
 
@@ -385,7 +391,11 @@ export const useChatStore = defineStore('chat', {
       })
 
       if (this.replyingToMessage?.messageId === message.id) {
-        this.replyingToMessage = null
+        this.replyingToMessage = {
+          ...this.replyingToMessage,
+          content: RECALL_REPLY_UNAVAILABLE_TEXT,
+          attachment: null,
+        }
       }
     },
 

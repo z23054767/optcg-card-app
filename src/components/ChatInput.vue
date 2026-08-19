@@ -12,16 +12,27 @@
       <div class="flex items-start justify-between gap-2">
         <button type="button" class="min-w-0 flex-1 text-left" @click="handleReplyPreviewClick">
           <div
+            v-if="!isReplyingToRecalledMessage"
             class="text-[11px] font-semibold"
-            :class="isReplyingToRecalledMessage ? 'text-gray-500' : 'text-blue-700'"
+            :class="'text-blue-700'"
           >
             回覆 {{ chat.replyingToMessage.senderName }}
           </div>
           <div
             class="mt-1 line-clamp-2 text-sm"
-            :class="isReplyingToRecalledMessage ? 'italic text-gray-400' : 'text-gray-700'"
+            :class="isReplyingToRecalledMessage ? 'text-center italic text-gray-400' : 'text-gray-700'"
           >
             {{ replyPreviewContent }}
+          </div>
+
+          <div
+            v-if="replyPreviewAttachmentLabel && !isReplyingToRecalledMessage"
+            class="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-[11px]"
+            :class="replyAttachmentBadgeClass"
+          >
+            <span aria-hidden="true">{{ replyPreviewAttachmentIcon }}</span>
+            <span class="truncate">{{ replyPreviewAttachmentLabel }}</span>
+            <span class="text-[10px] opacity-75">{{ replyPreviewAttachmentSize }}</span>
           </div>
         </button>
 
@@ -78,7 +89,13 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { sendChatMessage, sendTypingStatus } from '@/websocket/chatSocket'
 import { useChatStore } from '@/stores/chatStore'
 import { uploadChatAttachmentApi } from '@/api/chatApi'
-import { RECALL_MESSAGE_PLACEHOLDER } from '@/types/chat'
+import { RECALL_MESSAGE_PLACEHOLDER, RECALL_REPLY_UNAVAILABLE_TEXT } from '@/types/chat'
+import {
+  getReplyAttachmentPreviewIcon,
+  getReplyAttachmentPreviewLabel,
+  getReplyAttachmentPreviewSizeText,
+  getReplyAttachmentPreviewToneClass,
+} from '@/utils/chatReplyPreview'
 
 const props = defineProps<{
   scrollToMessage?: (messageId: string) => Promise<void>
@@ -102,6 +119,7 @@ const isReplyingToRecalledMessage = computed(() => {
 
   return (
     content === RECALL_MESSAGE_PLACEHOLDER ||
+    content === RECALL_REPLY_UNAVAILABLE_TEXT ||
     content === '訊息已收回' ||
     content === '已收回訊息'
   )
@@ -109,10 +127,46 @@ const isReplyingToRecalledMessage = computed(() => {
 
 const replyPreviewContent = computed(() => {
   if (isReplyingToRecalledMessage.value) {
-    return RECALL_MESSAGE_PLACEHOLDER
+    return RECALL_REPLY_UNAVAILABLE_TEXT
   }
 
-  return chat.replyingToMessage?.content || '（空白訊息）'
+  if (chat.replyingToMessage?.content) {
+    return chat.replyingToMessage.content
+  }
+
+  if (chat.replyingToMessage?.attachment) {
+    return ''
+  }
+
+  return '（空白訊息）'
+})
+
+const replyPreviewAttachmentLabel = computed(() => {
+  if (isReplyingToRecalledMessage.value) {
+    return ''
+  }
+
+  return getReplyAttachmentPreviewLabel(chat.replyingToMessage?.attachment)
+})
+
+const replyPreviewAttachmentIcon = computed(() => {
+  if (isReplyingToRecalledMessage.value) {
+    return ''
+  }
+
+  return getReplyAttachmentPreviewIcon(chat.replyingToMessage?.attachment)
+})
+
+const replyPreviewAttachmentSize = computed(() => {
+  if (isReplyingToRecalledMessage.value) {
+    return ''
+  }
+
+  return getReplyAttachmentPreviewSizeText(chat.replyingToMessage?.attachment)
+})
+
+const replyAttachmentBadgeClass = computed(() => {
+  return getReplyAttachmentPreviewToneClass(chat.replyingToMessage?.attachment)
 })
 
 function send(): void {
@@ -151,10 +205,16 @@ async function handleFiles(event: Event): Promise<void> {
   uploading.value = true
 
   try {
+    const replyTarget = chat.replyingToMessage
+
     for (const [index, file] of files.entries()) {
       uploadProgress.value = `${index + 1}/${files.length}：${file.name}`
 
-      await uploadChatAttachmentApi(chat.currentRoomId, file)
+      await uploadChatAttachmentApi(chat.currentRoomId, file, replyTarget)
+    }
+
+    if (replyTarget) {
+      chat.clearReplyTarget()
     }
   } catch (error: unknown) {
     console.error('檔案上傳失敗', error)

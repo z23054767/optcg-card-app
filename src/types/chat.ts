@@ -28,13 +28,22 @@ export interface ChatUrlPreview {
   /** 網站名稱 */
   siteName: string | null
 }
- 
+
+export interface ChatReplyAttachmentPreview {
+  name: string
+  mimeType: string
+  size: number
+}
+
 export interface ChatReplyContext {
   /** 被回覆訊息 ID */
   messageId: string
 
   /** 被回覆訊息內容 */
   content: string
+
+  /** 被回覆訊息附件快照 */
+  attachment?: ChatReplyAttachmentPreview | null
 
   /** 被回覆訊息發送者顯示名稱 */
   senderName: string
@@ -44,6 +53,7 @@ export interface ChatReplyContext {
 }
 
 export const RECALL_MESSAGE_PLACEHOLDER = '此訊息已被收回'
+export const RECALL_REPLY_UNAVAILABLE_TEXT = '無法讀取原始訊息'
  
 /**
  * 聊天訊息

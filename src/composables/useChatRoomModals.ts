@@ -32,7 +32,12 @@ import type {
   ChatRoomMember,
   ChatUserSearchItem,
 } from '@/types/chat'
-import { showConfirmAlert, showErrorAlert, showSuccessAlert } from '@/utils/alerts'
+import {
+  showConfirmAlert,
+  showDangerConfirmAlert,
+  showErrorAlert,
+  showSuccessAlert,
+} from '@/utils/alerts'
 
 type ChatRoomModalsDeps = {
   showUserMenu: Ref<boolean>
@@ -679,7 +684,11 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
     const roomId = chat.currentRoomId;
 
-    const result = await showConfirmAlert("確定要退出這個群組聊天室嗎？");
+    const result = await showDangerConfirmAlert("退出後將不再收到此群組的新訊息。", {
+      title: '確定要退出群組聊天室？',
+      confirmButtonText: '退出群組',
+      cancelButtonText: '保留在群組',
+    });
 
     if (!result.isConfirmed) {
       return;
@@ -740,7 +749,11 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
     if (!otherMember) return
 
-    const result = await showConfirmAlert('確定要封鎖這個使用者嗎？')
+    const result = await showDangerConfirmAlert('封鎖後你們將無法繼續互相傳送訊息。', {
+      title: '確定要封鎖這個使用者？',
+      confirmButtonText: '封鎖使用者',
+      cancelButtonText: '取消',
+    })
     if (!result.isConfirmed) {
       return
     }
@@ -768,7 +781,11 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
     if (!otherMember) return
 
-    const result = await showConfirmAlert('確定要解除封鎖嗎？')
+    const result = await showConfirmAlert('解除封鎖後，對方可再次與你互動。', {
+      title: '確定要解除封鎖嗎？',
+      confirmButtonText: '解除封鎖',
+      cancelButtonText: '取消',
+    })
     if (!result.isConfirmed) {
       return
     }
