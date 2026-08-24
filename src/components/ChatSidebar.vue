@@ -1,7 +1,8 @@
 <template>
   <aside
     class="fixed bottom-0 left-0 top-14 z-40 w-72 border-r bg-white shadow-lg transition-transform sm:static sm:z-auto sm:w-64 sm:shadow-none"
-    :class="open ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'">
+    :class="open ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'"
+  >
     <div class="border-b px-4 py-3">
       <div class="flex items-center justify-between gap-2">
         <div>
@@ -12,7 +13,8 @@
         <div class="flex items-center gap-2">
           <button
             class="flex h-8 w-8 items-center justify-center rounded-full text-xl text-gray-500 hover:bg-gray-100 sm:hidden"
-            @click="$emit('close')">
+            @click="$emit('close')"
+          >
             ✕
           </button>
         </div>
@@ -23,17 +25,24 @@
       <div>
         <div class="text-xs font-semibold text-gray-400 px-2 mb-2">公開聊天室</div>
 
-        <button class="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition" :class="currentRoomId === 'lobby'
-          ? 'bg-blue-50 text-blue-700 font-semibold'
-          : 'hover:bg-gray-100 text-gray-700'
-          " @click="$emit('switch-room', 'lobby')">
+        <button
+          class="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition"
+          :class="
+            currentRoomId === 'lobby'
+              ? 'bg-blue-50 text-blue-700 font-semibold'
+              : 'hover:bg-gray-100 text-gray-700'
+          "
+          @click="$emit('switch-room', 'lobby')"
+        >
           <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100">
             📢
           </span>
 
           <span class="truncate">大廳</span>
-          <span v-if="getUnreadCount('lobby') > 0"
-            class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-linear-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm">
+          <span
+            v-if="getUnreadCount('lobby') > 0"
+            class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-linear-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
+          >
             {{ formatUnreadCount(getUnreadCount('lobby')) }}
           </span>
         </button>
@@ -45,24 +54,42 @@
         <div>
           <button
             class="mb-1 flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs font-semibold text-gray-500 hover:bg-gray-100"
-            type="button" @click="privateCollapsed = !privateCollapsed">
+            type="button"
+            @click="privateCollapsed = !privateCollapsed"
+          >
             <span>朋友</span>
-            <span class="text-sm transition-transform" :class="privateCollapsed ? '-rotate-90' : 'rotate-0'">
+            <span
+              class="text-sm transition-transform"
+              :class="privateCollapsed ? '-rotate-90' : 'rotate-0'"
+            >
               ▾
             </span>
           </button>
           <div v-show="!privateCollapsed">
-            <button v-for="room in privateRooms" :key="room.id"
-              class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition" :class="currentRoomId === room.id
-                ? 'bg-blue-50 font-semibold text-blue-700'
-                : 'text-gray-700 hover:bg-gray-100'
-                " :title="getRoomName(room)" @click="$emit('switch-room', room.id)">
-              <UserAvatar class="h-7 w-7 text-xs" :avatar-url="room.avatarUrl" :display-name="getRoomName(room)"
-                :user-id="room.id" />
+            <button
+              v-for="room in privateRooms"
+              :key="room.id"
+              class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition"
+              :class="
+                currentRoomId === room.id
+                  ? 'bg-blue-50 font-semibold text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              "
+              :title="getRoomName(room)"
+              @click="$emit('switch-room', room.id)"
+            >
+              <UserAvatar
+                class="h-7 w-7 text-xs"
+                :avatar-url="room.avatarUrl"
+                :display-name="getRoomName(room)"
+                :user-id="room.id"
+              />
 
               <span class="truncate">{{ getRoomName(room) }}</span>
-              <span v-if="getUnreadCount(room.id) > 0"
-                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm">
+              <span
+                v-if="getUnreadCount(room.id) > 0"
+                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-linear-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
+              >
                 {{ formatUnreadCount(getUnreadCount(room.id)) }}
               </span>
             </button>
@@ -75,22 +102,40 @@
         <div>
           <button
             class="mb-1 flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs font-semibold text-gray-500 hover:bg-gray-100"
-            type="button" @click="groupCollapsed = !groupCollapsed">
+            type="button"
+            @click="groupCollapsed = !groupCollapsed"
+          >
             <span>群組聊天</span>
-            <span class="text-sm transition-transform" :class="groupCollapsed ? '-rotate-90' : 'rotate-0'">
+            <span
+              class="text-sm transition-transform"
+              :class="groupCollapsed ? '-rotate-90' : 'rotate-0'"
+            >
               ▾
             </span>
           </button>
           <div v-show="!groupCollapsed">
-            <button v-for="room in groupRooms" :key="`group-${room.id}`"
-              class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition" :class="currentRoomId === room.id
-                ? 'bg-blue-50 font-semibold text-blue-700'
-                : 'text-gray-700 hover:bg-gray-100'
-                " :title="getRoomName(room)" @click="$emit('switch-room', room.id)">
-              <span class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-100">
-                <img v-if="getRoomAvatarUrl(room) && !failedAvatarRoomIds.has(room.id)"
-                  :src="getRoomAvatarUrl(room) ?? undefined" :alt="`${getRoomName(room)} 群組頭像`"
-                  class="h-full w-full object-cover" @error="markAvatarLoadFailed(room.id)" />
+            <button
+              v-for="room in groupRooms"
+              :key="`group-${room.id}`"
+              class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition"
+              :class="
+                currentRoomId === room.id
+                  ? 'bg-blue-50 font-semibold text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              "
+              :title="getRoomName(room)"
+              @click="$emit('switch-room', room.id)"
+            >
+              <span
+                class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-100"
+              >
+                <img
+                  v-if="getRoomAvatarUrl(room) && !failedAvatarRoomIds.has(room.id)"
+                  :src="getRoomAvatarUrl(room) ?? undefined"
+                  :alt="`${getRoomName(room)} 群組頭像`"
+                  class="h-full w-full object-cover"
+                  @error="markAvatarLoadFailed(room.id)"
+                />
 
                 <span v-else> 👥 </span>
               </span>
@@ -98,8 +143,10 @@
               <span class="truncate">
                 {{ getRoomName(room) }}
               </span>
-              <span v-if="getUnreadCount(room.id) > 0"
-                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm">
+              <span
+                v-if="getUnreadCount(room.id) > 0"
+                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-linear-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
+              >
                 {{ formatUnreadCount(getUnreadCount(room.id)) }}
               </span>
             </button>
@@ -138,7 +185,7 @@ defineEmits<{
 }>()
 
 function getRoomName(room: ChatRoomListItem): string {
-  if (room.type === "private") {
+  if (room.type === 'private') {
     return room.displayName?.trim() || room.name?.trim() || room.id
   }
 
@@ -148,7 +195,6 @@ function getRoomName(room: ChatRoomListItem): string {
 function getRoomAvatarUrl(room: ChatRoomListItem): string | null {
   return resolveChatRoomAvatarUrl(room.avatarUrl ?? null)
 }
-
 
 function markAvatarLoadFailed(roomId: string): void {
   failedAvatarRoomIds.value = new Set([...failedAvatarRoomIds.value, roomId])

@@ -5,14 +5,17 @@ export function resolveChatRoomAvatarUrl(avatarPath?: string | null): string | n
   const rawPath = String(avatarPath ?? '').trim()
 
   if (!rawPath) return null
-  if (/^(?:https?:)?\/\//i.test(rawPath) || rawPath.startsWith('data:') || rawPath.startsWith('blob:')) {
+  if (
+    /^(?:https?:)?\/\//i.test(rawPath) ||
+    rawPath.startsWith('data:') ||
+    rawPath.startsWith('blob:')
+  ) {
     return rawPath
-  } 
+  }
 
-  const apiBaseUrl = (import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL).replace(
-    /\/$/,
-    '',
-  )
+  const apiBaseUrl = (
+    import.meta.env.VITE_API_FULL_URL || import.meta.env.VITE_API_BASE_URL
+  ).replace(/\/$/, '')
   const normalizedPath = rawPath.replace(/\\/g, '/')
   const match = normalizedPath.match(/^([^?#]+)([?#].*)?$/)
   const pathname = (match?.[1] ?? normalizedPath).replace(/^\/+/, '')

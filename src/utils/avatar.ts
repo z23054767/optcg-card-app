@@ -16,9 +16,22 @@ export interface AvatarProps {
 }
 
 const AVATAR_COLORS = [
-  '#D32F2F', '#C2185B', '#7B1FA2', '#512DA8', '#303F9F', '#1976D2',
-  '#0288D1', '#0097A7', '#00796B', '#388E3C', '#689F38', '#AFB42B',
-  '#F57C00', '#E64A19', '#5D4037', '#455A64',
+  '#D32F2F',
+  '#C2185B',
+  '#7B1FA2',
+  '#512DA8',
+  '#303F9F',
+  '#1976D2',
+  '#0288D1',
+  '#0097A7',
+  '#00796B',
+  '#388E3C',
+  '#689F38',
+  '#AFB42B',
+  '#F57C00',
+  '#E64A19',
+  '#5D4037',
+  '#455A64',
 ] as const
 
 function normalize(value?: string | number | null): string {

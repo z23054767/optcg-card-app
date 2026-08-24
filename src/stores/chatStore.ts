@@ -17,7 +17,10 @@ interface WelcomePopup {
 interface ChatState {
   messages: ChatMessage[]
   users: Map<string, { displayName: string; username: string }>
-  typingUsersByRoom: Map<string, Map<string, { displayName: string; username: string; updatedAt: number }>>
+  typingUsersByRoom: Map<
+    string,
+    Map<string, { displayName: string; username: string; updatedAt: number }>
+  >
   replyingToMessage: ChatReplyContext | null
   welcomePopup: WelcomePopup
   onlineUsers: Set<string>
@@ -364,7 +367,9 @@ export const useChatStore = defineStore('chat', {
     },
 
     applyMessageRecalled(message: ChatMessage): void {
-      const updateReplyContext = (replyTo?: ChatReplyContext | null): ChatReplyContext | null | undefined => {
+      const updateReplyContext = (
+        replyTo?: ChatReplyContext | null,
+      ): ChatReplyContext | null | undefined => {
         if (!replyTo || replyTo.messageId !== message.id) {
           return replyTo
         }
@@ -521,7 +526,6 @@ export const useChatStore = defineStore('chat', {
       this.$reset()
     },
 
-
     setLobbySnapshot(userIds: string[]): void {
       this.setRoomSnapshot('lobby', userIds)
     },
@@ -560,10 +564,16 @@ export const useChatStore = defineStore('chat', {
     pruneTypingUsers(): void {
       const EXPIRE_MS = 6000
       const now = Date.now()
-      const nextTypingByRoom = new Map<string, Map<string, { displayName: string; username: string; updatedAt: number }>>()
+      const nextTypingByRoom = new Map<
+        string,
+        Map<string, { displayName: string; username: string; updatedAt: number }>
+      >()
 
       for (const [roomId, roomTypingUsers] of this.typingUsersByRoom.entries()) {
-        const nextRoomTypingUsers = new Map<string, { displayName: string; username: string; updatedAt: number }>()
+        const nextRoomTypingUsers = new Map<
+          string,
+          { displayName: string; username: string; updatedAt: number }
+        >()
 
         for (const [userId, typingUser] of roomTypingUsers.entries()) {
           if (now - typingUser.updatedAt <= EXPIRE_MS) {
@@ -608,7 +618,9 @@ export const useChatStore = defineStore('chat', {
       return state.hasUnreadInvitationNotice || state.hasUnreadFriendRequestNotice
     },
 
-    currentRoomTypingUsers(state): Array<{ userId: string; displayName: string; username: string }> {
+    currentRoomTypingUsers(
+      state,
+    ): Array<{ userId: string; displayName: string; username: string }> {
       const EXPIRE_MS = 6000
       const now = Date.now()
       const roomTypingUsers = state.typingUsersByRoom.get(state.currentRoomId)

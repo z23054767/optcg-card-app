@@ -29,7 +29,6 @@
         @send-friend-request="emit('send-friend-request', $event)"
       />
     </template>
-
   </div>
 </template>
 

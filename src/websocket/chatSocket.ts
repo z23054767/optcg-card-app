@@ -279,25 +279,25 @@ export function connectChatSocket(
  * @param content 訊息內容
  */
 export function sendChatMessage(
- roomId: string,
- content: string,
- replyTo?: ChatReplyContext | null,
+  roomId: string,
+  content: string,
+  replyTo?: ChatReplyContext | null,
 ): void {
- if (!socket || socket.readyState !== WebSocket.OPEN) {
-   console.warn('[WS] not connected')
-   return
- }
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.warn('[WS] not connected')
+    return
+  }
 
- const message: ClientWsMessage = {
-   type: 'SEND_MESSAGE',
-   payload: {
-     roomId,
-     content,
-     replyTo: replyTo ?? null,
-   },
- }
+  const message: ClientWsMessage = {
+    type: 'SEND_MESSAGE',
+    payload: {
+      roomId,
+      content,
+      replyTo: replyTo ?? null,
+    },
+  }
 
- socket.send(JSON.stringify(message))
+  socket.send(JSON.stringify(message))
 }
 
 /**

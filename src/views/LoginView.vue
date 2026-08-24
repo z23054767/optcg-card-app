@@ -2,159 +2,219 @@
   <div class="min-h-screen bg-linear-to-br transition-colors duration-200" :class="pageClass">
     <AppHeader />
 
-    <main class="px-4 py-6 sm:flex sm:min-h-[calc(100vh-4rem)] sm:items-center sm:justify-center sm:py-8">
+    <main
+      class="px-4 py-6 sm:flex sm:min-h-[calc(100vh-4rem)] sm:items-center sm:justify-center sm:py-8"
+    >
       <div
         class="relative mx-auto w-full max-w-md rounded-[28px] border p-6 shadow-xl sm:p-8"
-        :class="panelClass">
-      <!-- Login Logo -->
-      <div class="mb-6 flex flex-col items-center">
-        <img src="/logo_op.png" alt="Login Logo" class="app-logo h-20 w-20 object-contain drop-shadow-sm" />
+        :class="panelClass"
+      >
+        <!-- Login Logo -->
+        <div class="mb-6 flex flex-col items-center">
+          <img
+            src="/logo_op.png"
+            alt="Login Logo"
+            class="app-logo h-20 w-20 object-contain drop-shadow-sm"
+          />
 
-        <h1 class="mt-3 text-2xl font-bold" :class="titleClass">登入帳號</h1>
+          <h1 class="mt-3 text-2xl font-bold" :class="titleClass">登入帳號</h1>
 
-        <p class="mt-1 text-center text-sm" :class="mutedTextClass">登入您的帳號以繼續使用</p>
-      </div>
-
-      <!-- Form -->
-      <form class="space-y-4" @submit.prevent="login">
-        <!-- Account -->
-        <div>
-          <label class="mb-1 block text-sm font-medium" :class="labelClass"> 帳號 </label>
-
-          <input v-model="name" type="text" placeholder="請輸入 Username"
-            class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :class="inputClass"
-            required />
+          <p class="mt-1 text-center text-sm" :class="mutedTextClass">登入您的帳號以繼續使用</p>
         </div>
 
-        <!-- Password -->
-        <div>
-          <label class="mb-1 block text-sm font-medium" :class="labelClass"> 密碼 </label>
+        <!-- Form -->
+        <form class="space-y-4" @submit.prevent="login">
+          <!-- Account -->
+          <div>
+            <label class="mb-1 block text-sm font-medium" :class="labelClass"> 帳號 </label>
 
-          <div class="relative">
-            <input v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="請輸入密碼"
-              class="w-full rounded-lg border px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <input
+              v-model="name"
+              type="text"
+              autocomplete="username"
+              placeholder="請輸入 Username"
+              class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               :class="inputClass"
-              required />
-
-            <button type="button" :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'" :title="showPassword ? '隱藏密碼' : '顯示密碼'"
-              class="absolute inset-y-0 right-0 flex w-10 items-center justify-center transition"
-              :class="passwordToggleClass"
-              @click="showPassword = !showPassword">
-              <FontAwesomeIcon :icon="showPassword ? 'eye-slash' : 'eye'" class="text-lg" />
-            </button>
+              required
+            />
           </div>
-        </div>
 
-        <div class="flex items-center justify-end">
-          <RouterLink to="/forgot-password" class="text-sm font-medium" :class="linkClass">
-            忘記密碼？
-          </RouterLink>
-        </div>
+          <!-- Password -->
+          <div>
+            <label class="mb-1 block text-sm font-medium" :class="labelClass"> 密碼 </label>
 
-        <!-- Error -->
-        <p v-if="errorMessage" class="text-sm text-red-600">
-          {{ errorMessage }}
+            <div class="relative">
+              <input
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                placeholder="請輸入密碼"
+                class="w-full rounded-lg border px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :class="inputClass"
+                required
+              />
+
+              <button
+                type="button"
+                :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'"
+                :title="showPassword ? '隱藏密碼' : '顯示密碼'"
+                class="absolute inset-y-0 right-0 flex w-10 items-center justify-center transition"
+                :class="passwordToggleClass"
+                @click="showPassword = !showPassword"
+              >
+                <FontAwesomeIcon :icon="showPassword ? 'eye-slash' : 'eye'" class="text-lg" />
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end">
+            <RouterLink to="/forgot-password" class="text-sm font-medium" :class="linkClass">
+              忘記密碼？
+            </RouterLink>
+          </div>
+
+          <!-- Error -->
+          <p v-if="errorMessage" class="text-sm text-red-600">
+            {{ errorMessage }}
+          </p>
+
+          <!-- Login Button -->
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ loading ? '登入中...' : '登入' }}
+          </button>
+        </form>
+
+        <p class="mt-5 text-center text-sm" :class="mutedTextClass">
+          還沒有帳號？
+          <RouterLink to="/register" class="font-medium" :class="linkClass">立即註冊</RouterLink>
         </p>
 
-        <!-- Login Button -->
-        <button type="submit" :disabled="loading"
-          class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-          {{ loading ? '登入中...' : '登入' }}
-        </button>
-      </form>
+        <p class="mt-2 text-center text-xs" :class="subtleTextClass">
+          想先看看平台定位？
+          <RouterLink to="/" class="font-medium" :class="subtleLinkClass">回首頁瀏覽</RouterLink>
+        </p>
 
-      <p class="mt-5 text-center text-sm" :class="mutedTextClass">
-        還沒有帳號？
-        <RouterLink to="/register" class="font-medium" :class="linkClass">立即註冊</RouterLink>
-      </p>
+        <!-- Divider -->
+        <div class="my-6 flex items-center gap-3">
+          <div class="h-px flex-1" :class="dividerClass"></div>
 
-      <p class="mt-2 text-center text-xs" :class="subtleTextClass">
-        想先看看平台定位？
-        <RouterLink to="/" class="font-medium" :class="subtleLinkClass">回首頁瀏覽</RouterLink>
-      </p>
+          <span class="shrink-0 text-xs" :class="subtleTextClass"> 或使用第三方登入 </span>
 
-      <!-- Divider -->
-      <div class="my-6 flex items-center gap-3">
-        <div class="h-px flex-1" :class="dividerClass"></div>
+          <div class="h-px flex-1" :class="dividerClass"></div>
+        </div>
 
-        <span class="shrink-0 text-xs" :class="subtleTextClass"> 或使用第三方登入 </span>
-
-        <div class="h-px flex-1" :class="dividerClass"></div>
-      </div>
-
-      <!-- OAuth Login -->
-      <div class="space-y-3">
-        <!-- Google -->
-        <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          :class="oauthButtonClass"
-          @click="startOAuthLogin('google')">
-          <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-            <img :src="GoogleIcon" alt="Google" class="h-5 w-5 justify-self-center object-contain" />
-
-            <span class="whitespace-nowrap text-center">
-              {{ oauthLoadingProvider === 'google' ? '前往 Google...' : '使用 Google 登入' }}
-            </span>
-
-            <span aria-hidden="true"></span>
-          </span>
-        </button>
-
-        <!-- Microsoft -->
-        <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          :class="oauthButtonClass"
-          @click="startOAuthLogin('microsoft')">
-          <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-            <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-              <img :src="MicrosoftIcon" alt="Microsoft" class="h-5 w-5 justify-self-center object-contain" />
+        <!-- OAuth Login -->
+        <div class="space-y-3">
+          <!-- Google -->
+          <button
+            type="button"
+            :disabled="oauthLoadingProvider !== null"
+            class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+            :class="oauthButtonClass"
+            @click="startOAuthLogin('google')"
+          >
+            <span
+              class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3"
+            >
+              <img
+                :src="GoogleIcon"
+                alt="Google"
+                class="h-5 w-5 justify-self-center object-contain"
+              />
 
               <span class="whitespace-nowrap text-center">
-                {{
-                  oauthLoadingProvider === 'microsoft' ? '前往 Microsoft...' : '使用 Microsoft 登入'
-                }}
+                {{ oauthLoadingProvider === 'google' ? '前往 Google...' : '使用 Google 登入' }}
               </span>
 
               <span aria-hidden="true"></span>
             </span>
+          </button>
 
-            <span aria-hidden="true"></span>
-          </span>
-        </button>
+          <!-- Microsoft -->
+          <button
+            type="button"
+            :disabled="oauthLoadingProvider !== null"
+            class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+            :class="oauthButtonClass"
+            @click="startOAuthLogin('microsoft')"
+          >
+            <span
+              class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3"
+            >
+              <span
+                class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3"
+              >
+                <img
+                  :src="MicrosoftIcon"
+                  alt="Microsoft"
+                  class="h-5 w-5 justify-self-center object-contain"
+                />
 
-        <!-- LINE -->
-        <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          :class="oauthButtonClass"
-          @click="startOAuthLogin('line')">
-          <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-            <img :src="LineIcon" alt="LINE" class="h-5 w-5 justify-self-center object-contain" />
+                <span class="whitespace-nowrap text-center">
+                  {{
+                    oauthLoadingProvider === 'microsoft'
+                      ? '前往 Microsoft...'
+                      : '使用 Microsoft 登入'
+                  }}
+                </span>
 
-            <span class="whitespace-nowrap text-center">
-              {{ oauthLoadingProvider === 'line' ? '前往 LINE...' : '使用 LINE 登入' }}
+                <span aria-hidden="true"></span>
+              </span>
+
+              <span aria-hidden="true"></span>
             </span>
+          </button>
 
-            <span aria-hidden="true"></span>
-          </span>
-        </button>
+          <!-- LINE -->
+          <button
+            type="button"
+            :disabled="oauthLoadingProvider !== null"
+            class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+            :class="oauthButtonClass"
+            @click="startOAuthLogin('line')"
+          >
+            <span
+              class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3"
+            >
+              <img :src="LineIcon" alt="LINE" class="h-5 w-5 justify-self-center object-contain" />
 
-        <!-- Discord -->
-        <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-          :class="oauthButtonClass"
-          @click="startOAuthLogin('discord')">
-          <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
-            <img :src="DiscordIcon" alt="Discord" class="h-5 w-5 justify-self-center object-contain" />
+              <span class="whitespace-nowrap text-center">
+                {{ oauthLoadingProvider === 'line' ? '前往 LINE...' : '使用 LINE 登入' }}
+              </span>
 
-            <span class="whitespace-nowrap text-center">
-              {{ oauthLoadingProvider === 'discord' ? '前往 Discord...' : '使用 Discord 登入' }}
+              <span aria-hidden="true"></span>
             </span>
+          </button>
 
-            <span aria-hidden="true"></span>
-          </span>
-        </button>
-      </div>
+          <!-- Discord -->
+          <button
+            type="button"
+            :disabled="oauthLoadingProvider !== null"
+            class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+            :class="oauthButtonClass"
+            @click="startOAuthLogin('discord')"
+          >
+            <span
+              class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3"
+            >
+              <img
+                :src="DiscordIcon"
+                alt="Discord"
+                class="h-5 w-5 justify-self-center object-contain"
+              />
+
+              <span class="whitespace-nowrap text-center">
+                {{ oauthLoadingProvider === 'discord' ? '前往 Discord...' : '使用 Discord 登入' }}
+              </span>
+
+              <span aria-hidden="true"></span>
+            </span>
+          </button>
+        </div>
       </div>
     </main>
   </div>
@@ -214,7 +274,9 @@ const linkClass = computed(() =>
   preferences.isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700',
 )
 const subtleLinkClass = computed(() =>
-  preferences.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700',
+  preferences.isDark
+    ? 'text-slate-400 hover:text-slate-200'
+    : 'text-slate-500 hover:text-slate-700',
 )
 const dividerClass = computed(() => (preferences.isDark ? 'bg-white/10' : 'bg-gray-200'))
 const oauthButtonClass = computed(() =>

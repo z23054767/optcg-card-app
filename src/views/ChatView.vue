@@ -1,96 +1,201 @@
 <template>
   <div class="flex h-screen flex-col overflow-hidden bg-gray-100">
-    <AppHeader :avatar-url="resolvedUserAvatarUrl" :notification-count="notificationCount" user-menu-enabled
-      @toggle-user-menu="toggleUserMenu" @close-user-menu="showUserMenu = false" />
+    <AppHeader
+      :avatar-url="resolvedUserAvatarUrl"
+      :notification-count="notificationCount"
+      user-menu-enabled
+      @toggle-user-menu="toggleUserMenu"
+      @close-user-menu="showUserMenu = false"
+    />
 
     <div class="relative flex min-h-0 flex-1 overflow-hidden">
-      <ChatSidebar :open="sidebarOpen" :rooms="chat.rooms" :current-room-id="chat.currentRoomId"
-      :unread-counts="roomUnreadCounts" @close="sidebarOpen = false" @switch-room="switchRoom" />
+      <ChatSidebar
+        :open="sidebarOpen"
+        :rooms="chat.rooms"
+        :current-room-id="chat.currentRoomId"
+        :unread-counts="roomUnreadCounts"
+        @close="sidebarOpen = false"
+        @switch-room="switchRoom"
+      />
 
-    <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
-      <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId" :room-type="currentRoomType"
-        :avatar-url="currentRoomAvatarUrl" :online-count="chat.currentRoomOnlineCount"
-        :show-create-button="canCreateRoom"
-        :show-private-chat-button="canStartPrivateChat" :show-invite-members-button="canInviteMembers"
-        :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
-        :show-leave-group-button="canLeaveGroup" :leaving-group="leavingGroupRoom"
-        :show-add-friend-button="canAddFriend" :show-block-user-button="canBlockUser"
-        :show-unblock-user-button="canUnblockUser" :private-blocked-by-other="privateBlockedByOther"
-        @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
-        @toggle-sidebar="toggleSidebar" @open-members="openRoomMembers"
-        @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage"
-        @leave-group="leaveCurrentGroupRoom" @add-friend="sendFriendRequestToCurrentPrivateUser"
-        @block-user="blockCurrentUser" @unblock-user="unblockCurrentUser" />
+      <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
+        <ChatHeader
+          :title="currentRoomTitle"
+          :current-room-id="chat.currentRoomId"
+          :room-type="currentRoomType"
+          :avatar-url="currentRoomAvatarUrl"
+          :online-count="chat.currentRoomOnlineCount"
+          :show-create-button="canCreateRoom"
+          :show-private-chat-button="canStartPrivateChat"
+          :show-invite-members-button="canInviteMembers"
+          :show-manage-group-button="canManageGroup"
+          :show-members-button="isCurrentGroupRoom"
+          :show-leave-group-button="canLeaveGroup"
+          :leaving-group="leavingGroupRoom"
+          :show-add-friend-button="canAddFriend"
+          :show-block-user-button="canBlockUser"
+          :show-unblock-user-button="canUnblockUser"
+          :private-blocked-by-other="privateBlockedByOther"
+          @create-room="showCreateRoom = true"
+          @start-private-chat="showPrivateChat = true"
+          @back-to-lobby="backToLobby"
+          @toggle-sidebar="toggleSidebar"
+          @open-members="openRoomMembers"
+          @invite-members="showInviteMembers = true"
+          @open-manage-group="openGroupManage"
+          @leave-group="leaveCurrentGroupRoom"
+          @add-friend="sendFriendRequestToCurrentPrivateUser"
+          @block-user="blockCurrentUser"
+          @unblock-user="unblockCurrentUser"
+        />
 
-      <div v-if="showUserMenu" class="fixed inset-0 z-40" @click="showUserMenu = false"></div>
-      <UserMenu :open="showUserMenu" :display-name="auth.user?.displayName || auth.user?.name || '使用者'"
-        :name="auth.user?.name || ''" :avatar-url="resolvedUserAvatarUrl" :invitation-count="notificationCount"
-        @close="showUserMenu = false" @logout="logout" @open-invitations="openInvitations"
-        @open-settings="openProfileSettings" @open-preferences="openPreferences" />
+        <div v-if="showUserMenu" class="fixed inset-0 z-40" @click="showUserMenu = false"></div>
+        <UserMenu
+          :open="showUserMenu"
+          :display-name="auth.user?.displayName || auth.user?.name || '使用者'"
+          :name="auth.user?.name || ''"
+          :avatar-url="resolvedUserAvatarUrl"
+          :invitation-count="notificationCount"
+          show-deck-link
+          @close="showUserMenu = false"
+          @logout="logout"
+          @open-invitations="openInvitations"
+          @open-settings="openProfileSettings"
+        />
 
-      <PreferencesModal v-if="showPreferences" @close="showPreferences = false" />
+        <ProfileSettingsModal
+          v-if="showProfileSettings && userProfile"
+          :profile="userProfile"
+          @close="showProfileSettings = false"
+          @saved="handleProfileSaved"
+        />
 
-      <ProfileSettingsModal v-if="showProfileSettings && userProfile" :profile="userProfile"
-        @close="showProfileSettings = false" @saved="handleProfileSaved" />
+        <CreateRoomModal
+          v-if="showCreateRoom"
+          :loading="creatingRoom"
+          @close="showCreateRoom = false"
+          @create="createRoom"
+        />
+        <PrivateChatModal
+          v-if="showPrivateChat"
+          :users="privateChatUsers"
+          :searching="searchingPrivateUsers"
+          :inviting="creatingPrivateChat"
+          :inviting-user-id="invitingPrivateUserId"
+          :searched="privateUserSearched"
+          @close="closePrivateChatModal"
+          @search="searchPrivateUsers"
+          @clear="clearPrivateUserSearch"
+          @invite="createPrivateChat"
+        />
+        <InviteMembersModal
+          v-if="showInviteMembers"
+          :room-id="chat.currentRoomId"
+          :loading="invitingMembers"
+          @close="showInviteMembers = false"
+          @invite="inviteMembers"
+        />
+        <GroupManageModal
+          v-if="showGroupManage && groupManageRoom"
+          :room="groupManageRoom"
+          :members="roomMembers"
+          :loading-members="loadingRoomMembers"
+          :updating-info="updatingGroupInfo"
+          :deleting-room="deletingGroupRoom"
+          :removing-user-id="removingMemberUserId"
+          :transferring-user-id="transferringManagerUserId"
+          :invitations="roomInvitations"
+          :loading-invitations="loadingRoomInvitations"
+          :re-inviting-invitee-id="reInvitingInviteeId"
+          @close="showGroupManage = false"
+          @save-info="saveGroupInfo"
+          @remove-member="removeMember"
+          @transfer-manager="transferManager"
+          @delete-room="deleteGroupRoom"
+          @re-invite="reInvite"
+        />
 
-      <CreateRoomModal v-if="showCreateRoom" :loading="creatingRoom" @close="showCreateRoom = false"
-        @create="createRoom" />
-      <PrivateChatModal v-if="showPrivateChat" :users="privateChatUsers" :searching="searchingPrivateUsers"
-        :inviting="creatingPrivateChat" :inviting-user-id="invitingPrivateUserId" :searched="privateUserSearched"
-        @close="closePrivateChatModal" @search="searchPrivateUsers" @clear="clearPrivateUserSearch"
-        @invite="createPrivateChat" />
-      <InviteMembersModal v-if="showInviteMembers" :room-id="chat.currentRoomId" :loading="invitingMembers"
-        @close="showInviteMembers = false" @invite="inviteMembers" />
-      <GroupManageModal v-if="showGroupManage && groupManageRoom" :room="groupManageRoom" :members="roomMembers"
-        :loading-members="loadingRoomMembers" :updating-info="updatingGroupInfo" :deleting-room="deletingGroupRoom"
-        :removing-user-id="removingMemberUserId" :transferring-user-id="transferringManagerUserId"
-        :invitations="roomInvitations" :loading-invitations="loadingRoomInvitations"
-        :re-inviting-invitee-id="reInvitingInviteeId" @close="showGroupManage = false" @save-info="saveGroupInfo"
-        @remove-member="removeMember" @transfer-manager="transferManager" @delete-room="deleteGroupRoom"
-        @re-invite="reInvite" />
+        <InvitationModal
+          v-if="showInvitations"
+          :invitations="chat.invitations"
+          :friend-requests="friendRequests"
+          :processing-friend-request-id="processingFriendRequestId"
+          @close="showInvitations = false"
+          @accept-invitation="acceptInvitation"
+          @reject-invitation="rejectInvitation"
+          @accept-friend-request="acceptFriendRequest"
+          @reject-friend-request="rejectFriendRequest"
+        />
+        <RoomMembersModal
+          v-if="showRoomMembers"
+          :members="roomMembers"
+          :loading="loadingRoomMembers"
+          @close="showRoomMembers = false"
+        />
+        <MessageUserProfileModal
+          v-if="showMessageUserProfile"
+          :user="messageProfileUser"
+          :loading="messageProfileLoading"
+          @close="closeMessageUserProfile"
+        />
 
-      <InvitationModal v-if="showInvitations" :invitations="chat.invitations" :friend-requests="friendRequests"
-        :processing-friend-request-id="processingFriendRequestId" @close="showInvitations = false"
-        @accept-invitation="acceptInvitation" @reject-invitation="rejectInvitation"
-        @accept-friend-request="acceptFriendRequest" @reject-friend-request="rejectFriendRequest" />
-      <RoomMembersModal v-if="showRoomMembers" :members="roomMembers" :loading="loadingRoomMembers"
-        @close="showRoomMembers = false" />
-      <MessageUserProfileModal v-if="showMessageUserProfile" :user="messageProfileUser" :loading="messageProfileLoading"
-        @close="closeMessageUserProfile" />
+        <main
+          ref="messagesEl"
+          class="relative min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50 sm:px-4"
+          @scroll="handleMessageScroll"
+        >
+          <ChatMessageTimeline
+            :messages="filteredMessages"
+            :loading-older-messages="loadingOlderMessages"
+            :date-anchor="dateLabelAnchor"
+            :scroll-to-message="scrollToMessage"
+            @view-user-profile="openMessageUserProfile"
+            @send-friend-request="sendFriendRequestToMessageUser"
+            @recall-message="handleRecallMessage"
+          />
+        </main>
 
-      <main ref="messagesEl" class="relative min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50 sm:px-4"
-        @scroll="handleMessageScroll">
-        <ChatMessageTimeline :messages="filteredMessages" :loading-older-messages="loadingOlderMessages"
-          :date-anchor="dateLabelAnchor" :scroll-to-message="scrollToMessage"
-          @view-user-profile="openMessageUserProfile" @send-friend-request="sendFriendRequestToMessageUser"
-          @recall-message="handleRecallMessage" />
-      </main>
+        <footer class="relative border-t bg-white px-3 py-2">
+          <div v-if="typingIndicatorText" class="mb-1 px-1 text-xs text-gray-500">
+            {{ typingIndicatorText }}
+          </div>
+          <button
+            v-show="showScrollButton"
+            type="button"
+            aria-label="回到最新訊息"
+            class="chat-latest-button group absolute right-4 -top-12 z-20 sm:right-6"
+            @click="handleScrollButtonClick"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              class="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5"
+            >
+              <path
+                d="M10 3.5v12m0 0 4.5-4.5M10 15.5 5.5 11"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>最新訊息</span>
+          </button>
+          <ChatInput
+            :scroll-to-message="scrollToMessage"
+            :send-disabled-reason="privateBlockedReason"
+          />
+        </footer>
 
-      <footer class="relative border-t bg-white px-3 py-2">
-        <div v-if="typingIndicatorText" class="mb-1 px-1 text-xs text-gray-500">
-          {{ typingIndicatorText }}
-        </div>
-        <button v-show="showScrollButton" type="button" aria-label="回到最新訊息"
-          class="chat-latest-button group absolute right-4 -top-12 z-20 sm:right-6"
-          @click="handleScrollButtonClick">
-          <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"
-            class="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5">
-            <path d="M10 3.5v12m0 0 4.5-4.5M10 15.5 5.5 11" stroke="currentColor" stroke-width="1.8"
-              stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <span>最新訊息</span>
-        </button>
-        <ChatInput :scroll-to-message="scrollToMessage" :send-disabled-reason="privateBlockedReason" />
-      </footer>
-
-      <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
+        <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { recallChatRoomMessageApi } from '@/api/chatApi'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
@@ -111,7 +216,6 @@ import PrivateChatModal from '@/components/PrivateChatModal.vue'
 import RoomMembersModal from '@/components/RoomMembersModal.vue'
 import GroupManageModal from '@/components/GroupManageModal.vue'
 import ProfileSettingsModal from '@/components/ProfileSettingsModal.vue'
-import PreferencesModal from '@/components/PreferencesModal.vue'
 import MessageUserProfileModal from '@/components/MessageUserProfileModal.vue'
 import { showToast as showGlobalToast } from '@/utils/alerts'
 
@@ -188,8 +292,6 @@ const loadingOlderMessages = messages.loadingOlderMessages
 const showScrollButton = messages.showScrollButton
 const dateLabelAnchor = messages.dateLabelAnchor
 
-const showPreferences = ref(false)
-
 const showCreateRoom = modals.showCreateRoom
 const creatingRoom = modals.creatingRoom
 const showPrivateChat = modals.showPrivateChat
@@ -262,11 +364,6 @@ const openInvitations = modals.openInvitations
 const openMessageUserProfile = modals.openMessageUserProfile
 const closeMessageUserProfile = modals.closeMessageUserProfile
 const sendFriendRequestToMessageUser = modals.sendFriendRequestToMessageUser
-
-function openPreferences(): void {
-  showUserMenu.value = false
-  showPreferences.value = true
-}
 
 async function handleRecallMessage(payload: { messageId: string }): Promise<void> {
   const roomId = chat.currentRoomId

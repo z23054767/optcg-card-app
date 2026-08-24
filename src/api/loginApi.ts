@@ -75,6 +75,9 @@ export async function resetPasswordApi(token: string, newPassword: string): Prom
 }
 
 export async function checkNameAvailabilityApi(name: string): Promise<boolean> {
-  const { data } = await http.get<{ success: boolean; available: boolean }>('/auth/name-availability', { params: { name } })
+  const { data } = await http.get<{ success: boolean; available: boolean }>(
+    '/auth/name-availability',
+    { params: { name } },
+  )
   return data.available
 }

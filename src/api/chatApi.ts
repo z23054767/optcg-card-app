@@ -389,15 +389,12 @@ export async function searchUserByNameApi(
   name: string,
   roomId: string,
 ): Promise<SearchUserByNameResponse> {
-  const { data } = await http.get<SearchUserByNameResponse>(
-    '/chat/users/search/name',
-    {
-      params: {
-        name,
-        roomId,
-      },
+  const { data } = await http.get<SearchUserByNameResponse>('/chat/users/search/name', {
+    params: {
+      name,
+      roomId,
     },
-  )
+  })
 
   return data
 }

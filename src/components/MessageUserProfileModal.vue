@@ -29,10 +29,16 @@
               <span class="text-xs">✦</span>
               社交互動
             </div>
-            <h2 class="text-lg font-semibold tracking-tight" :class="preferences.isDark ? 'text-white' : 'text-slate-900'">
+            <h2
+              class="text-lg font-semibold tracking-tight"
+              :class="preferences.isDark ? 'text-white' : 'text-slate-900'"
+            >
               檢視個人檔案
             </h2>
-            <p class="mt-1 text-xs leading-5 sm:text-sm" :class="preferences.isDark ? 'text-slate-400' : 'text-slate-500'">
+            <p
+              class="mt-1 text-xs leading-5 sm:text-sm"
+              :class="preferences.isDark ? 'text-slate-400' : 'text-slate-500'"
+            >
               你可以直接從訊息查看對方的基本資料與好友狀態。
             </p>
           </div>
@@ -57,16 +63,17 @@
             v-if="!user"
             class="rounded-xl border border-dashed px-4 py-8 text-center"
             :class="
-              preferences.isDark
-                ? 'border-white/10 bg-white/[0.03]'
-                : 'border-slate-200 bg-white'
+              preferences.isDark ? 'border-white/10 bg-white/[0.03]' : 'border-slate-200 bg-white'
             "
           >
             <div
               class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-t-indigo-400"
               :class="preferences.isDark ? 'border-slate-600' : 'border-slate-300'"
             ></div>
-            <div class="mt-3 text-sm font-medium" :class="preferences.isDark ? 'text-slate-200' : 'text-slate-800'">
+            <div
+              class="mt-3 text-sm font-medium"
+              :class="preferences.isDark ? 'text-slate-200' : 'text-slate-800'"
+            >
               載入使用者資料中…
             </div>
           </div>
@@ -75,9 +82,7 @@
             v-else
             class="rounded-2xl border p-4"
             :class="
-              preferences.isDark
-                ? 'border-white/8 bg-slate-950/45'
-                : 'border-slate-200 bg-slate-50'
+              preferences.isDark ? 'border-white/8 bg-slate-950/45' : 'border-slate-200 bg-slate-50'
             "
           >
             <div class="flex items-center gap-3">
@@ -90,20 +95,32 @@
               />
 
               <div class="min-w-0 flex-1">
-                <div class="truncate text-base font-semibold" :class="preferences.isDark ? 'text-slate-100' : 'text-slate-900'">
+                <div
+                  class="truncate text-base font-semibold"
+                  :class="preferences.isDark ? 'text-slate-100' : 'text-slate-900'"
+                >
                   {{ user.displayName || user.name }}
                 </div>
-                <div class="truncate text-sm" :class="preferences.isDark ? 'text-slate-400' : 'text-slate-500'">
+                <div
+                  class="truncate text-sm"
+                  :class="preferences.isDark ? 'text-slate-400' : 'text-slate-500'"
+                >
                   @{{ user.name }}
                 </div>
               </div>
             </div>
 
-            <div class="mt-4 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="friendshipBadgeClass">
+            <div
+              class="mt-4 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+              :class="friendshipBadgeClass"
+            >
               {{ friendshipStatusLabel }}
             </div>
 
-            <p class="mt-3 text-xs leading-5" :class="preferences.isDark ? 'text-slate-400' : 'text-slate-500'">
+            <p
+              class="mt-3 text-xs leading-5"
+              :class="preferences.isDark ? 'text-slate-400' : 'text-slate-500'"
+            >
               {{ friendshipStatusHint }}
             </p>
           </div>
@@ -187,7 +204,9 @@ const friendshipBadgeClass = computed(() => {
     case 'incoming_pending':
       return preferences.isDark ? 'bg-sky-500/12 text-sky-300' : 'bg-sky-100 text-sky-700'
     case 'friend':
-      return preferences.isDark ? 'bg-emerald-500/12 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
+      return preferences.isDark
+        ? 'bg-emerald-500/12 text-emerald-300'
+        : 'bg-emerald-100 text-emerald-700'
     default:
       return preferences.isDark ? 'bg-slate-500/12 text-slate-300' : 'bg-slate-100 text-slate-700'
   }

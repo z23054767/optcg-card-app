@@ -1,19 +1,25 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-100 via-white to-violet-50 px-4 py-6 sm:flex sm:items-center sm:justify-center">
+    class="min-h-screen bg-linear-to-br from-slate-100 via-white to-violet-50 px-4 py-6 sm:flex sm:items-center sm:justify-center"
+  >
     <div
-      class="relative mx-auto w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-8">
-      <RouterLink to="/"
-        class="absolute left-4 top-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800">
+      class="relative mx-auto w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-8"
+    >
+      <RouterLink
+        to="/"
+        class="absolute left-4 top-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+      >
         ← 返回首頁
       </RouterLink>
 
       <div class="mb-6 flex flex-col items-center pt-8">
-        <img src="/logo_op.png" alt="註冊" class="app-logo h-20 w-20 object-contain drop-shadow-sm" />
+        <img
+          src="/logo_op.png"
+          alt="註冊"
+          class="app-logo h-20 w-20 object-contain drop-shadow-sm"
+        />
 
-        <h1 class="mt-3 text-2xl font-bold text-gray-800">
-          建立帳號
-        </h1>
+        <h1 class="mt-3 text-2xl font-bold text-gray-800">建立帳號</h1>
 
         <p class="mt-1 text-center text-sm leading-6 text-gray-500">
           {{ PRODUCT_COPY.registerSummary }}
@@ -22,17 +28,21 @@
 
       <form class="space-y-4" @submit.prevent="register">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Username
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Username </label>
 
-          <input v-model.trim="name" type="text" maxlength="30" autocomplete="username" placeholder="例如：player.one_01"
-            class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2" :class="nameInputClass" required
-            @input="scheduleNameCheck" />
+          <input
+            v-model.trim="name"
+            type="text"
+            maxlength="30"
+            autocomplete="username"
+            placeholder="例如：player.one_01"
+            class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2"
+            :class="nameInputClass"
+            required
+            @input="scheduleNameCheck"
+          />
 
-          <p v-if="nameStatus === 'checking'" class="mt-1 text-xs text-gray-500">
-            檢查中...
-          </p>
+          <p v-if="nameStatus === 'checking'" class="mt-1 text-xs text-gray-500">檢查中...</p>
 
           <p v-else-if="nameStatus === 'available'" class="mt-1 text-xs text-green-600">
             ✔ 此帳號可以使用
@@ -52,64 +62,86 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Display Name（選填）
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Display Name（選填） </label>
 
-          <input v-model.trim="displayName" type="text" maxlength="50" autocomplete="nickname" placeholder="請輸入顯示名稱"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input
+            v-model.trim="displayName"
+            type="text"
+            maxlength="50"
+            autocomplete="nickname"
+            placeholder="請輸入顯示名稱"
+            class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-          <p class="mt-1 text-xs text-gray-500">
-            若未填寫，將自動使用 Username
+          <p class="mt-1 text-xs text-gray-500">若未填寫，將自動使用 Username</p>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Email </label>
+
+          <input
+            v-model.trim="email"
+            type="email"
+            autocomplete="email"
+            placeholder="example@email.com"
+            class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2"
+            :class="emailInputClass"
+            required
+            @input="handleEmailInput"
+            @blur="validateEmail"
+          />
+
+          <p v-if="emailStatus === 'invalid'" class="mt-1 text-xs text-red-600">
+            ✖ {{ emailValidationMessage }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Email
-          </label>
-
-          <input v-model.trim="email" type="email" autocomplete="email" placeholder="example@email.com"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required />
-        </div>
-
-        <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            密碼
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> 密碼 </label>
 
           <div class="relative">
-            <input v-model="password" :type="showPassword ? 'text' : 'password'" autocomplete="new-password"
+            <input
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="new-password"
               placeholder="至少 8 碼，包含英文、數字及特殊符號"
               class="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required />
+              required
+            />
 
-            <button type="button"
+            <button
+              type="button"
               class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 hover:text-gray-700"
-              :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'" @click="showPassword = !showPassword">
+              :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'"
+              @click="showPassword = !showPassword"
+            >
               <FontAwesomeIcon :icon="showPassword ? 'eye-slash' : 'eye'" />
             </button>
           </div>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            確認密碼
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> 確認密碼 </label>
 
-          <input v-model="confirmPassword" :type="showPassword ? 'text' : 'password'" autocomplete="new-password"
+          <input
+            v-model="confirmPassword"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
             placeholder="請再次輸入密碼"
             class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required />
+            required
+          />
         </div>
 
         <p v-if="errorMessage" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
           {{ errorMessage }}
         </p>
 
-        <button type="submit" :disabled="!canSubmit"
-          class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+        <button
+          type="submit"
+          :disabled="!canSubmit"
+          class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
           {{ loading ? '註冊中...' : '註冊' }}
         </button>
       </form>
@@ -124,6 +156,7 @@
 
       <p class="mt-2 text-center text-xs text-gray-400">
         只想先逛內容？
+
         <RouterLink to="/" class="font-medium text-slate-500 hover:text-slate-700">
           回首頁看看
         </RouterLink>
@@ -142,12 +175,9 @@ import { resolveApiError } from '@/api/resolveApiError'
 import { showSuccessAlert } from '@/utils/alerts'
 import { USERNAME_RULES_HINT, normalizeUsername, validateUsername } from '@/utils/username'
 
-type NameStatus =
-  | 'idle'
-  | 'checking'
-  | 'available'
-  | 'unavailable'
-  | 'invalid'
+type NameStatus = 'idle' | 'checking' | 'available' | 'unavailable' | 'invalid'
+
+type EmailStatus = 'idle' | 'valid' | 'invalid'
 
 const router = useRouter()
 
@@ -163,6 +193,9 @@ const errorMessage = ref('')
 
 const nameStatus = ref<NameStatus>('idle')
 const nameValidationMessage = ref('')
+
+const emailStatus = ref<EmailStatus>('idle')
+const emailValidationMessage = ref('')
 
 let nameCheckTimer: ReturnType<typeof setTimeout> | null = null
 let nameCheckRequestId = 0
@@ -183,8 +216,20 @@ const nameInputClass = computed(() => {
   }
 })
 
+const emailInputClass = computed(() => {
+  switch (emailStatus.value) {
+    case 'invalid':
+      return 'border-red-500 focus:ring-red-200'
+
+    case 'valid':
+    case 'idle':
+    default:
+      return 'border-gray-300 focus:ring-blue-500'
+  }
+})
+
 const canSubmit = computed(() => {
-  return !loading.value && nameStatus.value === 'available'
+  return !loading.value && nameStatus.value === 'available' && emailStatus.value !== 'invalid'
 })
 
 function clearNameCheckTimer(): void {
@@ -203,6 +248,7 @@ function scheduleNameCheck(): void {
   nameValidationMessage.value = ''
 
   name.value = normalizeUsername(name.value)
+
   const value = name.value
   const validationMessage = validateUsername(value)
 
@@ -225,19 +271,13 @@ function scheduleNameCheck(): void {
     try {
       const available = await checkNameAvailabilityApi(value)
 
-      if (
-        currentRequestId !== nameCheckRequestId ||
-        name.value.trim() !== value
-      ) {
+      if (currentRequestId !== nameCheckRequestId || name.value.trim() !== value) {
         return
       }
 
       nameStatus.value = available ? 'available' : 'unavailable'
     } catch (error: unknown) {
-      if (
-        currentRequestId !== nameCheckRequestId ||
-        name.value.trim() !== value
-      ) {
+      if (currentRequestId !== nameCheckRequestId || name.value.trim() !== value) {
         return
       }
 
@@ -249,6 +289,46 @@ function scheduleNameCheck(): void {
       }
     }
   }, 400)
+}
+
+function validateEmailFormat(value: string): string {
+  if (!value) {
+    return '請輸入 Email'
+  }
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  if (!emailPattern.test(value)) {
+    return '請輸入有效的 Email'
+  }
+
+  return ''
+}
+
+function handleEmailInput(): void {
+  errorMessage.value = ''
+
+  if (emailStatus.value !== 'idle') {
+    emailStatus.value = 'idle'
+    emailValidationMessage.value = ''
+  }
+}
+
+function validateEmail(): void {
+  const normalizedEmail = email.value.trim()
+
+  email.value = normalizedEmail
+
+  const validationMessage = validateEmailFormat(normalizedEmail)
+
+  if (validationMessage) {
+    emailStatus.value = 'invalid'
+    emailValidationMessage.value = validationMessage
+    return
+  }
+
+  emailStatus.value = 'valid'
+  emailValidationMessage.value = ''
 }
 
 function validatePassword(value: string): string {
@@ -307,6 +387,18 @@ async function register(): Promise<void> {
     return
   }
 
+  const emailError = validateEmailFormat(normalizedEmail)
+
+  if (emailError) {
+    emailStatus.value = 'invalid'
+    emailValidationMessage.value = emailError
+    errorMessage.value = emailError
+    return
+  }
+
+  emailStatus.value = 'valid'
+  emailValidationMessage.value = ''
+
   const passwordError = validatePassword(password.value)
 
   if (passwordError) {
@@ -330,6 +422,7 @@ async function register(): Promise<void> {
     })
 
     await showSuccessAlert('註冊成功，請至信箱完成帳號驗證')
+
     await router.replace('/login')
   } catch (error: unknown) {
     errorMessage.value = resolveApiError(error)

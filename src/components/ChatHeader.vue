@@ -8,8 +8,12 @@
         @click="$emit('toggle-sidebar')"
       >
         <svg viewBox="0 0 20 20" fill="none" class="h-5 w-5" aria-hidden="true">
-          <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" stroke="currentColor" stroke-width="1.7"
-            stroke-linecap="round" />
+          <path
+            d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+          />
         </svg>
       </button>
 
@@ -60,64 +64,100 @@
               大廳
             </button>
 
-            <span v-if="currentRoomId !== 'lobby' && roomType !== 'private'" class="text-gray-300">·</span>
+            <span v-if="currentRoomId !== 'lobby' && roomType !== 'private'" class="text-gray-300"
+              >·</span
+            >
 
-            <span v-if="roomType !== 'private'" class="truncate">
-              {{ onlineCount }} 人在線
-            </span>
+            <span v-if="roomType !== 'private'" class="truncate"> {{ onlineCount }} 人在線 </span>
 
             <span v-else-if="privateBlockedByOther" class="truncate text-red-500 sm:hidden">
               已被對方封鎖
             </span>
-            <span v-else class="truncate">
-              私人聊天室
-            </span>
+            <span v-else class="truncate"> 私人聊天室 </span>
           </div>
         </div>
       </div>
 
       <div class="hidden shrink-0 items-center gap-1.5 sm:flex">
-        <button v-if="showAddFriendButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary"
-          @click="$emit('add-friend')">
+        <button
+          v-if="showAddFriendButton"
+          type="button"
+          class="chat-toolbar-button chat-toolbar-button-primary"
+          @click="$emit('add-friend')"
+        >
           加好友
         </button>
 
-        <button v-if="showCreateButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary"
-          @click="$emit('create-room')">
+        <button
+          v-if="showCreateButton"
+          type="button"
+          class="chat-toolbar-button chat-toolbar-button-primary"
+          @click="$emit('create-room')"
+        >
           建立群組
         </button>
 
-        <button v-if="showInviteMembersButton" type="button" class="chat-toolbar-button"
-          @click="$emit('invite-members')">
+        <button
+          v-if="showInviteMembersButton"
+          type="button"
+          class="chat-toolbar-button"
+          @click="$emit('invite-members')"
+        >
           邀請成員
         </button>
 
-        <button v-if="showPrivateChatButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary"
-          @click="$emit('start-private-chat')">
+        <button
+          v-if="showPrivateChatButton"
+          type="button"
+          class="chat-toolbar-button chat-toolbar-button-primary"
+          @click="$emit('start-private-chat')"
+        >
           新增好友
         </button>
 
-        <button v-if="showMembersButton" type="button" class="chat-toolbar-button" @click="$emit('open-members')">
+        <button
+          v-if="showMembersButton"
+          type="button"
+          class="chat-toolbar-button"
+          @click="$emit('open-members')"
+        >
           成員
         </button>
 
-        <button v-if="showManageGroupButton" type="button" class="chat-toolbar-button"
-          @click="$emit('open-manage-group')">
+        <button
+          v-if="showManageGroupButton"
+          type="button"
+          class="chat-toolbar-button"
+          @click="$emit('open-manage-group')"
+        >
           群組管理
         </button>
 
-        <button v-if="showUnblockUserButton" type="button" class="chat-toolbar-button"
-          @click="$emit('unblock-user')">
+        <button
+          v-if="showUnblockUserButton"
+          type="button"
+          class="chat-toolbar-button"
+          @click="$emit('unblock-user')"
+        >
           解除封鎖
         </button>
 
-        <button v-if="showLeaveGroupButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger"
-          :disabled="leavingGroup" @click="$emit('leave-group')">
+        <button
+          v-if="showLeaveGroupButton"
+          type="button"
+          class="chat-toolbar-button chat-toolbar-button-danger"
+          :disabled="leavingGroup"
+          @click="$emit('leave-group')"
+        >
           {{ leavingGroup ? '退出中…' : '退出群組' }}
         </button>
 
-        <button v-if="showBlockUserButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger"
-          @click="$emit('block-user')">
+        <button
+          v-if="showBlockUserButton"
+          type="button"
+          class="chat-toolbar-button chat-toolbar-button-danger"
+          @click="$emit('block-user')"
+        >
           封鎖
         </button>
       </div>
@@ -127,47 +167,85 @@
       v-if="hasMobileActions"
       class="chat-header-mobile-actions flex gap-2 overflow-x-auto border-t border-gray-200/70 px-3 py-2 sm:hidden"
     >
-      <button v-if="showAddFriendButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
-        @click="$emit('add-friend')">
+      <button
+        v-if="showAddFriendButton"
+        type="button"
+        class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
+        @click="$emit('add-friend')"
+      >
         加好友
       </button>
 
-      <button v-if="showCreateButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
-        @click="$emit('create-room')">
+      <button
+        v-if="showCreateButton"
+        type="button"
+        class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
+        @click="$emit('create-room')"
+      >
         建立群組
       </button>
 
-      <button v-if="showInviteMembersButton" type="button" class="chat-toolbar-button shrink-0"
-        @click="$emit('invite-members')">
+      <button
+        v-if="showInviteMembersButton"
+        type="button"
+        class="chat-toolbar-button shrink-0"
+        @click="$emit('invite-members')"
+      >
         邀請成員
       </button>
 
-      <button v-if="showPrivateChatButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
-        @click="$emit('start-private-chat')">
+      <button
+        v-if="showPrivateChatButton"
+        type="button"
+        class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
+        @click="$emit('start-private-chat')"
+      >
         新增好友
       </button>
 
-      <button v-if="showMembersButton" type="button" class="chat-toolbar-button shrink-0" @click="$emit('open-members')">
+      <button
+        v-if="showMembersButton"
+        type="button"
+        class="chat-toolbar-button shrink-0"
+        @click="$emit('open-members')"
+      >
         成員
       </button>
 
-      <button v-if="showManageGroupButton" type="button" class="chat-toolbar-button shrink-0"
-        @click="$emit('open-manage-group')">
+      <button
+        v-if="showManageGroupButton"
+        type="button"
+        class="chat-toolbar-button shrink-0"
+        @click="$emit('open-manage-group')"
+      >
         群組管理
       </button>
 
-      <button v-if="showUnblockUserButton" type="button" class="chat-toolbar-button shrink-0"
-        @click="$emit('unblock-user')">
+      <button
+        v-if="showUnblockUserButton"
+        type="button"
+        class="chat-toolbar-button shrink-0"
+        @click="$emit('unblock-user')"
+      >
         解除封鎖
       </button>
 
-      <button v-if="showLeaveGroupButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger shrink-0"
-        :disabled="leavingGroup" @click="$emit('leave-group')">
+      <button
+        v-if="showLeaveGroupButton"
+        type="button"
+        class="chat-toolbar-button chat-toolbar-button-danger shrink-0"
+        :disabled="leavingGroup"
+        @click="$emit('leave-group')"
+      >
         {{ leavingGroup ? '退出中…' : '退出群組' }}
       </button>
 
-      <button v-if="showBlockUserButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger shrink-0"
-        @click="$emit('block-user')">
+      <button
+        v-if="showBlockUserButton"
+        type="button"
+        class="chat-toolbar-button chat-toolbar-button-danger shrink-0"
+        @click="$emit('block-user')"
+      >
         封鎖
       </button>
     </div>
@@ -288,7 +366,6 @@ function handleAvatarLoadError(): void {
     avatarLoadFailed.value = false
   }, 800)
 }
-
 
 defineEmits<{
   'toggle-sidebar': []

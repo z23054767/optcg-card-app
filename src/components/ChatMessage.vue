@@ -9,7 +9,10 @@
       :class="rowClass"
     >
       <div class="min-w-0">
-        <div v-if="!isMine && !message.isRecalled" class="mb-1 px-1 text-[11px] leading-none text-gray-500">
+        <div
+          v-if="!isMine && !message.isRecalled"
+          class="mb-1 px-1 text-[11px] leading-none text-gray-500"
+        >
           {{ displayName }}
         </div>
 
@@ -31,10 +34,7 @@
             "
             @click="handleReplyReferenceClick"
           >
-            <div
-              v-if="!isReplyPreviewRecalled"
-              class="truncate font-medium text-gray-600"
-            >
+            <div v-if="!isReplyPreviewRecalled" class="truncate font-medium text-gray-600">
               ↩ {{ replyPreviewName }}
             </div>
             <div
@@ -149,7 +149,9 @@
                 <div
                   class="line-clamp-2"
                   :class="[
-                    isReplyPreviewRecalled ? 'text-center italic text-gray-400' : 'mt-1 text-gray-500',
+                    isReplyPreviewRecalled
+                      ? 'text-center italic text-gray-400'
+                      : 'mt-1 text-gray-500',
                   ]"
                 >
                   {{ replyPreviewContent }}
@@ -165,7 +167,9 @@
                 </div>
               </button>
 
-              <div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-gray-400">
+              <div
+                class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-gray-400"
+              >
                 <span
                   class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500"
                 ></span>
@@ -176,7 +180,13 @@
 
           <!-- 圖片附件 -->
           <div
-            v-else-if="!message.isRecalled && message.attachment && isImageAttachment && previewUrl && !previewLoadFailed"
+            v-else-if="
+              !message.isRecalled &&
+              message.attachment &&
+              isImageAttachment &&
+              previewUrl &&
+              !previewLoadFailed
+            "
             class="inline-block w-fit max-w-full overflow-hidden rounded-xl border shadow-sm"
             :class="[
               message.content ? 'mt-2' : '',
@@ -196,7 +206,9 @@
               <div
                 class="line-clamp-2"
                 :class="[
-                  isReplyPreviewRecalled ? 'text-center italic text-gray-400' : 'mt-1 text-gray-500',
+                  isReplyPreviewRecalled
+                    ? 'text-center italic text-gray-400'
+                    : 'mt-1 text-gray-500',
                 ]"
               >
                 {{ replyPreviewContent }}
@@ -283,7 +295,9 @@
               <div
                 class="line-clamp-2"
                 :class="[
-                  isReplyPreviewRecalled ? 'text-center italic text-gray-400' : 'mt-1 text-gray-500',
+                  isReplyPreviewRecalled
+                    ? 'text-center italic text-gray-400'
+                    : 'mt-1 text-gray-500',
                 ]"
               >
                 {{ replyPreviewContent }}
@@ -329,7 +343,9 @@
 
           <!-- 預覽失敗 -->
           <div
-            v-if="!message.isRecalled && message.attachment && isImageAttachment && previewLoadFailed"
+            v-if="
+              !message.isRecalled && message.attachment && isImageAttachment && previewLoadFailed
+            "
             class="mt-1 text-xs"
             :class="isMine ? 'text-blue-100' : 'text-red-600'"
           >
@@ -862,8 +878,8 @@ function setReplyTarget(): void {
       ? {
           name: props.message.attachment.name,
           mimeType: props.message.attachment.mimeType,
-        size: props.message.attachment.size,
-      }
+          size: props.message.attachment.size,
+        }
       : null,
     senderName: replyPreviewName.value,
     senderUsername: props.message.senderUsername || props.message.senderName || '使用者',
@@ -964,7 +980,10 @@ function handleDocumentContextMenu(event: MouseEvent): void {
 
   const target = event.target as Node | null
 
-  if (target && (contextMenuEl.value?.contains(target) || messageBubbleEl.value?.contains(target))) {
+  if (
+    target &&
+    (contextMenuEl.value?.contains(target) || messageBubbleEl.value?.contains(target))
+  ) {
     return
   }
 

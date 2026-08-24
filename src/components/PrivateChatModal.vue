@@ -135,9 +135,7 @@
           <div
             class="rounded-2xl border p-3"
             :class="
-              preferences.isDark
-                ? 'border-white/8 bg-slate-950/45'
-                : 'border-slate-200 bg-slate-50'
+              preferences.isDark ? 'border-white/8 bg-slate-950/45' : 'border-slate-200 bg-slate-50'
             "
           >
             <div class="mb-3 flex items-center justify-between">
@@ -313,9 +311,7 @@
                   v-else-if="user.blockStatus === 'blocked_me'"
                   class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                   :class="
-                    preferences.isDark
-                      ? 'bg-red-500/12 text-red-300'
-                      : 'bg-red-100 text-red-700'
+                    preferences.isDark ? 'bg-red-500/12 text-red-300' : 'bg-red-100 text-red-700'
                   "
                 >
                   已被封鎖
@@ -349,9 +345,7 @@
                   v-else-if="user.friendshipStatus === 'incoming_pending'"
                   class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                   :class="
-                    preferences.isDark
-                      ? 'bg-sky-500/12 text-sky-300'
-                      : 'bg-sky-100 text-sky-700'
+                    preferences.isDark ? 'bg-sky-500/12 text-sky-300' : 'bg-sky-100 text-sky-700'
                   "
                 >
                   待你接受

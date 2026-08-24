@@ -1,5 +1,8 @@
 <template>
-  <div v-if="open" class="fixed right-2 top-[4.5rem] z-[60] w-64 rounded-xl border bg-white py-2 shadow-xl sm:right-4">
+  <div
+    v-if="open"
+    class="fixed right-2 top-18 z-60 w-64 rounded-xl border bg-white py-2 shadow-xl sm:right-4"
+  >
     <div class="px-4 py-2">
       <div class="flex items-center gap-3">
         <UserAvatar
@@ -14,9 +17,7 @@
             {{ displayName }}
           </div>
 
-          <div class="mt-0.5 truncate text-xs text-gray-500">
-            @{{ name }}
-          </div>
+          <div class="mt-0.5 truncate text-xs text-gray-500">@{{ name }}</div>
         </div>
       </div>
     </div>
@@ -43,7 +44,7 @@
       <span>聊天室</span>
     </RouterLink>
 
-    <div v-if="showInvitations || showSettings || showPreferences" class="my-1 border-t"></div>
+    <div v-if="showInvitations || showSettings" class="my-1 border-t"></div>
 
     <button
       v-if="showInvitations"
@@ -52,7 +53,10 @@
     >
       <span>📨 收到的邀請</span>
 
-      <span v-if="invitationCount > 0" class="rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+      <span
+        v-if="invitationCount > 0"
+        class="rounded-full bg-red-500 px-2 py-0.5 text-xs text-white"
+      >
         {{ invitationCount }}
       </span>
     </button>
@@ -65,17 +69,12 @@
       ⚙ 個人設定
     </button>
 
-    <button
-      v-if="showPreferences"
-      class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-      @click="$emit('open-preferences')"
-    >
-      🌙 偏好設定
-    </button>
-
     <div class="my-1 border-t"></div>
 
-    <button class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" @click="$emit('logout')">
+    <button
+      class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+      @click="$emit('logout')"
+    >
       🚪 登出
     </button>
   </div>
@@ -93,14 +92,12 @@ withDefaults(
     avatarUrl: string | null
     showInvitations?: boolean
     showSettings?: boolean
-    showPreferences?: boolean
     showDeckLink?: boolean
     showChatLink?: boolean
   }>(),
   {
     showInvitations: true,
     showSettings: true,
-    showPreferences: true,
     showDeckLink: false,
     showChatLink: false,
   },
@@ -111,6 +108,5 @@ defineEmits<{
   logout: []
   'open-invitations': []
   'open-settings': []
-  'open-preferences': []
 }>()
 </script>

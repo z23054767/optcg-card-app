@@ -92,8 +92,18 @@ function syncCurrentAlert(): void {
     return
   }
 
-  const { resolve: _resolve, ...publicAlert } = nextAlert
-  alertState.current = publicAlert
+  alertState.current = {
+    id: nextAlert.id,
+    variant: nextAlert.variant,
+    tone: nextAlert.tone,
+    presentation: nextAlert.presentation,
+    title: nextAlert.title,
+    text: nextAlert.text,
+    confirmButtonText: nextAlert.confirmButtonText,
+    cancelButtonText: nextAlert.cancelButtonText,
+    showCancelButton: nextAlert.showCancelButton,
+    autoCloseMs: nextAlert.autoCloseMs,
+  }
 }
 
 function enqueueAlert(input: {

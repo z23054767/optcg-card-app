@@ -54,7 +54,7 @@ export interface ChatReplyContext {
 
 export const RECALL_MESSAGE_PLACEHOLDER = '此訊息已被收回'
 export const RECALL_REPLY_UNAVAILABLE_TEXT = '無法讀取原始訊息'
- 
+
 /**
  * 聊天訊息
  */
@@ -131,24 +131,24 @@ export interface LeaveRoomPayload {
  */
 export type ClientWsMessage =
   | {
-    type: 'SEND_MESSAGE'
-    payload: SendMessagePayload
-  }
-  | {
-    type: 'JOIN_ROOM'
-    payload: JoinRoomPayload
-  }
-  | {
-    type: 'LEAVE_ROOM'
-    payload: LeaveRoomPayload
-  }
-  | {
-    type: 'TYPING_STATUS'
-    payload: {
-      roomId: ChatRoomId
-      isTyping: boolean
+      type: 'SEND_MESSAGE'
+      payload: SendMessagePayload
     }
-  }
+  | {
+      type: 'JOIN_ROOM'
+      payload: JoinRoomPayload
+    }
+  | {
+      type: 'LEAVE_ROOM'
+      payload: LeaveRoomPayload
+    }
+  | {
+      type: 'TYPING_STATUS'
+      payload: {
+        roomId: ChatRoomId
+        isTyping: boolean
+      }
+    }
 
 /**
  * 聊天室資訊
@@ -193,7 +193,7 @@ export interface ChatRoomMember {
   avatarUrl: string | null
 
   /** 成員角色 */
-  role: "manager" | "member"
+  role: 'manager' | 'member'
 }
 
 /**

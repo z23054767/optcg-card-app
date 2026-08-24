@@ -130,18 +130,18 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     }
   }
 
-  async function resolveMessageUserProfile(
-    payload: {
-      userId: string
-      username: string
-      displayName: string
-    },
-  ): Promise<ChatUserSearchItem> {
+  async function resolveMessageUserProfile(payload: {
+    userId: string
+    username: string
+    displayName: string
+  }): Promise<ChatUserSearchItem> {
     const fallback = createMessageUserFallback(payload)
 
     const response = await searchChatUsersApi(payload.username)
     const normalizedUsername = payload.username.trim().toLowerCase()
-    const matchedUser = (response.users ?? []).find((item) => item.name.trim().toLowerCase() === normalizedUsername)
+    const matchedUser = (response.users ?? []).find(
+      (item) => item.name.trim().toLowerCase() === normalizedUsername,
+    )
 
     return mergeMessageUserWithSearchResult(fallback, matchedUser)
   }
@@ -151,7 +151,11 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
     username: string
     displayName: string
   }): Promise<void> {
-    if (!payload.userId || !payload.username.trim() || String(payload.userId) === String(auth.userId)) {
+    if (
+      !payload.userId ||
+      !payload.username.trim() ||
+      String(payload.userId) === String(auth.userId)
+    ) {
       return
     }
 
@@ -261,7 +265,9 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
         return
       }
 
-      const otherMember = roomMembers.value.find((member) => String(member.userId) !== String(auth.userId))
+      const otherMember = roomMembers.value.find(
+        (member) => String(member.userId) !== String(auth.userId),
+      )
 
       if (!otherMember?.name) {
         currentPrivateFriendshipStatus.value = null
@@ -376,7 +382,11 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   }
 
   async function createPrivateChat(user: ChatUserSearchItem): Promise<void> {
-    if (user.friendshipStatus !== 'none' || user.blockStatus !== 'none' || creatingPrivateChat.value) {
+    if (
+      user.friendshipStatus !== 'none' ||
+      user.blockStatus !== 'none' ||
+      creatingPrivateChat.value
+    ) {
       return
     }
 
@@ -525,9 +535,7 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   async function reInvite(inviteeName: string): Promise<void> {
     if (!chat.currentRoomId) return
 
-    const invitation = roomInvitations.value.find(
-      (item) => item.inviteeName === inviteeName,
-    )
+    const invitation = roomInvitations.value.find((item) => item.inviteeName === inviteeName)
 
     if (invitation) {
       reInvitingInviteeId.value = String(invitation.inviteeId)
@@ -582,7 +590,10 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
       }
 
       if (payload.avatarUpload) {
-        const response = await uploadGroupChatRoomAvatarApi(chat.currentRoomId, payload.avatarUpload)
+        const response = await uploadGroupChatRoomAvatarApi(
+          chat.currentRoomId,
+          payload.avatarUpload,
+        )
         const baseRoom = groupManageRoom.value ?? currentRoom
 
         if (baseRoom) {
@@ -678,38 +689,38 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
   }
 
   async function leaveCurrentGroupRoom(): Promise<void> {
-    if (!chat.currentRoomId || leavingGroupRoom.value) return;
+    if (!chat.currentRoomId || leavingGroupRoom.value) return
 
-    if (!auth.userId) return;
+    if (!auth.userId) return
 
-    const roomId = chat.currentRoomId;
+    const roomId = chat.currentRoomId
 
-    const result = await showDangerConfirmAlert("退出後將不再收到此群組的新訊息。", {
+    const result = await showDangerConfirmAlert('退出後將不再收到此群組的新訊息。', {
       title: '確定要退出群組聊天室？',
       confirmButtonText: '退出群組',
       cancelButtonText: '保留在群組',
-    });
+    })
 
     if (!result.isConfirmed) {
-      return;
+      return
     }
 
-    leavingGroupRoom.value = true;
+    leavingGroupRoom.value = true
 
     try {
-      await removeChatRoomMemberApi(roomId, String(auth.userId));
+      await removeChatRoomMemberApi(roomId, String(auth.userId))
 
-      showGroupManage.value = false;
-      showRoomMembers.value = false;
+      showGroupManage.value = false
+      showRoomMembers.value = false
 
-      await deps.loadMyRooms();
-      await deps.switchRoom("lobby");
+      await deps.loadMyRooms()
+      await deps.switchRoom('lobby')
 
-      await showSuccessAlert("已退出群組聊天室");
+      await showSuccessAlert('已退出群組聊天室')
     } catch {
-      await showErrorAlert("退出群組聊天室失敗，請稍後再試");
+      await showErrorAlert('退出群組聊天室失敗，請稍後再試')
     } finally {
-      leavingGroupRoom.value = false;
+      leavingGroupRoom.value = false
     }
   }
 
@@ -817,7 +828,11 @@ export function useChatRoomModals(deps: ChatRoomModalsDeps) {
 
   function handleProfileSaved(profile: UserProfile): void {
     userProfile.value = profile
-    auth.updateProfile({ displayName: profile.displayName, avatarUrl: profile.avatarUrl, bio: profile.bio })
+    auth.updateProfile({
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      bio: profile.bio,
+    })
     showProfileSettings.value = false
     deps.showToast('個人設定已更新')
   }

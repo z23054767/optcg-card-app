@@ -92,9 +92,7 @@
           <div
             class="rounded-2xl border p-4"
             :class="
-              preferences.isDark
-                ? 'border-white/8 bg-slate-950/45'
-                : 'border-slate-200 bg-slate-50'
+              preferences.isDark ? 'border-white/8 bg-slate-950/45' : 'border-slate-200 bg-slate-50'
             "
           >
             <div

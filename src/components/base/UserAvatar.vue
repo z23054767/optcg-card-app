@@ -113,10 +113,7 @@ function clearRetryTimer(): void {
   retryTimer.value = null
 }
 
-watch(
-  () => avatar.value.imageUrl,
-  resetImageState,
-)
+watch(() => avatar.value.imageUrl, resetImageState)
 
 onBeforeUnmount(() => {
   clearRetryTimer()

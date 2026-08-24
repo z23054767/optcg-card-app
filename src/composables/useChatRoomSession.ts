@@ -385,7 +385,10 @@ export function useChatRoomSession() {
         : user,
     )
 
-    if (nextDeps.modals.messageProfileUser.value && String(nextDeps.modals.messageProfileUser.value.userId) === String(input.otherUserId)) {
+    if (
+      nextDeps.modals.messageProfileUser.value &&
+      String(nextDeps.modals.messageProfileUser.value.userId) === String(input.otherUserId)
+    ) {
       nextDeps.modals.messageProfileUser.value = {
         ...nextDeps.modals.messageProfileUser.value,
         friendshipStatus: input.friendshipStatus,
@@ -397,7 +400,11 @@ export function useChatRoomSession() {
       (member) => String(member.userId) !== String(auth.userId),
     )
 
-    if (currentRoomType.value === 'private' && currentPrivateMember && String(currentPrivateMember.userId) === String(input.otherUserId)) {
+    if (
+      currentRoomType.value === 'private' &&
+      currentPrivateMember &&
+      String(currentPrivateMember.userId) === String(input.otherUserId)
+    ) {
       nextDeps.modals.currentPrivateFriendshipStatus.value = input.friendshipStatus
       nextDeps.modals.currentPrivateBlockStatus.value = input.blockStatus
     }
