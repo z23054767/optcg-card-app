@@ -1,21 +1,23 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-gray-100 relative">
-    <ChatSidebar :open="sidebarOpen" :rooms="chat.rooms" :current-room-id="chat.currentRoomId"
+  <div class="flex h-screen flex-col overflow-hidden bg-gray-100">
+    <AppHeader :avatar-url="resolvedUserAvatarUrl" :notification-count="notificationCount" user-menu-enabled
+      @toggle-user-menu="toggleUserMenu" @close-user-menu="showUserMenu = false" />
+
+    <div class="relative flex min-h-0 flex-1 overflow-hidden">
+      <ChatSidebar :open="sidebarOpen" :rooms="chat.rooms" :current-room-id="chat.currentRoomId"
       :unread-counts="roomUnreadCounts" @close="sidebarOpen = false" @switch-room="switchRoom" />
 
     <div class="flex min-h-0 flex-1 flex-col min-w-0 bg-white shadow-lg">
       <ChatHeader :title="currentRoomTitle" :current-room-id="chat.currentRoomId" :room-type="currentRoomType"
-        :avatar-url="currentRoomAvatarUrl" :user-name="auth.user?.displayName || auth.user?.name || '使用者'"
-        :user-account="auth.user?.name ? `@${auth.user.name}` : ''" :user-id="auth.user?.userId || null"
-        :user-avatar-url="resolvedUserAvatarUrl" :online-count="chat.currentRoomOnlineCount"
-        :unread-notification-count="notificationCount" :show-create-button="canCreateRoom"
+        :avatar-url="currentRoomAvatarUrl" :online-count="chat.currentRoomOnlineCount"
+        :show-create-button="canCreateRoom"
         :show-private-chat-button="canStartPrivateChat" :show-invite-members-button="canInviteMembers"
         :show-manage-group-button="canManageGroup" :show-members-button="isCurrentGroupRoom"
         :show-leave-group-button="canLeaveGroup" :leaving-group="leavingGroupRoom"
         :show-add-friend-button="canAddFriend" :show-block-user-button="canBlockUser"
         :show-unblock-user-button="canUnblockUser" :private-blocked-by-other="privateBlockedByOther"
         @create-room="showCreateRoom = true" @start-private-chat="showPrivateChat = true" @back-to-lobby="backToLobby"
-        @toggle-sidebar="toggleSidebar" @toggle-user-menu="toggleUserMenu" @open-members="openRoomMembers"
+        @toggle-sidebar="toggleSidebar" @open-members="openRoomMembers"
         @invite-members="showInviteMembers = true" @open-manage-group="openGroupManage"
         @leave-group="leaveCurrentGroupRoom" @add-friend="sendFriendRequestToCurrentPrivateUser"
         @block-user="blockCurrentUser" @unblock-user="unblockCurrentUser" />
@@ -69,7 +71,7 @@
           {{ typingIndicatorText }}
         </div>
         <button v-show="showScrollButton" type="button" aria-label="回到最新訊息"
-          class="group absolute right-4 -top-14 z-20 inline-flex h-10 items-center gap-2 rounded-full border border-indigo-400/30 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 text-sm font-medium text-white shadow-lg shadow-indigo-900/20 transition-all duration-200 hover:-translate-y-0.5 hover:from-indigo-500 hover:to-violet-500 hover:shadow-xl hover:shadow-indigo-900/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.97] sm:right-6"
+          class="chat-latest-button group absolute right-4 -top-12 z-20 sm:right-6"
           @click="handleScrollButtonClick">
           <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"
             class="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5">
@@ -82,6 +84,7 @@
       </footer>
 
       <WelcomePopup :visible="chat.welcomePopup.visible" :message="chat.welcomePopup.message" />
+      </div>
     </div>
   </div>
 </template>
@@ -94,6 +97,7 @@ import { useChatStore } from '@/stores/chatStore'
 import { useChatMessages } from '@/composables/useChatMessages'
 import { useChatRoomModals } from '@/composables/useChatRoomModals'
 import { useChatRoomSession } from '@/composables/useChatRoomSession'
+import AppHeader from '@/components/AppHeader.vue'
 import UserMenu from '@/components/UserMenu.vue'
 import ChatSidebar from '@/components/ChatSidebar.vue'
 import ChatHeader from '@/components/ChatHeader.vue'

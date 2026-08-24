@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { getMyProfileApi } from '@/api/profileApi'
 import { useChatStore } from '@/stores/chatStore'
 
 export type AuthUser = {
@@ -36,6 +37,8 @@ function parseJwt(token: string): AuthUser {
     email: payload.email ?? null,
   }
 }
+
+let profileLoadingPromise: Promise<void> | null = null
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -80,6 +83,41 @@ export const useAuthStore = defineStore('auth', {
     updateProfile(profile: { displayName: string; avatarUrl: string | null; bio: string | null }) {
       if (!this.user) return
       this.user = { ...this.user, ...profile }
+    },
+
+    async ensureProfileLoaded(): Promise<void> {
+      if (!this.isAuthenticated || !this.user) return
+
+      if (this.user.avatarUrl !== undefined && this.user.bio !== undefined) {
+        return
+      }
+
+      if (profileLoadingPromise) {
+        await profileLoadingPromise
+        return
+      }
+
+      profileLoadingPromise = (async () => {
+        try {
+          const profile = await getMyProfileApi()
+
+          if (!this.user || String(this.user.userId) !== String(profile.id)) {
+            return
+          }
+
+          this.user = {
+            ...this.user,
+            displayName: profile.displayName,
+            email: profile.email,
+            avatarUrl: profile.avatarUrl,
+            bio: profile.bio,
+          }
+        } finally {
+          profileLoadingPromise = null
+        }
+      })()
+
+      await profileLoadingPromise
     },
 
     logout() {

@@ -1,40 +1,74 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import LoginView from '@/views/LoginView.vue'
-import VerifySuccessView from '@/views/VerifySuccessView.vue'
-import RegisterView from '@/views/RegisterView.vue'
-import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
-import ResetPasswordView from '@/views/ResetPasswordView.vue'
-import ChatView from '@/views/ChatView.vue'
-import ChatInviteView from '@/views/ChatInviteView.vue'
-
 import { useAuthStore } from '@/stores/authStore'
+import ChatInviteView from '@/views/ChatInviteView.vue'
+import ChatView from '@/views/ChatView.vue'
+import DeckStudioView from '@/views/DeckStudioView.vue'
+import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
+import HomeView from '@/views/HomeView.vue'
+import LoginView from '@/views/LoginView.vue'
+import RegisterView from '@/views/RegisterView.vue'
+import ResetPasswordView from '@/views/ResetPasswordView.vue'
+import VerifySuccessView from '@/views/VerifySuccessView.vue'
+
+const DEFAULT_AUTHENTICATED_PATH = '/decks'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
       path: '/',
-      redirect: '/chat',
+      name: 'home',
+      component: HomeView,
+      meta: { public: true },
     },
     {
       path: '/login',
+      name: 'login',
       component: LoginView,
+      meta: { guestOnly: true },
     },
-    { path: '/register', component: RegisterView },
-    { path: '/forgot-password', component: ForgotPasswordView },
-    { path: '/auth/reset-password', component: ResetPasswordView },
+    {
+      path: '/register',
+      name: 'register',
+      component: RegisterView,
+      meta: { guestOnly: true },
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: ForgotPasswordView,
+      meta: { guestOnly: true },
+    },
+    {
+      path: '/auth/reset-password',
+      name: 'reset-password',
+      component: ResetPasswordView,
+      meta: { guestOnly: true },
+    },
     {
       path: '/auth/verify-success',
+      name: 'verify-success',
       component: VerifySuccessView,
+      meta: { public: true },
+    },
+    {
+      path: '/decks',
+      name: 'deck-studio',
+      component: DeckStudioView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/chat',
+      name: 'chat',
       component: ChatView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/chat/invite',
+      name: 'chat-invite',
       component: ChatInviteView,
+      meta: { requiresAuth: true },
     },
   ],
 })
@@ -42,15 +76,19 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
 
-  const guestOnlyPaths = ['/login', '/register', '/forgot-password', '/auth/reset-password']
-  const publicPaths = [...guestOnlyPaths, '/auth/verify-success']
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+  const guestOnly = to.matched.some((record) => record.meta.guestOnly)
 
-  if (auth.isAuthenticated && guestOnlyPaths.includes(to.path)) {
-    return '/chat'
+  if (auth.isAuthenticated && guestOnly) {
+    const redirectTarget =
+      typeof to.query.redirect === 'string' && to.query.redirect.startsWith('/')
+        ? to.query.redirect
+        : DEFAULT_AUTHENTICATED_PATH
+
+    return redirectTarget
   }
 
-  // 驗證成功頁面必須可被未登入使用者開啟，讓使用者看到成功結果後再導向登入
-  if (!auth.isAuthenticated && !publicPaths.includes(to.path)) {
+  if (!auth.isAuthenticated && requiresAuth) {
     return {
       path: '/login',
       query: {
@@ -58,6 +96,9 @@ router.beforeEach((to) => {
       },
     }
   }
+
+  return true
 })
 
+export { DEFAULT_AUTHENTICATED_PATH }
 export default router

@@ -519,7 +519,20 @@ export function useChatRoomSession() {
         }
       },
       () => {
-        void loadMyInvitations()
+        const nextDeps = depsSafe()
+        const refreshTasks: Promise<unknown>[] = [
+          loadMyProfile(),
+          loadMyRooms(),
+          loadMyInvitations(),
+        ]
+
+        if (chat.currentRoomId !== 'lobby') {
+          refreshTasks.push(nextDeps.modals.loadRoomMembers(chat.currentRoomId))
+        }
+
+        void Promise.all(refreshTasks).catch(() => {
+          nextDeps.showToast('重新同步聊天室資料失敗，請稍後再試', 'error')
+        })
         joinRoom(chat.currentRoomId)
       },
       async () => {

@@ -1,13 +1,16 @@
 <template>
-  <header class="sticky top-0 z-10 border-b bg-white">
-    <div class="flex min-h-14 items-center gap-3 px-3 py-2 sm:px-4">
+  <div class="chat-header border-b border-gray-200 bg-gray-50/80 backdrop-blur-sm">
+    <div class="flex min-h-16 items-center gap-3 px-3 py-2 sm:px-4">
       <button
         type="button"
-        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-gray-600 hover:bg-gray-100 sm:hidden"
+        class="app-icon-button shrink-0 sm:hidden"
         aria-label="開啟聊天室選單"
         @click="$emit('toggle-sidebar')"
       >
-        ☰
+        <svg viewBox="0 0 20 20" fill="none" class="h-5 w-5" aria-hidden="true">
+          <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" stroke="currentColor" stroke-width="1.7"
+            stroke-linecap="round" />
+        </svg>
       </button>
 
       <div class="flex min-w-0 flex-1 items-center gap-3">
@@ -20,7 +23,7 @@
 
         <span
           v-else
-          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
+          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl"
           :class="[avatarBackgroundClass, avatarTextClass]"
         >
           <img
@@ -34,241 +37,141 @@
         </span>
 
         <div class="min-w-0">
-          <h1 class="truncate text-base font-semibold text-gray-800 sm:text-lg">
-            {{ title }}
-          </h1>
+          <div class="flex min-w-0 items-center gap-2">
+            <h1 class="truncate text-sm font-semibold text-gray-900 sm:text-base">
+              {{ title }}
+            </h1>
 
-          <div
-            v-if="privateBlockedByOther"
-            class="mt-1 inline-flex rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-medium text-red-700"
-          >
-            已被對方封鎖
+            <span
+              v-if="privateBlockedByOther"
+              class="hidden shrink-0 rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 sm:inline-flex"
+            >
+              已被封鎖
+            </span>
           </div>
 
-          <div class="mt-0.5 flex items-center gap-2 text-xs">
+          <div class="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-gray-500">
             <button
               v-if="currentRoomId !== 'lobby'"
               type="button"
-              class="text-blue-600 hover:text-blue-700 hover:underline"
+              class="shrink-0 font-medium text-indigo-600 transition hover:text-indigo-700"
               @click="$emit('back-to-lobby')"
             >
-              ← 回到大廳
+              大廳
             </button>
 
-            <span v-if="currentRoomId !== 'lobby'" class="text-gray-300"> | </span>
+            <span v-if="currentRoomId !== 'lobby' && roomType !== 'private'" class="text-gray-300">·</span>
 
-            <span v-if="roomType !== 'private'" class="inline-flex items-center gap-1 text-emerald-600">
-              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            <span v-if="roomType !== 'private'" class="truncate">
               {{ onlineCount }} 人在線
+            </span>
+
+            <span v-else-if="privateBlockedByOther" class="truncate text-red-500 sm:hidden">
+              已被對方封鎖
+            </span>
+            <span v-else class="truncate">
+              私人聊天室
             </span>
           </div>
         </div>
       </div>
 
-      <div class="hidden shrink-0 items-center gap-2 sm:flex">
-        <button
-          v-if="showAddFriendButton"
-          type="button"
-          class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-          @click="$emit('add-friend')"
-        >
+      <div class="hidden shrink-0 items-center gap-1.5 sm:flex">
+        <button v-if="showAddFriendButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary"
+          @click="$emit('add-friend')">
           加好友
         </button>
 
-        <button
-          v-if="showCreateButton"
-          type="button"
-          class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-          @click="$emit('create-room')"
-        >
-          建立群組聊天
+        <button v-if="showCreateButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary"
+          @click="$emit('create-room')">
+          建立群組
         </button>
 
-        <button
-          v-if="showInviteMembersButton"
-          type="button"
-          class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-          @click="$emit('invite-members')"
-        >
+        <button v-if="showInviteMembersButton" type="button" class="chat-toolbar-button"
+          @click="$emit('invite-members')">
           邀請成員
         </button>
 
-        <button
-          v-if="showPrivateChatButton"
-          type="button"
-          class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-          @click="$emit('start-private-chat')"
-        >
+        <button v-if="showPrivateChatButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary"
+          @click="$emit('start-private-chat')">
           新增好友
         </button>
 
-        <button
-          v-if="showManageGroupButton"
-          type="button"
-          class="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700"
-          @click="$emit('open-manage-group')"
-        >
-          群組管理
-        </button>
-
-        <button
-          v-if="showMembersButton"
-          type="button"
-          class="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
-          @click="$emit('open-members')"
-        >
+        <button v-if="showMembersButton" type="button" class="chat-toolbar-button" @click="$emit('open-members')">
           成員
         </button>
 
-        <button
-          v-if="showLeaveGroupButton"
-          type="button"
-          class="rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="leavingGroup"
-          @click="$emit('leave-group')"
-        >
+        <button v-if="showManageGroupButton" type="button" class="chat-toolbar-button"
+          @click="$emit('open-manage-group')">
+          群組管理
+        </button>
+
+        <button v-if="showUnblockUserButton" type="button" class="chat-toolbar-button"
+          @click="$emit('unblock-user')">
+          解除封鎖
+        </button>
+
+        <button v-if="showLeaveGroupButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger"
+          :disabled="leavingGroup" @click="$emit('leave-group')">
           {{ leavingGroup ? '退出中…' : '退出群組' }}
         </button>
 
-        <button
-          v-if="showBlockUserButton"
-          type="button"
-          class="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
-          @click="$emit('block-user')"
-        >
+        <button v-if="showBlockUserButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger"
+          @click="$emit('block-user')">
           封鎖
         </button>
-
-        <button
-          v-if="showUnblockUserButton"
-          type="button"
-          class="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
-          @click="$emit('unblock-user')"
-        >
-          解除封鎖
-        </button>
       </div>
-
-      <button
-        type="button"
-        class="relative h-9 w-9 shrink-0 overflow-visible rounded-full"
-        aria-label="開啟使用者選單"
-        @click="$emit('toggle-user-menu')"
-      >
-        <UserAvatar
-          class="h-9 w-9 text-sm"
-          :avatar-url="userAvatarUrl"
-          :display-name="userName"
-          :username="userAccount"
-          :user-id="userId"
-        />
-
-        <span
-          v-if="unreadNotificationCount > 0"
-          class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-5 text-white"
-        >
-          {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
-        </span>
-      </button>
     </div>
 
     <div
-      v-if="
-        showCreateButton ||
-        showPrivateChatButton ||
-        showInviteMembersButton ||
-        showManageGroupButton ||
-        showMembersButton ||
-        showLeaveGroupButton ||
-        showAddFriendButton ||
-        showBlockUserButton ||
-        showUnblockUserButton
-      "
-      class="flex gap-2 overflow-x-auto border-t border-gray-100 px-3 py-2 sm:hidden"
+      v-if="hasMobileActions"
+      class="chat-header-mobile-actions flex gap-2 overflow-x-auto border-t border-gray-200/70 px-3 py-2 sm:hidden"
     >
-      <button
-        v-if="showAddFriendButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-        @click="$emit('add-friend')"
-      >
+      <button v-if="showAddFriendButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
+        @click="$emit('add-friend')">
         加好友
       </button>
 
-      <button
-        v-if="showCreateButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-        @click="$emit('create-room')"
-      >
-        建立群組聊天
+      <button v-if="showCreateButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
+        @click="$emit('create-room')">
+        建立群組
       </button>
 
-      <button
-        v-if="showInviteMembersButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-        @click="$emit('invite-members')"
-      >
+      <button v-if="showInviteMembersButton" type="button" class="chat-toolbar-button shrink-0"
+        @click="$emit('invite-members')">
         邀請成員
       </button>
 
-      <button
-        v-if="showPrivateChatButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-        @click="$emit('start-private-chat')"
-      >
+      <button v-if="showPrivateChatButton" type="button" class="chat-toolbar-button chat-toolbar-button-primary shrink-0"
+        @click="$emit('start-private-chat')">
         新增好友
       </button>
 
-      <button
-        v-if="showManageGroupButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700"
-        @click="$emit('open-manage-group')"
-      >
-        群組管理
-      </button>
-
-      <button
-        v-if="showMembersButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
-        @click="$emit('open-members')"
-      >
+      <button v-if="showMembersButton" type="button" class="chat-toolbar-button shrink-0" @click="$emit('open-members')">
         成員
       </button>
 
-      <button
-        v-if="showLeaveGroupButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-        :disabled="leavingGroup"
-        @click="$emit('leave-group')"
-      >
+      <button v-if="showManageGroupButton" type="button" class="chat-toolbar-button shrink-0"
+        @click="$emit('open-manage-group')">
+        群組管理
+      </button>
+
+      <button v-if="showUnblockUserButton" type="button" class="chat-toolbar-button shrink-0"
+        @click="$emit('unblock-user')">
+        解除封鎖
+      </button>
+
+      <button v-if="showLeaveGroupButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger shrink-0"
+        :disabled="leavingGroup" @click="$emit('leave-group')">
         {{ leavingGroup ? '退出中…' : '退出群組' }}
       </button>
 
-      <button
-        v-if="showBlockUserButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
-        @click="$emit('block-user')"
-      >
+      <button v-if="showBlockUserButton" type="button" class="chat-toolbar-button chat-toolbar-button-danger shrink-0"
+        @click="$emit('block-user')">
         封鎖
       </button>
-
-      <button
-        v-if="showUnblockUserButton"
-        type="button"
-        class="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
-        @click="$emit('unblock-user')"
-      >
-        解除封鎖
-      </button>
     </div>
-  </header>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -282,12 +185,7 @@ const props = defineProps<{
   currentRoomId: string
   roomType: 'group' | 'private' | 'lobby'
   avatarUrl?: string | null
-  userName: string
-  userAccount: string
-  userId?: string | number | null
-  userAvatarUrl: string | null
   onlineCount: number
-  unreadNotificationCount: number
   showCreateButton: boolean
   showPrivateChatButton: boolean
   showInviteMembersButton: boolean
@@ -326,7 +224,7 @@ const defaultAvatar = computed(() => {
       return ''
     case 'lobby':
     default:
-      return '🏠'
+      return '📢'
   }
 })
 
@@ -355,6 +253,19 @@ const avatarTextClass = computed(() => {
       return 'font-semibold text-blue-600'
   }
 })
+
+const hasMobileActions = computed(
+  () =>
+    props.showCreateButton ||
+    props.showPrivateChatButton ||
+    props.showInviteMembersButton ||
+    props.showManageGroupButton ||
+    props.showMembersButton ||
+    props.showLeaveGroupButton ||
+    props.showAddFriendButton ||
+    props.showBlockUserButton ||
+    props.showUnblockUserButton,
+)
 
 watch(
   () => [props.roomType, props.avatarUrl],
@@ -386,7 +297,6 @@ defineEmits<{
   'invite-members': []
   'open-manage-group': []
   'back-to-lobby': []
-  'toggle-user-menu': []
   'open-members': []
   'leave-group': []
   'add-friend': []

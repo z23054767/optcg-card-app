@@ -1,43 +1,45 @@
 <template>
-  <div class="min-h-screen bg-gray-100 px-4 py-6 sm:flex sm:items-center sm:justify-center">
-    <div class="mx-auto w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8 relative">
-      <button type="button" @click="preferences.setThemeMode(preferences.isDark ? 'light' : 'dark')"
-        :title="preferences.isDark ? '切換到淺色模式' : '切換到深色模式'" :aria-label="preferences.isDark ? '切換到淺色模式' : '切換到深色模式'"
-        class="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-lg shadow-sm shadow-slate-200/60 transition hover:scale-105 hover:shadow-md">
-        <span>{{ preferences.isDark ? '☀️' : '🌙' }}</span>
-      </button>
+  <div class="min-h-screen bg-linear-to-br transition-colors duration-200" :class="pageClass">
+    <AppHeader />
 
+    <main class="px-4 py-6 sm:flex sm:min-h-[calc(100vh-4rem)] sm:items-center sm:justify-center sm:py-8">
+      <div
+        class="relative mx-auto w-full max-w-md rounded-[28px] border p-6 shadow-xl sm:p-8"
+        :class="panelClass">
       <!-- Login Logo -->
       <div class="mb-6 flex flex-col items-center">
-        <img src="/images/login-logo.png" alt="Login Logo" class="h-20 w-20 object-contain drop-shadow-sm" />
+        <img src="/logo_op.png" alt="Login Logo" class="app-logo h-20 w-20 object-contain drop-shadow-sm" />
 
-        <h1 class="mt-3 text-2xl font-bold text-gray-800">Login</h1>
+        <h1 class="mt-3 text-2xl font-bold" :class="titleClass">登入帳號</h1>
 
-        <p class="mt-1 text-center text-sm text-gray-500">登入您的帳號以繼續使用</p>
+        <p class="mt-1 text-center text-sm" :class="mutedTextClass">登入您的帳號以繼續使用</p>
       </div>
 
       <!-- Form -->
       <form class="space-y-4" @submit.prevent="login">
         <!-- Account -->
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700"> 帳號 </label>
+          <label class="mb-1 block text-sm font-medium" :class="labelClass"> 帳號 </label>
 
           <input v-model="name" type="text" placeholder="請輸入 Username"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            :class="inputClass"
             required />
         </div>
 
         <!-- Password -->
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700"> 密碼 </label>
+          <label class="mb-1 block text-sm font-medium" :class="labelClass"> 密碼 </label>
 
           <div class="relative">
             <input v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="請輸入密碼"
-              class="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded-lg border px-4 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :class="inputClass"
               required />
 
             <button type="button" :aria-label="showPassword ? '隱藏密碼' : '顯示密碼'" :title="showPassword ? '隱藏密碼' : '顯示密碼'"
-              class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-gray-700"
+              class="absolute inset-y-0 right-0 flex w-10 items-center justify-center transition"
+              :class="passwordToggleClass"
               @click="showPassword = !showPassword">
               <FontAwesomeIcon :icon="showPassword ? 'eye-slash' : 'eye'" class="text-lg" />
             </button>
@@ -45,7 +47,7 @@
         </div>
 
         <div class="flex items-center justify-end">
-          <RouterLink to="/forgot-password" class="text-sm font-medium text-blue-600 hover:text-blue-700">
+          <RouterLink to="/forgot-password" class="text-sm font-medium" :class="linkClass">
             忘記密碼？
           </RouterLink>
         </div>
@@ -62,25 +64,31 @@
         </button>
       </form>
 
-      <p class="mt-5 text-center text-sm text-gray-500">
+      <p class="mt-5 text-center text-sm" :class="mutedTextClass">
         還沒有帳號？
-        <RouterLink to="/register" class="font-medium text-blue-600 hover:text-blue-700">立即註冊</RouterLink>
+        <RouterLink to="/register" class="font-medium" :class="linkClass">立即註冊</RouterLink>
+      </p>
+
+      <p class="mt-2 text-center text-xs" :class="subtleTextClass">
+        想先看看平台定位？
+        <RouterLink to="/" class="font-medium" :class="subtleLinkClass">回首頁瀏覽</RouterLink>
       </p>
 
       <!-- Divider -->
       <div class="my-6 flex items-center gap-3">
-        <div class="h-px flex-1 bg-gray-200"></div>
+        <div class="h-px flex-1" :class="dividerClass"></div>
 
-        <span class="shrink-0 text-xs text-gray-400"> 或使用第三方登入 </span>
+        <span class="shrink-0 text-xs" :class="subtleTextClass"> 或使用第三方登入 </span>
 
-        <div class="h-px flex-1 bg-gray-200"></div>
+        <div class="h-px flex-1" :class="dividerClass"></div>
       </div>
 
       <!-- OAuth Login -->
       <div class="space-y-3">
         <!-- Google -->
         <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          :class="oauthButtonClass"
           @click="startOAuthLogin('google')">
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
             <img :src="GoogleIcon" alt="Google" class="h-5 w-5 justify-self-center object-contain" />
@@ -95,7 +103,8 @@
 
         <!-- Microsoft -->
         <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          :class="oauthButtonClass"
           @click="startOAuthLogin('microsoft')">
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
             <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
@@ -116,7 +125,8 @@
 
         <!-- LINE -->
         <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          :class="oauthButtonClass"
           @click="startOAuthLogin('line')">
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
             <img :src="LineIcon" alt="LINE" class="h-5 w-5 justify-self-center object-contain" />
@@ -131,7 +141,8 @@
 
         <!-- Discord -->
         <button type="button" :disabled="oauthLoadingProvider !== null"
-          class="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          class="flex w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+          :class="oauthButtonClass"
           @click="startOAuthLogin('discord')">
           <span class="grid w-full max-w-48 grid-cols-[24px_1fr_24px] items-center gap-2 sm:gap-3">
             <img :src="DiscordIcon" alt="Discord" class="h-5 w-5 justify-self-center object-contain" />
@@ -144,16 +155,17 @@
           </span>
         </button>
       </div>
-    </div>
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { buildOAuthLoginUrl, loginApi, type OAuthProvider } from '@/api/loginApi'
 import { useAuthStore } from '@/stores/authStore'
-import { usePreferencesStore } from '@/stores/preferencesStore'
 import { resolveApiError } from '@/api/resolveApiError'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { showWarningAlert } from '@/utils/alerts'
@@ -162,6 +174,7 @@ import GoogleIcon from '@/assets/icons/google.svg'
 import LineIcon from '@/assets/icons/line.svg'
 import MicrosoftIcon from '@/assets/icons/microsoft.svg'
 import DiscordIcon from '@/assets/icons/discord.svg'
+import { usePreferencesStore } from '@/stores/preferencesStore'
 
 const authStore = useAuthStore()
 const preferences = usePreferencesStore()
@@ -175,10 +188,45 @@ const oauthLoadingProvider = ref<OAuthProvider | null>(null)
 const router = useRouter()
 const route = useRoute()
 
+const pageClass = computed(() =>
+  preferences.isDark
+    ? 'from-slate-950 via-slate-950 to-indigo-950'
+    : 'from-slate-100 via-white to-indigo-50',
+)
+const panelClass = computed(() =>
+  preferences.isDark
+    ? 'border-white/10 bg-slate-900/90 shadow-black/30'
+    : 'border-slate-200 bg-white shadow-slate-200/70',
+)
+const titleClass = computed(() => (preferences.isDark ? 'text-slate-100' : 'text-gray-800'))
+const labelClass = computed(() => (preferences.isDark ? 'text-slate-200' : 'text-gray-700'))
+const mutedTextClass = computed(() => (preferences.isDark ? 'text-slate-400' : 'text-gray-500'))
+const subtleTextClass = computed(() => (preferences.isDark ? 'text-slate-500' : 'text-gray-400'))
+const inputClass = computed(() =>
+  preferences.isDark
+    ? 'border-slate-700 bg-slate-950/70 text-slate-100 placeholder:text-slate-500'
+    : 'border-gray-300 bg-white text-gray-900',
+)
+const passwordToggleClass = computed(() =>
+  preferences.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700',
+)
+const linkClass = computed(() =>
+  preferences.isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700',
+)
+const subtleLinkClass = computed(() =>
+  preferences.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700',
+)
+const dividerClass = computed(() => (preferences.isDark ? 'bg-white/10' : 'bg-gray-200'))
+const oauthButtonClass = computed(() =>
+  preferences.isDark
+    ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
+    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
+)
+
 function normalizeRedirectTarget(input: unknown): string {
-  const redirect = String(input ?? '/chat')
+  const redirect = String(input ?? '/decks')
   if (!redirect.startsWith('/') || redirect.startsWith('//') || redirect.includes('://')) {
-    return '/chat'
+    return '/decks'
   }
 
   return redirect
@@ -220,7 +268,7 @@ async function login() {
 
     authStore.login(res.token)
 
-    const redirect = String(route.query.redirect ?? '/chat')
+    const redirect = normalizeRedirectTarget(route.query.redirect)
 
     await router.replace(redirect)
   } catch (error: unknown) {

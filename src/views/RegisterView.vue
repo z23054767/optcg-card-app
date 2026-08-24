@@ -1,15 +1,22 @@
 <template>
-  <div class="min-h-screen bg-gray-100 px-4 py-6 sm:flex sm:items-center sm:justify-center">
-    <div class="mx-auto w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8">
-      <div class="mb-6 flex flex-col items-center">
-        <img src="/images/login-logo.png" alt="註冊" class="h-20 w-20 object-contain drop-shadow-sm" />
+  <div
+    class="min-h-screen bg-gradient-to-br from-slate-100 via-white to-violet-50 px-4 py-6 sm:flex sm:items-center sm:justify-center">
+    <div
+      class="relative mx-auto w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-8">
+      <RouterLink to="/"
+        class="absolute left-4 top-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800">
+        ← 返回首頁
+      </RouterLink>
+
+      <div class="mb-6 flex flex-col items-center pt-8">
+        <img src="/logo_op.png" alt="註冊" class="app-logo h-20 w-20 object-contain drop-shadow-sm" />
 
         <h1 class="mt-3 text-2xl font-bold text-gray-800">
           建立帳號
         </h1>
 
-        <p class="mt-1 text-center text-sm text-gray-500">
-          填寫資料後，我們會寄送驗證信給您
+        <p class="mt-1 text-center text-sm leading-6 text-gray-500">
+          {{ PRODUCT_COPY.registerSummary }}
         </p>
       </div>
 
@@ -114,6 +121,13 @@
           返回登入
         </RouterLink>
       </p>
+
+      <p class="mt-2 text-center text-xs text-gray-400">
+        只想先逛內容？
+        <RouterLink to="/" class="font-medium text-slate-500 hover:text-slate-700">
+          回首頁看看
+        </RouterLink>
+      </p>
     </div>
   </div>
 </template>
@@ -123,6 +137,7 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { checkNameAvailabilityApi, registerApi } from '@/api/loginApi'
+import { PRODUCT_COPY } from '@/constants/productGlossary'
 import { resolveApiError } from '@/api/resolveApiError'
 import { showSuccessAlert } from '@/utils/alerts'
 import { USERNAME_RULES_HINT, normalizeUsername, validateUsername } from '@/utils/username'

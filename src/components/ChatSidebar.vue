@@ -1,18 +1,22 @@
 <template>
   <aside
-    class="fixed inset-y-0 left-0 z-40 w-72 bg-white border-r shadow-lg transition-transform sm:static sm:z-auto sm:w-64 sm:shadow-none"
+    class="fixed bottom-0 left-0 top-14 z-40 w-72 border-r bg-white shadow-lg transition-transform sm:static sm:z-auto sm:w-64 sm:shadow-none"
     :class="open ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'">
-    <div class="px-4 py-3 border-b flex items-center justify-between">
-      <div>
-        <div class="font-semibold text-gray-800">聊天室</div>
-        <div class="text-xs text-gray-400 mt-0.5">選擇聊天室開始對話</div>
-      </div>
+    <div class="border-b px-4 py-3">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <div class="font-semibold text-gray-800">聊天室</div>
+          <div class="mt-0.5 text-xs text-gray-400">選擇聊天室開始對話</div>
+        </div>
 
-      <button
-        class="sm:hidden w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center text-xl"
-        @click="$emit('close')">
-        ✕
-      </button>
+        <div class="flex items-center gap-2">
+          <button
+            class="flex h-8 w-8 items-center justify-center rounded-full text-xl text-gray-500 hover:bg-gray-100 sm:hidden"
+            @click="$emit('close')">
+            ✕
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="flex-1 overflow-y-auto p-3 space-y-4">
@@ -20,18 +24,16 @@
         <div class="text-xs font-semibold text-gray-400 px-2 mb-2">公開聊天室</div>
 
         <button class="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition" :class="currentRoomId === 'lobby'
-            ? 'bg-blue-50 text-blue-700 font-semibold'
-            : 'hover:bg-gray-100 text-gray-700'
+          ? 'bg-blue-50 text-blue-700 font-semibold'
+          : 'hover:bg-gray-100 text-gray-700'
           " @click="$emit('switch-room', 'lobby')">
-          <span class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
-            🏠
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100">
+            📢
           </span>
 
           <span class="truncate">大廳</span>
-          <span
-            v-if="getUnreadCount('lobby') > 0"
-            class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
-          >
+          <span v-if="getUnreadCount('lobby') > 0"
+            class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-linear-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm">
             {{ formatUnreadCount(getUnreadCount('lobby')) }}
           </span>
         </button>
@@ -52,21 +54,15 @@
           <div v-show="!privateCollapsed">
             <button v-for="room in privateRooms" :key="room.id"
               class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition" :class="currentRoomId === room.id
-                  ? 'bg-blue-50 font-semibold text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-blue-50 font-semibold text-blue-700'
+                : 'text-gray-700 hover:bg-gray-100'
                 " :title="getRoomName(room)" @click="$emit('switch-room', room.id)">
-              <UserAvatar
-                class="h-7 w-7 text-xs"
-                :avatar-url="room.avatarUrl"
-                :display-name="getRoomName(room)"
-                :user-id="room.id"
-              />
+              <UserAvatar class="h-7 w-7 text-xs" :avatar-url="room.avatarUrl" :display-name="getRoomName(room)"
+                :user-id="room.id" />
 
               <span class="truncate">{{ getRoomName(room) }}</span>
-              <span
-                v-if="getUnreadCount(room.id) > 0"
-                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
-              >
+              <span v-if="getUnreadCount(room.id) > 0"
+                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm">
                 {{ formatUnreadCount(getUnreadCount(room.id)) }}
               </span>
             </button>
@@ -88,8 +84,8 @@
           <div v-show="!groupCollapsed">
             <button v-for="room in groupRooms" :key="`group-${room.id}`"
               class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition" :class="currentRoomId === room.id
-                  ? 'bg-blue-50 font-semibold text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-blue-50 font-semibold text-blue-700'
+                : 'text-gray-700 hover:bg-gray-100'
                 " :title="getRoomName(room)" @click="$emit('switch-room', room.id)">
               <span class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-100">
                 <img v-if="getRoomAvatarUrl(room) && !failedAvatarRoomIds.has(room.id)"
@@ -102,10 +98,8 @@
               <span class="truncate">
                 {{ getRoomName(room) }}
               </span>
-              <span
-                v-if="getUnreadCount(room.id) > 0"
-                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm"
-              >
+              <span v-if="getUnreadCount(room.id) > 0"
+                class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-xs font-semibold leading-none text-white shadow-sm">
                 {{ formatUnreadCount(getUnreadCount(room.id)) }}
               </span>
             </button>

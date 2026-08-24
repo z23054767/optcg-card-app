@@ -1,12 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-100 px-4 py-6 sm:flex sm:items-center sm:justify-center">
-    <div class="mx-auto w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8">
-      <div class="mb-6 flex flex-col items-center">
-        <img
-          src="/images/login-logo.png"
-          alt="忘記密碼"
-          class="h-20 w-20 object-contain drop-shadow-sm"
-        />
+    <div class="relative mx-auto w-full max-w-md rounded-xl bg-white p-6 shadow-lg sm:p-8">
+      <RouterLink to="/"
+        class="absolute left-4 top-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800">
+        ← 返回首頁
+      </RouterLink>
+
+      <div class="mb-6 flex flex-col items-center pt-8">
+        <img src="/logo_op.png" alt="忘記密碼" class="app-logo h-20 w-20 object-contain drop-shadow-sm" />
         <h1 class="mt-3 text-2xl font-bold text-gray-800">忘記密碼</h1>
         <p class="mt-1 text-center text-sm text-gray-500">輸入註冊 Email，我們會寄送密碼重設連結</p>
       </div>
@@ -14,29 +15,19 @@
       <form class="space-y-4" @submit.prevent="submit">
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">Email</label>
-          <input
-            v-model.trim="email"
-            type="email"
-            autocomplete="email"
-            placeholder="example@email.com"
+          <input v-model.trim="email" type="email" autocomplete="email" placeholder="example@email.com"
             class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+            required />
         </div>
         <p v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</p>
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <button type="submit" :disabled="loading"
+          class="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
           {{ loading ? '寄送中...' : '寄送重設連結' }}
         </button>
       </form>
 
       <p class="mt-6 text-center text-sm">
-        <RouterLink to="/login" class="font-medium text-blue-600 hover:text-blue-700"
-          >返回登入</RouterLink
-        >
+        <RouterLink to="/login" class="font-medium text-blue-600 hover:text-blue-700">返回登入</RouterLink>
       </p>
     </div>
   </div>
