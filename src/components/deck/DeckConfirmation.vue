@@ -9,7 +9,9 @@
     <section class="rounded-2xl border p-4 sm:p-6" :class="panelClass">
       <div class="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between" :class="borderClass">
         <div>
-          <p class="text-xs font-medium" :class="mutedTextClass">牌組代碼</p>
+          <p class="text-xs font-medium" :class="mutedTextClass">牌組名稱</p>
+          <h2 class="mt-1 text-xl font-extrabold" :class="titleClass">{{ draft.name }}</h2>
+          <p class="mt-4 text-xs font-medium" :class="mutedTextClass">牌組代碼</p>
           <div class="mt-1 flex items-center gap-2">
             <strong class="break-all text-lg tracking-wide" :class="titleClass">{{ deckCode }}</strong>
             <button type="button" class="rounded-lg px-2 py-1 text-sm" :class="softButtonClass" @click="copyDeckCode">
@@ -40,6 +42,10 @@
       <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9">
         <article v-for="entry in sortedEntries" :key="entry.card.cid" class="relative">
           <img :src="entry.imageUrl" :alt="entry.card.cardName" class="aspect-5/7 w-full rounded-lg object-contain" />
+          <span v-if="entry.card.isBanned"
+            class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+            Banned
+          </span>
           <span
             class="absolute -right-1 -top-1 flex h-8 min-w-8 items-center justify-center rounded-full bg-[#101117] px-1.5 text-sm font-bold text-white ring-2 ring-white">
             {{ entry.quantity }}
@@ -53,6 +59,10 @@
         <article class="relative">
           <img :src="draft.leaderImageUrl" :alt="draft.leader.cardName"
             class="aspect-5/7 w-full rounded-lg object-contain" />
+          <span v-if="draft.leader.isBanned"
+            class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+            Banned
+          </span>
           <span
             class="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#101117] text-sm font-bold text-white ring-2 ring-white">
             1
@@ -91,7 +101,7 @@ import { resolveApiError } from '@/api/resolveApiError'
 import DeckSortDialog from '@/components/deck/DeckSortDialog.vue'
 import { usePreferencesStore } from '@/stores/preferencesStore'
 import type { DeckDraft } from '@/types/deck'
-import { showSuccessAlert } from '@/utils/alerts'
+import { showConfirmAlert, showSuccessAlert, showWarningAlert } from '@/utils/alerts'
 import { sortDeckEntries, type DeckSortOption } from '@/utils/deckSort'
 
 const props = defineProps<{
@@ -148,6 +158,55 @@ function applyDeckSort(options: DeckSortOption[]): void {
 
 async function saveDeck(): Promise<void> {
   if (isSaving.value) return
+
+  const allCards = [props.draft.leader, ...sortedEntries.value.map(({ card }) => card)]
+  const cardIds = new Set(allCards.map(({ cardId }) => cardId))
+  const bannedCardIds = Array.from(
+    new Set(allCards.filter(({ isBanned }) => isBanned).map(({ cardId }) => cardId)),
+  )
+  const combinationKeys = new Set<string>()
+  const prohibitedCombinations: [string, string][] = []
+  allCards.forEach((card) => {
+    card.prohibitedWithCardIds.forEach((otherCardId) => {
+      if (!cardIds.has(otherCardId)) return
+      const pair = [card.cardId, otherCardId].sort() as [string, string]
+      const key = pair.join('|')
+      if (combinationKeys.has(key)) return
+      combinationKeys.add(key)
+      prohibitedCombinations.push(pair)
+    })
+  })
+
+  const cardCountViolations = sortedEntries.value.flatMap(({ card, quantity }) => {
+    if (card.deckLimit) {
+      if (card.deckLimit.maxCount === 0 || card.deckLimit.maxCount === null) return []
+      if (quantity <= card.deckLimit.maxCount) return []
+      return [{ cardId: card.cardId, quantity, maxCount: card.deckLimit.maxCount }]
+    }
+    return quantity > 4 ? [{ cardId: card.cardId, quantity, maxCount: 4 }] : []
+  })
+
+  let confirmedIllegalDeck = false
+  if (bannedCardIds.length || prohibitedCombinations.length || cardCountViolations.length) {
+    const messages = [
+      ...(bannedCardIds.length ? [`禁止卡牌：${bannedCardIds.join('、')}`] : []),
+      ...prohibitedCombinations.map((pair) => `禁止組合：${pair.join(' + ')}`),
+      ...cardCountViolations.map(
+        ({ cardId, quantity, maxCount }) => `張數超限：${cardId} 目前 ${quantity} 張，最多 ${maxCount} 張`,
+      ),
+    ]
+    const result = await showConfirmAlert(
+      `此牌組目前不符合賽事規則：\n${messages.join('\n')}\n\n仍要儲存嗎？`,
+      {
+        title: '牌組目前不合法',
+        confirmButtonText: isEditing.value ? '仍要更新' : '仍要儲存',
+        cancelButtonText: '返回修改',
+      },
+    )
+    if (!result.isConfirmed) return
+    confirmedIllegalDeck = true
+  }
+
   isSaving.value = true
   actionMessage.value = ''
   actionError.value = ''
@@ -156,6 +215,7 @@ async function saveDeck(): Promise<void> {
     const wasEditing = persistedDeckId.value !== undefined
     const input = {
       code: deckCode.value,
+      name: props.draft.name,
       regulation: props.draft.regulation,
       leaderCid: props.draft.leader.cid,
       leaderFileId: props.draft.leaderFileId,
@@ -165,15 +225,27 @@ async function saveDeck(): Promise<void> {
         fileId,
       })),
     }
-    if (persistedDeckId.value === undefined) {
-      const created = await createDeck(input)
-      persistedDeckId.value = created.id
-    } else {
-      await updateDeck(persistedDeckId.value, input)
-    }
-    if (wasEditing) {
+    const saved = persistedDeckId.value === undefined
+      ? await createDeck(input)
+      : await updateDeck(persistedDeckId.value, input)
+    persistedDeckId.value = saved.id
+
+    if (!saved.isLegal && !confirmedIllegalDeck) {
+      const messages = saved.violations.map((violation) => {
+        if (violation.type === 'banned_card') {
+          return `禁止卡牌：${violation.cardIds.join('、')}`
+        }
+        if (violation.type === 'prohibited_combination') {
+          return `禁止組合：${violation.cardIds.join(' + ')}`
+        }
+        return `張數超限：${violation.cardId} 目前 ${violation.quantity} 張，最多 ${violation.maxCount} 張`
+      })
+      await showWarningAlert(`此牌組已儲存，但目前不符合賽事規則。\n${messages.join('\n')}`, {
+        title: '牌組已儲存為不合法',
+      })
+    } else if (saved.isLegal && wasEditing) {
       await showSuccessAlert('牌組編輯完成。')
-    } else {
+    } else if (saved.isLegal) {
       await showSuccessAlert('牌組已儲存到資料庫。')
     }
     emit('saved', persistedDeckId.value)

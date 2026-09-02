@@ -4,6 +4,7 @@ import type { CardRecord } from '@/api/cardsApi'
 
 export interface CreateDeckRequest {
   code: string
+  name: string
   regulation: LeaderRegulation
   leaderCid: number
   leaderFileId: number
@@ -14,28 +15,40 @@ export interface CreateDeckRequest {
   }[]
 }
 
+export type DeckLegalityViolation =
+  | { type: 'banned_card'; cardIds: string[] }
+  | { type: 'prohibited_combination'; cardIds: [string, string] }
+  | { type: 'card_count_limit'; cardId: string; quantity: number; maxCount: number }
+
 export interface CreatedDeckResponse {
   id: number
   code: string
+  name: string
+  isLegal: boolean
+  violations: DeckLegalityViolation[]
   createdAt: string
 }
 
 export interface DeckListItem {
   id: number
   code: string
+  name: string
   regulation: LeaderRegulation
   leaderCid: number
   leaderCardId: string
   leaderCardName: string
   leaderFileId?: number
   totalCards: number
+  isLegal: boolean
   createdAt: string
 }
 
 export interface DeckDetail {
   id: number
   code: string
+  name: string
   regulation: LeaderRegulation
+  isLegal: boolean
   leader: CardRecord
   cards: Array<{
     card: CardRecord

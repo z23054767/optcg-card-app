@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal-fade" appear>
-      <div v-if="activeAlert" class="fixed inset-0 z-[140] flex px-4 backdrop-blur-sm" :class="overlayClass"
+      <div v-if="activeAlert" class="fixed inset-0 z-140 flex px-4 backdrop-blur-sm" :class="overlayClass"
         @click.self="handleBackdropClick">
         <div class="w-full" :class="panelWrapperClass">
           <div class="modal-panel w-full overflow-hidden border shadow-2xl"
@@ -52,8 +52,8 @@
               </div>
 
               <div v-else class="flex" :class="activeAlert.presentation === 'sheet'
-                  ? 'flex-col-reverse gap-2'
-                  : 'justify-end gap-2'
+                ? 'flex-col-reverse gap-2'
+                : 'justify-end gap-2'
                 ">
                 <button v-if="activeAlert.showCancelButton" type="button"
                   class="rounded-2xl border px-4 py-3 text-sm font-medium transition" :class="secondaryButtonClass"
@@ -76,7 +76,7 @@
       enter-from-class="translate-y-2 opacity-0 scale-[0.98]" enter-to-class="translate-y-0 opacity-100 scale-100"
       leave-active-class="transition-all duration-200 ease-in" leave-from-class="translate-y-0 opacity-100 scale-100"
       leave-to-class="translate-y-2 opacity-0 scale-[0.98]"
-      class="pointer-events-none fixed inset-x-0 bottom-5 z-[150] flex flex-col items-center gap-3 px-4 sm:bottom-6">
+      class="pointer-events-none fixed inset-x-0 bottom-5 z-150 flex flex-col items-center gap-3 px-4 sm:bottom-6">
       <div v-for="toast in toasts" :key="toast.id"
         class="pointer-events-auto w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl"
         :class="toastCardClass(toast.variant)">
@@ -97,8 +97,8 @@
           </div>
 
           <button type="button" class="rounded-full p-1 transition" :class="preferences.isDark
-              ? 'text-slate-400 hover:bg-white/8 hover:text-white'
-              : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+            ? 'text-slate-400 hover:bg-white/8 hover:text-white'
+            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
             " aria-label="關閉通知" @click="dismissToast(toast.id)">
             ✕
           </button>

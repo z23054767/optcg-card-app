@@ -10,6 +10,7 @@ export interface DeckEntry {
 export interface DeckDraft {
   id?: number
   code?: string
+  name: string
   regulation: LeaderRegulation
   leader: LeaderCard
   leaderFileId: number

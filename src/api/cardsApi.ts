@@ -21,6 +21,9 @@ export interface CardRecord {
   effect: string
   fileId?: number
   relatedFileIds: number[]
+  isBanned: boolean
+  prohibitedWithCardIds: string[]
+  deckLimit: { maxCount: number | null } | null
 }
 
 export type LeaderCard = CardRecord

@@ -2,26 +2,14 @@
   <div class="min-h-screen transition-colors duration-200" :class="pageClass">
     <AppHeader />
 
-    <DeckBuilder
-      v-if="isDeckBuilderOpen && selectedLeader"
-      :leader="selectedLeader.leader"
+    <DeckBuilder v-if="isDeckBuilderOpen && selectedLeader" :leader="selectedLeader.leader"
       :leader-file-id="deckDraft?.leaderFileId ?? selectedLeader.fileId"
-      :leader-image-url="deckDraft?.leaderImageUrl ?? selectedLeader.url"
-      :regulation="selectedRegulation!"
-      :deck-id="deckDraft?.id"
-      :initial-entries="deckDraft?.entries"
-      @cancel="closeDeckBuilder"
-      @close="returnToDeckList"
-      @confirm="confirmDeck"
-    />
+      :leader-image-url="deckDraft?.leaderImageUrl ?? selectedLeader.url" :regulation="selectedRegulation!"
+      :deck-id="deckDraft?.id" :deck-name="deckDraft?.name" :initial-entries="deckDraft?.entries"
+      @cancel="closeDeckBuilder" @confirm="confirmDeck" />
 
-    <DeckConfirmation
-      v-else-if="deckDraft"
-      :draft="deckDraft"
-      @edit="editDeck"
-      @saved="handleDeckSaved"
-      @close="returnToDeckList"
-    />
+    <DeckConfirmation v-else-if="deckDraft" :draft="deckDraft" @edit="editDeck" @saved="handleDeckSaved"
+      @close="returnToDeckList" />
 
     <main v-else class="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8">
       <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -72,8 +60,7 @@
               </div>
 
               <template v-if="!selectedRegulation">
-                <div v-if="isDeckListLoading" class="rounded-xl border px-4 py-12 text-center"
-                  :class="emptyStateClass">
+                <div v-if="isDeckListLoading" class="rounded-xl border px-4 py-12 text-center" :class="emptyStateClass">
                   <div
                     class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent">
                   </div>
@@ -88,33 +75,46 @@
                   </button>
                 </div>
 
-                <div v-else-if="myDecks.length"
-                  class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div v-else-if="myDecks.length" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <article v-for="deck in myDecks" :key="deck.id"
-                    class="relative overflow-hidden rounded-xl border transition hover:-translate-y-0.5 hover:border-indigo-500 hover:shadow-lg"
-                    :class="infoCardClass">
+                    class="relative overflow-hidden rounded-xl border transition hover:-translate-y-0.5 hover:shadow-lg"
+                    :class="[infoCardClass, !deck.isLegal ? invalidDeckCardClass : 'hover:border-indigo-500']">
+                    <span v-if="!deck.isLegal"
+                      class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white shadow-lg">
+                      不合法
+                    </span>
                     <button type="button"
                       class="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500"
                       @click="activeDeckActions = deck">
                       <div class="flex gap-3 p-3">
-                      <div class="aspect-5/7 w-24 shrink-0 overflow-hidden rounded-lg bg-slate-950/10">
-                        <img v-if="deckImageUrlById.get(deck.id)" :src="deckImageUrlById.get(deck.id)"
-                          :alt="`${deck.leaderCardName} (${deck.leaderCardId})`"
-                          class="h-full w-full object-contain" loading="lazy" />
-                        <div v-else class="flex h-full items-center justify-center text-2xl">🃏</div>
+                        <div class="aspect-5/7 w-24 shrink-0 overflow-hidden rounded-lg bg-slate-950/10">
+                          <img v-if="deckImageUrlById.get(deck.id)" :src="deckImageUrlById.get(deck.id)"
+                            :alt="`${deck.leaderCardName} (${deck.leaderCardId})`" class="h-full w-full object-contain"
+                            loading="lazy" />
+                          <div v-else class="flex h-full items-center justify-center text-2xl">🃏</div>
+                        </div>
+                        <div class="min-w-0 flex-1 py-1">
+                          <p class="truncate text-base font-extrabold" :class="titleClass">{{ deck.name }}</p>
+                          <p class="mt-1 truncate text-xs font-semibold" :class="mutedTextClass">
+                            {{ deck.leaderCardName }} · {{ deck.leaderCardId }}
+                          </p>
+                          <span
+                            class="mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide shadow-sm"
+                            :class="deck.regulation === 'standard'
+                              ? (preferences.isDark
+                                ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-300'
+                                : 'border-emerald-200 bg-emerald-50 text-emerald-700')
+                              : (preferences.isDark
+                                ? 'border-violet-400/30 bg-violet-400/15 text-violet-300'
+                                : 'border-violet-200 bg-violet-50 text-violet-700')">
+                            {{ deck.regulation === 'standard' ? 'Standard' : 'Extra' }}
+                          </span>
+                          <p class="mt-1 text-xs" :class="mutedTextClass">主牌 {{ deck.totalCards }} 張</p>
+                          <p class="mt-1 truncate font-mono text-[11px]" :class="mutedTextClass">
+                            {{ deck.code }}
+                          </p>
+                        </div>
                       </div>
-                      <div class="min-w-0 flex-1 py-1">
-                        <p class="truncate text-sm font-bold" :class="titleClass">{{ deck.leaderCardName }}</p>
-                        <p class="mt-1 text-xs font-semibold" :class="mutedTextClass">{{ deck.leaderCardId }}</p>
-                        <p class="mt-3 text-xs" :class="mutedTextClass">
-                          {{ deck.regulation === 'standard' ? 'Standard' : 'Extra' }} Regulation For Asia
-                        </p>
-                        <p class="mt-1 text-xs" :class="mutedTextClass">主牌 {{ deck.totalCards }} 張</p>
-                        <p class="mt-1 truncate font-mono text-[11px]" :class="mutedTextClass">
-                          {{ deck.code }}
-                        </p>
-                      </div>
-                    </div>
                     </button>
                   </article>
                 </div>
@@ -149,83 +149,77 @@
                 </div>
 
                 <div v-else>
-                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <button type="button" class="rounded-lg border px-3 py-2 text-xs font-semibold transition"
-                    :class="secondaryButtonClass" @click="openRegulationDialog">
-                    切換賽制
-                  </button>
-                </div>
-
-                <div class="mb-5">
-                  <div class="flex flex-wrap gap-2" role="group" aria-label="Leader 顏色篩選">
-                    <button type="button" class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
-                      :class="colorButtonClass(null)" :aria-pressed="selectedColor === null" @click="selectColor(null)">
-                      ALL
-                    </button>
-                    <button v-for="color in colors" :key="color" type="button"
-                      class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
-                      :class="colorButtonClass(color)" :aria-pressed="selectedColor === color"
-                      @click="selectColor(color)">
-                      {{ color }}
+                  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <button type="button" class="rounded-lg border px-3 py-2 text-xs font-semibold transition"
+                      :class="secondaryButtonClass" @click="openRegulationDialog">
+                      切換賽制
                     </button>
                   </div>
-                </div>
 
-                <div v-if="leaderReleaseGroups.length" class="space-y-5">
-                  <section v-for="group in leaderReleaseGroups" :key="group.release"
-                    class="overflow-hidden rounded-2xl border" :class="leaderReleaseSectionClass">
-                    <header class="flex items-center justify-between gap-3 border-b px-4 py-3"
-                      :class="leaderReleaseHeaderClass">
-                      <div class="flex items-center gap-2.5">
-                        <span class="h-2.5 w-2.5 rounded-full bg-indigo-500 shadow-sm"></span>
-                        <h4 class="text-sm font-extrabold tracking-wide" :class="titleClass">{{ group.release }}</h4>
-                      </div>
-                      <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold" :class="countBadgeClass">
-                        {{ group.images.length }} 張領航
-                      </span>
-                    </header>
-                    <div class="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:p-4 md:grid-cols-4 lg:grid-cols-5">
-                      <button v-for="image in group.images" :key="image.fileId" type="button"
-                        class="group overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 hover:border-indigo-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                        :class="[infoCardClass, selectedLeader?.leader.cid === image.leader.cid ? 'ring-2 ring-indigo-500' : '']"
-                        @click="openLeaderDialog(image)">
-                        <div class="aspect-5/7 bg-slate-950/10">
-                          <img :src="image.url" :alt="`${image.cardName} (${image.cardId})`"
-                            class="h-full w-full object-contain transition group-hover:scale-[1.02]" loading="lazy" />
-                        </div>
-                        <div class="p-2.5">
-                          <div class="flex items-center justify-between gap-2">
-                            <div class="truncate text-xs font-semibold" :class="titleClass">{{ image.cardId }}</div>
-                            <span v-if="selectedLeader?.leader.cid === image.leader.cid"
-                              class="shrink-0 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
-                              已選擇
-                            </span>
-                          </div>
-                          <div class="mt-0.5 truncate text-xs" :class="mutedTextClass">{{ image.cardName }}</div>
-                        </div>
+                  <div class="mb-5">
+                    <div class="flex flex-wrap gap-2" role="group" aria-label="Leader 顏色篩選">
+                      <button type="button" class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                        :class="colorButtonClass(null)" :aria-pressed="selectedColor === null"
+                        @click="selectColor(null)">
+                        ALL
+                      </button>
+                      <button v-for="color in colors" :key="color" type="button"
+                        class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                        :class="colorButtonClass(color)" :aria-pressed="selectedColor === color"
+                        @click="selectColor(color)">
+                        {{ color }}
                       </button>
                     </div>
-                  </section>
+                  </div>
+
+                  <div v-if="leaderReleaseGroups.length" class="space-y-5">
+                    <section v-for="group in leaderReleaseGroups" :key="group.release"
+                      class="overflow-hidden rounded-2xl border" :class="leaderReleaseSectionClass">
+                      <header class="flex items-center justify-between gap-3 border-b px-4 py-3"
+                        :class="leaderReleaseHeaderClass">
+                        <div class="flex items-center gap-2.5">
+                          <span class="h-2.5 w-2.5 rounded-full bg-indigo-500 shadow-sm"></span>
+                          <h4 class="text-sm font-extrabold tracking-wide" :class="titleClass">{{ group.release }}</h4>
+                        </div>
+                        <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold" :class="countBadgeClass">
+                          {{ group.images.length }} 張領航
+                        </span>
+                      </header>
+                      <div class="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:p-4 md:grid-cols-4 lg:grid-cols-5">
+                        <button v-for="image in group.images" :key="image.fileId" type="button"
+                          class="group overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 hover:border-indigo-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                          :class="[infoCardClass, selectedLeader?.leader.cid === image.leader.cid ? 'ring-2 ring-indigo-500' : '']"
+                          @click="openLeaderDialog(image)">
+                          <div class="relative aspect-5/7 bg-slate-950/10">
+                            <img :src="image.url" :alt="`${image.cardName} (${image.cardId})`"
+                              class="h-full w-full object-contain transition group-hover:scale-[1.02]" loading="lazy" />
+                            <span v-if="image.leader.isBanned"
+                              class="absolute bottom-1.5 right-1.5 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+                              Banned
+                            </span>
+                          </div>
+                          <div class="p-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                              <div class="truncate text-xs font-semibold" :class="titleClass">{{ image.cardId }}</div>
+                              <span v-if="selectedLeader?.leader.cid === image.leader.cid"
+                                class="shrink-0 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                已選擇
+                              </span>
+                            </div>
+                            <div class="mt-0.5 truncate text-xs" :class="mutedTextClass">{{ image.cardName }}</div>
+                          </div>
+                        </button>
+                      </div>
+                    </section>
+                  </div>
+                  <div v-else class="rounded-xl border border-dashed px-4 py-10 text-center text-sm"
+                    :class="emptyStateClass">
+                    找不到符合此顏色的 Leader。
+                  </div>
                 </div>
-                <div v-else class="rounded-xl border border-dashed px-4 py-10 text-center text-sm"
-                  :class="emptyStateClass">
-                  找不到符合此顏色的 Leader。
-                </div>
-              </div>
               </template>
             </div>
           </article>
-
-          <section class="grid gap-3 md:grid-cols-3">
-            <article v-for="item in studioHighlights" :key="item.title" class="rounded-xl border p-4"
-              :class="infoCardClass">
-              <div class="flex h-9 w-9 items-center justify-center rounded-lg text-lg" :class="infoIconClass">
-                {{ item.icon }}
-              </div>
-              <h3 class="mt-3 text-sm font-semibold" :class="titleClass">{{ item.title }}</h3>
-              <p class="mt-1 text-xs leading-6" :class="mutedTextClass">{{ item.description }}</p>
-            </article>
-          </section>
         </div>
 
         <aside class="space-y-4 xl:sticky xl:top-20 xl:self-start">
@@ -256,39 +250,30 @@
               </RouterLink>
             </div>
           </article>
-
-          <article class="rounded-2xl border" :class="panelClass">
-            <div class="border-b px-4 py-3" :class="sectionBorderClass">
-              <h2 class="text-sm font-semibold" :class="titleClass">開發進度</h2>
-            </div>
-            <div class="space-y-2 p-3">
-              <div v-for="item in roadmapItems" :key="item.title" class="rounded-lg px-3 py-2.5"
-                :class="roadmapItemClass">
-                <div class="flex items-center gap-2">
-                  <span class="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
-                  <div class="text-sm font-medium" :class="titleClass">{{ item.title }}</div>
-                </div>
-                <p class="mt-1 pl-3.5 text-xs leading-5" :class="mutedTextClass">
-                  {{ item.description }}
-                </p>
-              </div>
-            </div>
-          </article>
         </aside>
       </section>
     </main>
 
     <div v-if="activeDeckActions"
-      class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-3 sm:items-center sm:p-4"
-      role="dialog" aria-modal="true" aria-labelledby="deck-actions-title"
-      @click.self="closeDeckActions">
+      class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-3 sm:items-center sm:p-4" role="dialog"
+      aria-modal="true" aria-labelledby="deck-actions-title" @click.self="closeDeckActions">
       <div class="w-full max-w-sm space-y-3">
         <section class="overflow-hidden rounded-2xl border shadow-2xl" :class="panelClass">
           <header class="border-b px-5 py-4 text-center" :class="sectionBorderClass">
             <h2 id="deck-actions-title" class="truncate text-base font-bold" :class="titleClass">
-              {{ activeDeckActions.leaderCardName }}
+              {{ activeDeckActions.name }}
             </h2>
-            <p class="mt-1 font-mono text-xs" :class="mutedTextClass">{{ activeDeckActions.code }}</p>
+
+            <div class="mt-2 space-y-1">
+              <p class="truncate text-sm font-semibold" :class="mutedTextClass">
+                {{ activeDeckActions.leaderCardName }}
+              </p>
+
+              <p class="inline-flex max-w-full items-center rounded-md px-2 py-1 font-mono text-[11px] font-medium"
+                :class="deckCodeClass">
+                {{ activeDeckActions.code }}
+              </p>
+            </div>
           </header>
           <div class="divide-y" :class="sectionBorderClass">
             <button type="button" class="block w-full px-5 py-4 text-center text-sm font-bold transition"
@@ -364,8 +349,7 @@
         </div>
 
         <div class="min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-8">
-          <img :src="activeLeaderImage.url"
-            :alt="`${activeLeaderImage.cardName} (${activeLeaderImage.cardId})`"
+          <img :src="activeLeaderImage.url" :alt="`${activeLeaderImage.cardName} (${activeLeaderImage.cardId})`"
             class="mx-auto mt-4 max-h-[52vh] w-full max-w-sm object-contain" />
 
           <div v-if="activeLeaderImage.leader.relatedFileIds.length" class="mt-5">
@@ -379,16 +363,15 @@
               :class="leaderVariantPanelClass">
               <div class="h-7 w-7 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"></div>
             </div>
-            <div v-else-if="leaderVariantsError"
-              class="rounded-xl px-4 py-5 text-center text-sm text-red-500" :class="leaderVariantPanelClass">
+            <div v-else-if="leaderVariantsError" class="rounded-xl px-4 py-5 text-center text-sm text-red-500"
+              :class="leaderVariantPanelClass">
               {{ leaderVariantsError }}
             </div>
             <div v-else class="grid grid-cols-3 gap-2 sm:grid-cols-4">
               <button v-for="variant in activeLeaderVariants" :key="variant.fileId" type="button"
                 class="relative overflow-hidden rounded-xl border p-1 transition hover:-translate-y-0.5 hover:border-rose-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                 :class="variant.fileId === activeLeaderImage.fileId ? selectedLeaderVariantClass : infoCardClass"
-                :aria-pressed="variant.fileId === activeLeaderImage.fileId"
-                @click="selectLeaderVariant(variant)">
+                :aria-pressed="variant.fileId === activeLeaderImage.fileId" @click="selectLeaderVariant(variant)">
                 <img :src="variant.url" :alt="`${variant.cardName} 圖片版本`"
                   class="aspect-5/7 w-full rounded-lg object-contain" loading="lazy" />
                 <span v-if="variant.fileId === activeLeaderImage.fileId"
@@ -411,13 +394,12 @@
           <div class="mt-5 overflow-hidden rounded-xl border" :class="leaderDetailClass">
             <button type="button"
               class="flex w-full items-center justify-between px-5 py-4 text-left text-base font-semibold transition"
-              :class="leaderDetailButtonClass"
-              :aria-expanded="isLeaderDetailOpen" @click="isLeaderDetailOpen = !isLeaderDetailOpen">
+              :class="leaderDetailButtonClass" :aria-expanded="isLeaderDetailOpen"
+              @click="isLeaderDetailOpen = !isLeaderDetailOpen">
               Detail
               <span class="text-2xl font-light transition" :class="isLeaderDetailOpen ? 'rotate-45' : ''">＋</span>
             </button>
-            <div v-if="isLeaderDetailOpen" class="space-y-3 border-t px-5 py-4 text-sm"
-              :class="sectionBorderClass">
+            <div v-if="isLeaderDetailOpen" class="space-y-3 border-t px-5 py-4 text-sm" :class="sectionBorderClass">
               <dl class="grid grid-cols-2 gap-x-5 gap-y-3">
                 <div>
                   <dt class="text-xs" :class="mutedTextClass">顏色</dt>
@@ -455,8 +437,7 @@
             @click="closeLeaderDialog">
             返回
           </button>
-          <button type="button"
-            class="rounded-full border px-4 py-3 text-sm font-bold transition active:translate-y-px"
+          <button type="button" class="rounded-full border px-4 py-3 text-sm font-bold transition active:translate-y-px"
             :class="leaderConfirmButtonClass" @click="confirmLeaderSelection">
             以此領導者製作牌組
           </button>
@@ -633,62 +614,64 @@ function confirmDeck(draft: DeckDraft): void {
     ...draft,
     id: deckDraft.value?.id,
     code: deckDraft.value?.code,
+    name: draft.name,
   }
   isDeckBuilderOpen.value = false
 }
 
 async function openSavedDeck(deckId: number): Promise<void> {
-    isDeckListLoading.value = true
-    deckListError.value = ''
+  isDeckListLoading.value = true
+  deckListError.value = ''
 
-    try {
-      const deck = await getMyDeck(deckId)
-      const leaderFileId = deck.leader.fileId
-      if (leaderFileId === undefined) {
-        throw new Error('此牌組的 Leader 圖片資料不完整。')
-      }
-      const entries = deck.cards.map(({ card, quantity }) => {
-        if (card.fileId === undefined) {
-          throw new Error(`卡片 ${card.cardId} 的圖片資料不完整。`)
-        }
-        return { card, quantity, fileId: card.fileId }
-      })
-      const fileIds = [
-        leaderFileId,
-        ...entries.map(({ fileId }) => fileId),
-      ]
-      const signedUrls = fileIds.length ? await createSignedImageUrls(fileIds) : []
-      const urlByFileId = new Map(signedUrls.map(({ fileId, url }) => [fileId, url]))
-      const leaderImageUrl = urlByFileId.get(leaderFileId) ?? ''
-
-      selectedRegulation.value = deck.regulation
-      selectedLeader.value = {
-        fileId: leaderFileId,
-        url: leaderImageUrl,
-        cardId: deck.leader.cardId,
-        cardName: deck.leader.cardName,
-        leader: deck.leader,
-      }
-      deckDraft.value = {
-        id: deck.id,
-        code: deck.code,
-        regulation: deck.regulation,
-        leader: deck.leader,
-        leaderFileId,
-        leaderImageUrl,
-        entries: entries.map(({ card, quantity, fileId }) => ({
-          card,
-          fileId,
-          quantity,
-          imageUrl: urlByFileId.get(fileId) ?? '',
-        })),
-      }
-      isDeckBuilderOpen.value = true
-    } catch (error) {
-      deckListError.value = resolveApiError(error)
-    } finally {
-      isDeckListLoading.value = false
+  try {
+    const deck = await getMyDeck(deckId)
+    const leaderFileId = deck.leader.fileId
+    if (leaderFileId === undefined) {
+      throw new Error('此牌組的 Leader 圖片資料不完整。')
     }
+    const entries = deck.cards.map(({ card, quantity }) => {
+      if (card.fileId === undefined) {
+        throw new Error(`卡片 ${card.cardId} 的圖片資料不完整。`)
+      }
+      return { card, quantity, fileId: card.fileId }
+    })
+    const fileIds = [
+      leaderFileId,
+      ...entries.map(({ fileId }) => fileId),
+    ]
+    const signedUrls = fileIds.length ? await createSignedImageUrls(fileIds) : []
+    const urlByFileId = new Map(signedUrls.map(({ fileId, url }) => [fileId, url]))
+    const leaderImageUrl = urlByFileId.get(leaderFileId) ?? ''
+
+    selectedRegulation.value = deck.regulation
+    selectedLeader.value = {
+      fileId: leaderFileId,
+      url: leaderImageUrl,
+      cardId: deck.leader.cardId,
+      cardName: deck.leader.cardName,
+      leader: deck.leader,
+    }
+    deckDraft.value = {
+      id: deck.id,
+      code: deck.code,
+      name: deck.name,
+      regulation: deck.regulation,
+      leader: deck.leader,
+      leaderFileId,
+      leaderImageUrl,
+      entries: entries.map(({ card, quantity, fileId }) => ({
+        card,
+        fileId,
+        quantity,
+        imageUrl: urlByFileId.get(fileId) ?? '',
+      })),
+    }
+    isDeckBuilderOpen.value = true
+  } catch (error) {
+    deckListError.value = resolveApiError(error)
+  } finally {
+    isDeckListLoading.value = false
+  }
 }
 
 function editDeck(draft: DeckDraft): void {
@@ -884,39 +867,6 @@ async function loadLeaderCards(
   imageUrlByFileId.value = new Map(signedUrls.map(({ fileId, url }) => [fileId, url]))
 }
 
-const studioHighlights = [
-  {
-    icon: '📝',
-    title: '草稿管理',
-    description: '整理構築中的牌組、測試版本與修改想法。',
-  },
-  {
-    icon: '↕️',
-    title: '展示與排序',
-    description: '用一致的卡片版型瀏覽與整理自己的牌組。',
-  },
-  {
-    icon: '💬',
-    title: '社群分享',
-    description: '快速切到聊天室，討論構築與對戰方向。',
-  },
-]
-
-const roadmapItems = [
-  {
-    title: '牌組建立器',
-    description: '建立牌組內容、備註與構築說明。',
-  },
-  {
-    title: '牌組瀏覽與排序',
-    description: '快速找到草稿、公開牌組與最近修改內容。',
-  },
-  {
-    title: '聊天室分享卡片',
-    description: '將牌組摘要直接分享進聊天。',
-  },
-]
-
 const leaderDetailClass = computed(() =>
   preferences.isDark
     ? 'border-white/10 bg-slate-950/80 text-slate-100'
@@ -955,6 +905,12 @@ const deckCancelButtonClass = computed(() =>
   preferences.isDark
     ? 'border-white/10 bg-slate-800 text-slate-100 hover:bg-slate-700'
     : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-100',
+)
+
+const deckCodeClass = computed(() =>
+  preferences.isDark
+    ? "bg-white/[0.06] text-slate-400"
+    : "bg-slate-100 text-slate-500",
 )
 
 const pageClass = computed(() =>
@@ -1004,14 +960,17 @@ const emptyIconClass = computed(() =>
 const infoCardClass = computed(() =>
   preferences.isDark ? 'border-white/10 bg-slate-900/55' : 'border-gray-200 bg-white',
 )
-const infoIconClass = computed(() =>
-  preferences.isDark ? 'bg-white/[0.05] text-slate-200' : 'bg-gray-100 text-gray-700',
+const invalidDeckCardClass = computed(() =>
+  preferences.isDark
+    ? 'border-red-500/70 bg-red-950/20 ring-1 ring-red-500/25'
+    : 'border-red-300 bg-red-50/60 ring-1 ring-red-200',
 )
+
+
 const quickActionClass = computed(() =>
   preferences.isDark ? 'text-slate-200 hover:bg-white/[0.05]' : 'text-gray-700 hover:bg-gray-100',
 )
 const quickActionIconClass = computed(() =>
   preferences.isDark ? 'bg-white/[0.05] text-slate-300' : 'bg-gray-100 text-gray-600',
 )
-const roadmapItemClass = computed(() => (preferences.isDark ? 'bg-slate-950/35' : 'bg-gray-50'))
 </script>
