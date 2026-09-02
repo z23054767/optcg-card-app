@@ -70,7 +70,7 @@
             class="aspect-5/7 w-full rounded-lg object-contain"
           />
           <span
-            v-if="draft.regulation !== 'sealed' && entry.card.isBanned"
+            v-if="appliesCardRestrictions && entry.card.isBanned"
             class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
           >
             Banned
@@ -95,7 +95,7 @@
             class="aspect-5/7 w-full rounded-lg object-contain"
           />
           <span
-            v-if="draft.regulation !== 'sealed' && draft.leader.isBanned"
+            v-if="appliesCardRestrictions && draft.leader.isBanned"
             class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
           >
             Banned
@@ -186,12 +186,17 @@ const mainDeckCount = computed(() =>
   sortedEntries.value.reduce((total, entry) => total + entry.quantity, 0),
 )
 const isEditing = computed(() => persistedDeckId.value !== undefined)
+const appliesCardRestrictions = computed(
+  () => props.draft.regulation !== 'sealed' && props.draft.regulation !== 'idea',
+)
 const regulationLabel = computed(() =>
   props.draft.regulation === 'standard'
     ? 'Standard Regulation For Asia'
     : props.draft.regulation === 'extra'
       ? 'Extra Regulation For Asia'
-      : 'sealed',
+      : props.draft.regulation === 'sealed'
+        ? 'sealed'
+        : 'idea',
 )
 
 function createDeckCode(): string {
@@ -220,14 +225,13 @@ async function saveDeck(): Promise<void> {
   if (isSaving.value) return
 
   const allCards = [props.draft.leader, ...sortedEntries.value.map(({ card }) => card)]
-  const appliesCardRestrictions = props.draft.regulation !== 'sealed'
   const cardIds = new Set(allCards.map(({ cardId }) => cardId))
-  const bannedCardIds = appliesCardRestrictions
+  const bannedCardIds = appliesCardRestrictions.value
     ? Array.from(new Set(allCards.filter(({ isBanned }) => isBanned).map(({ cardId }) => cardId)))
     : []
   const combinationKeys = new Set<string>()
   const prohibitedCombinations: [string, string][] = []
-  if (appliesCardRestrictions) {
+  if (appliesCardRestrictions.value) {
     allCards.forEach((card) => {
       card.prohibitedWithCardIds.forEach((otherCardId) => {
         if (!cardIds.has(otherCardId)) return
@@ -240,7 +244,7 @@ async function saveDeck(): Promise<void> {
     })
   }
 
-  const cardCountViolations = appliesCardRestrictions
+  const cardCountViolations = appliesCardRestrictions.value
     ? sortedEntries.value.flatMap(({ card, quantity }) => {
         if (card.deckLimit) {
           if (card.deckLimit.maxCount === 0 || card.deckLimit.maxCount === null) return []

@@ -166,9 +166,13 @@
                                     ? preferences.isDark
                                       ? 'border-violet-400/30 bg-violet-400/15 text-violet-300'
                                       : 'border-violet-200 bg-violet-50 text-violet-700'
-                                    : preferences.isDark
-                                      ? 'border-amber-400/30 bg-amber-400/15 text-amber-300'
-                                      : 'border-amber-200 bg-amber-50 text-amber-700'
+                                    : deck.regulation === 'idea'
+                                      ? preferences.isDark
+                                        ? 'border-sky-400/30 bg-sky-400/15 text-sky-300'
+                                        : 'border-sky-200 bg-sky-50 text-sky-700'
+                                      : preferences.isDark
+                                        ? 'border-amber-400/30 bg-amber-400/15 text-amber-300'
+                                        : 'border-amber-200 bg-amber-50 text-amber-700'
                               "
                             >
                               {{ regulationShortLabel(deck.regulation) }}
@@ -579,7 +583,7 @@
             <h2 id="regulation-dialog-title" class="text-lg font-semibold" :class="titleClass">
               選擇牌組賽制
             </h2>
-            <p class="mt-1 text-sm" :class="mutedTextClass">請選擇要使用的 Asia Regulation。</p>
+            <p class="mt-1 text-sm" :class="mutedTextClass">請選擇要使用的賽制</p>
           </div>
           <button
             type="button"
@@ -885,12 +889,19 @@ const regulationOptions = computed(
       description:
         '5包現開賽是特殊規則的對戰。參與對戰的玩家購買5包補充包，然後用這5包中開出的卡牌構築30張卡的牌組、並參加對戰！',
     },
+    {
+      value: 'idea',
+      label: 'idea',
+      description:
+        '自由構思牌組內容，不套用禁止卡、限制卡或同卡編號張數限制，主牌允許 0 至 100 張。',
+    },
   ],
 )
 
 function regulationShortLabel(regulation: LeaderRegulation): string {
   if (regulation === 'standard') return 'Standard'
   if (regulation === 'extra') return 'Extra'
+  if (regulation === 'idea') return 'idea'
   return 'sealed'
 }
 

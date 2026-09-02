@@ -110,7 +110,7 @@
               {{ entry.quantity }}
             </span>
             <span
-              v-if="regulation !== 'sealed' && entry.card.isBanned"
+              v-if="appliesCardRestrictions && entry.card.isBanned"
               class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
             >
               Banned
@@ -333,7 +333,7 @@
                   {{ cardTypeLabel(card.cardType) }}
                 </span>
                 <span
-                  v-if="regulation !== 'sealed' && card.isBanned"
+                  v-if="appliesCardRestrictions && card.isBanned"
                   class="absolute bottom-1.5 right-1.5 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
                 >
                   Banned
@@ -819,7 +819,12 @@ const leaderColors = computed(() => props.leader.color.split('/').filter(Boolean
 const mainDeckCount = computed(() =>
   deckEntries.value.reduce((total, entry) => total + entry.quantity, 0),
 )
-const maximumDeckCount = computed(() => (props.regulation === 'sealed' ? 30 : 50))
+const maximumDeckCount = computed(() =>
+  props.regulation === 'sealed' ? 30 : props.regulation === 'idea' ? 100 : 50,
+)
+const appliesCardRestrictions = computed(
+  () => props.regulation !== 'sealed' && props.regulation !== 'idea',
+)
 const isEditing = computed(() => props.deckId !== undefined)
 const canLoadMore = computed(() => currentPage.value * PAGE_SIZE < totalResults.value)
 const activeDeckEntry = computed(() =>
@@ -1175,8 +1180,8 @@ async function confirmDeck(): Promise<void> {
     showToast('請輸入牌組名稱。', { variant: 'error', title: '無法完成牌組' })
     return
   }
-  if (mainDeckCount.value === 0) return
-  if (mainDeckCount.value < maximumDeckCount.value) {
+  if (mainDeckCount.value === 0 && props.regulation !== 'idea') return
+  if (props.regulation !== 'idea' && mainDeckCount.value < maximumDeckCount.value) {
     const result = await showConfirmAlert(
       `目前主牌只有 ${mainDeckCount.value} 張，尚未達到 ${maximumDeckCount.value} 張。仍要繼續嗎？`,
       {
