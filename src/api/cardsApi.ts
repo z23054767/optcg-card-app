@@ -35,6 +35,10 @@ export interface PaginatedCards {
   total: number
 }
 
+export interface RegulationConfig {
+  rotatedThroughBlock: number
+}
+
 export interface SignedImageUrl {
   fileId: number
   url: string
@@ -43,6 +47,11 @@ export interface SignedImageUrl {
 
 export async function getCardColors(): Promise<string[]> {
   const { data } = await http.get<string[]>('/cards/colors')
+  return data
+}
+
+export async function getRegulationConfig(): Promise<RegulationConfig> {
+  const { data } = await http.get<RegulationConfig>('/cards/regulations')
   return data
 }
 

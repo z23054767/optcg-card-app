@@ -7,14 +7,24 @@
     </div>
 
     <section class="rounded-2xl border p-4 sm:p-6" :class="panelClass">
-      <div class="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between" :class="borderClass">
+      <div
+        class="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between"
+        :class="borderClass"
+      >
         <div>
           <p class="text-xs font-medium" :class="mutedTextClass">牌組名稱</p>
           <h2 class="mt-1 text-xl font-extrabold" :class="titleClass">{{ draft.name }}</h2>
           <p class="mt-4 text-xs font-medium" :class="mutedTextClass">牌組代碼</p>
           <div class="mt-1 flex items-center gap-2">
-            <strong class="break-all text-lg tracking-wide" :class="titleClass">{{ deckCode }}</strong>
-            <button type="button" class="rounded-lg px-2 py-1 text-sm" :class="softButtonClass" @click="copyDeckCode">
+            <strong class="break-all text-lg tracking-wide" :class="titleClass">{{
+              deckCode
+            }}</strong>
+            <button
+              type="button"
+              class="rounded-lg px-2 py-1 text-sm"
+              :class="softButtonClass"
+              @click="copyDeckCode"
+            >
               複製
             </button>
           </div>
@@ -22,74 +32,120 @@
         </div>
 
         <div class="flex flex-wrap gap-2">
-          <button type="button" class="rounded-full px-4 py-2.5 text-sm font-semibold" :class="softButtonClass"
-            :disabled="isExporting" @click="downloadDeckImage">
+          <button
+            type="button"
+            class="rounded-full px-4 py-2.5 text-sm font-semibold"
+            :class="softButtonClass"
+            :disabled="isExporting"
+            @click="downloadDeckImage"
+          >
             {{ isExporting ? '產生圖片中...' : '⇩ 保存圖片' }}
           </button>
-          <button type="button" class="rounded-full px-4 py-2.5 text-sm font-semibold" :class="softButtonClass"
-            @click="isSortDialogOpen = true">
+          <button
+            type="button"
+            class="rounded-full px-4 py-2.5 text-sm font-semibold"
+            :class="softButtonClass"
+            @click="isSortDialogOpen = true"
+          >
             ⇅ 變更排序
           </button>
         </div>
       </div>
 
-      <p v-if="actionMessage" class="mt-4 text-sm font-medium text-emerald-600">{{ actionMessage }}</p>
+      <p v-if="actionMessage" class="mt-4 text-sm font-medium text-emerald-600">
+        {{ actionMessage }}
+      </p>
       <p v-if="actionError" class="mt-4 text-sm font-medium text-red-500">{{ actionError }}</p>
     </section>
 
     <section class="mt-4 overflow-hidden rounded-2xl border" :class="panelClass">
-      <div class="bg-[#101117] px-4 py-3 text-sm font-bold text-white">主牌組 {{ mainDeckCount }}</div>
+      <div class="bg-[#101117] px-4 py-3 text-sm font-bold text-white">
+        主牌組 {{ mainDeckCount }}
+      </div>
       <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9">
         <article v-for="entry in sortedEntries" :key="entry.card.cid" class="relative">
-          <img :src="entry.imageUrl" :alt="entry.card.cardName" class="aspect-5/7 w-full rounded-lg object-contain" />
-          <span v-if="draft.regulation !== 'sealed' && entry.card.isBanned"
-            class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+          <img
+            :src="entry.imageUrl"
+            :alt="entry.card.cardName"
+            class="aspect-5/7 w-full rounded-lg object-contain"
+          />
+          <span
+            v-if="draft.regulation !== 'sealed' && entry.card.isBanned"
+            class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
+          >
             Banned
           </span>
           <span
-            class="absolute -right-1 -top-1 flex h-8 min-w-8 items-center justify-center rounded-full bg-[#101117] px-1.5 text-sm font-bold text-white ring-2 ring-white">
+            class="absolute -right-1 -top-1 flex h-8 min-w-8 items-center justify-center rounded-full bg-[#101117] px-1.5 text-sm font-bold text-white ring-2 ring-white"
+          >
             {{ entry.quantity }}
           </span>
-          <p class="mt-1 truncate text-center text-xs" :class="titleClass">{{ entry.card.cardId }}</p>
+          <p class="mt-1 truncate text-center text-xs" :class="titleClass">
+            {{ entry.card.cardId }}
+          </p>
         </article>
       </div>
 
       <div class="bg-[#101117] px-4 py-3 text-sm font-bold text-white">領航卡</div>
       <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9">
         <article class="relative">
-          <img :src="draft.leaderImageUrl" :alt="draft.leader.cardName"
-            class="aspect-5/7 w-full rounded-lg object-contain" />
-          <span v-if="draft.regulation !== 'sealed' && draft.leader.isBanned"
-            class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+          <img
+            :src="draft.leaderImageUrl"
+            :alt="draft.leader.cardName"
+            class="aspect-5/7 w-full rounded-lg object-contain"
+          />
+          <span
+            v-if="draft.regulation !== 'sealed' && draft.leader.isBanned"
+            class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
+          >
             Banned
           </span>
           <span
-            class="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#101117] text-sm font-bold text-white ring-2 ring-white">
+            class="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#101117] text-sm font-bold text-white ring-2 ring-white"
+          >
             1
           </span>
-          <p class="mt-1 truncate text-center text-xs" :class="titleClass">{{ draft.leader.cardId }}</p>
+          <p class="mt-1 truncate text-center text-xs" :class="titleClass">
+            {{ draft.leader.cardId }}
+          </p>
         </article>
       </div>
     </section>
 
     <div class="sticky bottom-0 mt-4 grid gap-3 bg-inherit py-4 sm:grid-cols-3">
-      <button type="button" class="rounded-full border px-5 py-3.5 text-sm font-bold transition"
-        :class="returnButtonClass" @click="emit('close')">
+      <button
+        type="button"
+        class="rounded-full border px-5 py-3.5 text-sm font-bold transition"
+        :class="returnButtonClass"
+        @click="emit('close')"
+      >
         回到我的牌組
       </button>
-      <button type="button"
+      <button
+        type="button"
         class="rounded-full bg-rose-100 px-5 py-3.5 text-sm font-bold text-rose-600 hover:bg-rose-200"
-        @click="editDeck">
+        @click="editDeck"
+      >
         編輯牌組
       </button>
-      <button type="button"
+      <button
+        type="button"
         class="rounded-full border px-5 py-3.5 text-sm font-bold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-        :class="primaryActionButtonClass" :disabled="isSaving" @click="saveDeck">
-        {{ isSaving ? (isEditing ? '更新中...' : '儲存中...') : (isEditing ? '更新牌組' : '儲存牌組') }}
+        :class="primaryActionButtonClass"
+        :disabled="isSaving"
+        @click="saveDeck"
+      >
+        {{
+          isSaving ? (isEditing ? '更新中...' : '儲存中...') : isEditing ? '更新牌組' : '儲存牌組'
+        }}
       </button>
     </div>
 
-    <DeckSortDialog v-if="isSortDialogOpen" @close="isSortDialogOpen = false" @select="applyDeckSort" />
+    <DeckSortDialog
+      v-if="isSortDialogOpen"
+      @close="isSortDialogOpen = false"
+      @select="applyDeckSort"
+    />
   </main>
 </template>
 
@@ -117,7 +173,9 @@ const emit = defineEmits<{
 const preferences = usePreferencesStore()
 const deckCode = ref(props.draft.code ?? createDeckCode())
 const persistedDeckId = ref(props.draft.id)
-const sortedEntries = ref(props.draft.entries.map((entry) => ({ ...entry, card: { ...entry.card } })))
+const sortedEntries = ref(
+  props.draft.entries.map((entry) => ({ ...entry, card: { ...entry.card } })),
+)
 const isExporting = ref(false)
 const isSaving = ref(false)
 const isSortDialogOpen = ref(false)
@@ -165,9 +223,7 @@ async function saveDeck(): Promise<void> {
   const appliesCardRestrictions = props.draft.regulation !== 'sealed'
   const cardIds = new Set(allCards.map(({ cardId }) => cardId))
   const bannedCardIds = appliesCardRestrictions
-    ? Array.from(
-        new Set(allCards.filter(({ isBanned }) => isBanned).map(({ cardId }) => cardId)),
-      )
+    ? Array.from(new Set(allCards.filter(({ isBanned }) => isBanned).map(({ cardId }) => cardId)))
     : []
   const combinationKeys = new Set<string>()
   const prohibitedCombinations: [string, string][] = []
@@ -201,13 +257,19 @@ async function saveDeck(): Promise<void> {
       : null
 
   let confirmedIllegalDeck = false
-  if (bannedCardIds.length || prohibitedCombinations.length || cardCountViolations.length || deckCountViolation) {
+  if (
+    bannedCardIds.length ||
+    prohibitedCombinations.length ||
+    cardCountViolations.length ||
+    deckCountViolation
+  ) {
     const messages = [
       ...(deckCountViolation ? [deckCountViolation] : []),
       ...(bannedCardIds.length ? [`禁止卡牌：${bannedCardIds.join('、')}`] : []),
       ...prohibitedCombinations.map((pair) => `禁止組合：${pair.join(' + ')}`),
       ...cardCountViolations.map(
-        ({ cardId, quantity, maxCount }) => `張數超限：${cardId} 目前 ${quantity} 張，最多 ${maxCount} 張`,
+        ({ cardId, quantity, maxCount }) =>
+          `張數超限：${cardId} 目前 ${quantity} 張，最多 ${maxCount} 張`,
       ),
     ]
     const result = await showConfirmAlert(
@@ -240,9 +302,10 @@ async function saveDeck(): Promise<void> {
         fileId,
       })),
     }
-    const saved = persistedDeckId.value === undefined
-      ? await createDeck(input)
-      : await updateDeck(persistedDeckId.value, input)
+    const saved =
+      persistedDeckId.value === undefined
+        ? await createDeck(input)
+        : await updateDeck(persistedDeckId.value, input)
     persistedDeckId.value = saved.id
 
     if (!saved.isLegal && !confirmedIllegalDeck) {

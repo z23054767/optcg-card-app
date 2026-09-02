@@ -1,6 +1,11 @@
 <template>
-  <div class="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/70 p-3 sm:items-center sm:p-4"
-    role="dialog" aria-modal="true" aria-labelledby="deck-sort-title" @click.self="emit('close')">
+  <div
+    class="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/70 p-3 sm:items-center sm:p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="deck-sort-title"
+    @click.self="emit('close')"
+  >
     <div class="w-full max-w-lg overflow-hidden rounded-3xl border shadow-2xl" :class="panelClass">
       <header class="border-b px-5 py-5 text-center" :class="borderClass">
         <h2 id="deck-sort-title" class="text-xl font-bold" :class="titleClass">變更卡片排序</h2>
@@ -8,47 +13,78 @@
       </header>
 
       <div class="max-h-[70vh] space-y-4 overflow-y-auto p-4 sm:p-5">
-        <div v-if="selectedOptions.length" class="rounded-xl border p-3" :class="priorityPanelClass">
+        <div
+          v-if="selectedOptions.length"
+          class="rounded-xl border p-3"
+          :class="priorityPanelClass"
+        >
           <p class="mb-2 text-xs font-bold" :class="titleClass">排序優先順序</p>
           <div class="flex flex-wrap gap-2">
-            <span v-for="(option, index) in selectedOptions" :key="option"
-              class="inline-flex items-center gap-1.5 rounded-full bg-rose-500 px-2.5 py-1 text-[11px] font-bold text-white">
-              <span class="flex h-4 w-4 items-center justify-center rounded-full bg-white/20">{{ index + 1 }}</span>
+            <span
+              v-for="(option, index) in selectedOptions"
+              :key="option"
+              class="inline-flex items-center gap-1.5 rounded-full bg-rose-500 px-2.5 py-1 text-[11px] font-bold text-white"
+            >
+              <span class="flex h-4 w-4 items-center justify-center rounded-full bg-white/20">{{
+                index + 1
+              }}</span>
               {{ optionLabel(option) }}
             </span>
           </div>
         </div>
 
         <section v-for="group in DECK_SORT_GROUPS" :key="group.label">
-          <h3 class="mb-2 text-xs font-bold uppercase tracking-wider" :class="mutedTextClass">{{ group.label }}</h3>
+          <h3 class="mb-2 text-xs font-bold uppercase tracking-wider" :class="mutedTextClass">
+            {{ group.label }}
+          </h3>
           <div class="grid grid-cols-2 gap-2">
-            <button v-for="choice in group.choices" :key="choice.value" type="button"
+            <button
+              v-for="choice in group.choices"
+              :key="choice.value"
+              type="button"
               class="relative rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-rose-500 hover:shadow-md"
-              :class="choiceClass(choice.value)" @click="selectChoice(choice.value)">
-              <span v-if="selectedPriority(choice.value)"
-                class="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-extrabold text-white">
+              :class="choiceClass(choice.value)"
+              @click="selectChoice(choice.value)"
+            >
+              <span
+                v-if="selectedPriority(choice.value)"
+                class="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-extrabold text-white"
+              >
                 {{ selectedPriority(choice.value) }}
               </span>
               <span class="block text-sm font-bold" :class="titleClass">{{ choice.label }}</span>
-              <span class="mt-1 block text-[11px]" :class="mutedTextClass">{{ choice.description }}</span>
+              <span class="mt-1 block text-[11px]" :class="mutedTextClass">{{
+                choice.description
+              }}</span>
             </button>
           </div>
         </section>
       </div>
 
       <footer class="grid grid-cols-2 gap-2 border-t p-4" :class="borderClass">
-        <button type="button"
+        <button
+          type="button"
           class="rounded-full px-5 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
-          :class="cancelButtonClass" :disabled="selectedOptions.length === 0" @click="selectedOptions = []">
+          :class="cancelButtonClass"
+          :disabled="selectedOptions.length === 0"
+          @click="selectedOptions = []"
+        >
           清除條件
         </button>
-        <button type="button"
+        <button
+          type="button"
           class="rounded-full bg-rose-500 px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-40"
-          :disabled="selectedOptions.length === 0" @click="applySort">
+          :disabled="selectedOptions.length === 0"
+          @click="applySort"
+        >
           套用排序
         </button>
-        <button type="button" class="col-span-2 w-full rounded-full px-5 py-3.5 text-sm font-bold transition"
-          :class="cancelButtonClass" @click="emit('close')">
+        <button
+          type="button"
+          class="col-span-2 w-full rounded-full px-5 py-3.5 text-sm font-bold transition"
+          :class="cancelButtonClass"
+          @click="emit('close')"
+        >
           取消
         </button>
       </footer>
@@ -89,7 +125,9 @@ function criterion(option: DeckSortOption): string {
 }
 
 function selectedPriority(option: DeckSortOption): number | null {
-  const index = selectedOptions.value.findIndex((selected) => criterion(selected) === criterion(option))
+  const index = selectedOptions.value.findIndex(
+    (selected) => criterion(selected) === criterion(option),
+  )
   return index < 0 ? null : index + 1
 }
 
@@ -106,7 +144,9 @@ function choiceClass(option: DeckSortOption): string {
 }
 
 function selectChoice(option: DeckSortOption): void {
-  const index = selectedOptions.value.findIndex((selected) => criterion(selected) === criterion(option))
+  const index = selectedOptions.value.findIndex(
+    (selected) => criterion(selected) === criterion(option),
+  )
   if (index < 0) {
     selectedOptions.value.push(option)
   } else if (selectedOptions.value[index] === option) {

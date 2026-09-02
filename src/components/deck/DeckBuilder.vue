@@ -10,9 +10,15 @@
 
     <section class="mb-4 rounded-2xl border p-4 sm:p-5" :class="panelClass">
       <label for="deck-name" class="text-sm font-bold" :class="titleClass">牌組名稱</label>
-      <input id="deck-name" v-model="deckName" type="text" maxlength="40" placeholder="請輸入牌組名稱"
+      <input
+        id="deck-name"
+        v-model="deckName"
+        type="text"
+        maxlength="40"
+        placeholder="請輸入牌組名稱"
         class="mt-2 h-11 w-full rounded-xl border px-3 text-sm outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20"
-        :class="inputClass" />
+        :class="inputClass"
+      />
       <div class="mt-1.5 flex justify-between gap-3 text-xs" :class="mutedTextClass">
         <span>建立後仍可再次編輯名稱</span>
         <span>{{ deckName.length }}/40</span>
@@ -22,53 +28,91 @@
     <section class="mb-4 overflow-hidden rounded-2xl border" :class="deckPanelClass">
       <div class="flex items-center justify-between border-b px-4 py-3" :class="deckHeaderClass">
         <p class="text-xs font-semibold" :class="deckHintClass">從下方搜尋結果點擊卡片加入主牌</p>
-        <button type="button" class="rounded-full px-4 py-2 text-xs font-semibold transition"
-          :class="deckSortButtonClass" @click="isSortDialogOpen = true">
+        <button
+          type="button"
+          class="rounded-full px-4 py-2 text-xs font-semibold transition"
+          :class="deckSortButtonClass"
+          @click="isSortDialogOpen = true"
+        >
           ⇅ 變更排序
         </button>
       </div>
 
       <div class="grid grid-cols-2 border-b text-center text-sm" :class="deckDividerClass">
-        <button type="button" class="border-b-2 px-4 py-3 font-semibold transition"
-          :class="activeDeckTab === 'main' ? activeDeckTabClass : inactiveDeckTabClass" @click="activeDeckTab = 'main'">
+        <button
+          type="button"
+          class="border-b-2 px-4 py-3 font-semibold transition"
+          :class="activeDeckTab === 'main' ? activeDeckTabClass : inactiveDeckTabClass"
+          @click="activeDeckTab = 'main'"
+        >
           主牌 {{ mainDeckCount }}/{{ maximumDeckCount }}
         </button>
-        <button type="button" class="border-b-2 px-4 py-3 font-semibold transition"
+        <button
+          type="button"
+          class="border-b-2 px-4 py-3 font-semibold transition"
           :class="activeDeckTab === 'leader' ? activeDeckTabClass : inactiveDeckTabClass"
-          @click="activeDeckTab = 'leader'">
+          @click="activeDeckTab = 'leader'"
+        >
           領航卡
         </button>
       </div>
 
       <div class="h-56 overflow-y-auto overscroll-contain p-4" style="overflow-anchor: none">
-        <div v-if="activeDeckTab === 'leader'" class="grid grid-cols-3 gap-3 sm:grid-cols-5 md:grid-cols-7">
-          <button type="button"
+        <div
+          v-if="activeDeckTab === 'leader'"
+          class="grid grid-cols-3 gap-3 sm:grid-cols-5 md:grid-cols-7"
+        >
+          <button
+            type="button"
             class="group relative rounded-xl p-1 text-left transition hover:-translate-y-0.5 hover:ring-2 hover:ring-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-            :class="selectedDeckCardClass" @click="openLeaderArtPicker">
-            <img :src="currentLeaderImageUrl" :alt="leader.cardName" class="aspect-5/7 w-full rounded-lg object-contain"
-              @error="refreshImage(currentLeaderFileId)" />
+            :class="selectedDeckCardClass"
+            @click="openLeaderArtPicker"
+          >
+            <img
+              :src="currentLeaderImageUrl"
+              :alt="leader.cardName"
+              class="aspect-5/7 w-full rounded-lg object-contain"
+              @error="refreshImage(currentLeaderFileId)"
+            />
             <span
               class="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full px-1 text-xs font-extrabold shadow-lg ring-2"
-              :class="quantityBadgeClass">1</span>
+              :class="quantityBadgeClass"
+              >1</span
+            >
             <p class="mt-1 truncate px-1 text-center text-[10px] font-semibold" :class="titleClass">
               點擊更換圖片
             </p>
           </button>
         </div>
 
-        <div v-else-if="deckEntries.length" class="grid grid-cols-3 gap-3 sm:grid-cols-5 md:grid-cols-7">
-          <button v-for="entry in deckEntries" :key="entry.card.cid" type="button"
+        <div
+          v-else-if="deckEntries.length"
+          class="grid grid-cols-3 gap-3 sm:grid-cols-5 md:grid-cols-7"
+        >
+          <button
+            v-for="entry in deckEntries"
+            :key="entry.card.cid"
+            type="button"
             class="relative rounded-xl p-1 text-left transition hover:-translate-y-0.5 hover:ring-2 hover:ring-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-            :class="selectedDeckCardClass" @click="openDeckCardDetail(entry)">
-            <img :src="entry.imageUrl" :alt="entry.card.cardName" class="aspect-5/7 w-full rounded-lg object-contain"
-              @error="refreshImage(entry.fileId)" />
+            :class="selectedDeckCardClass"
+            @click="openDeckCardDetail(entry)"
+          >
+            <img
+              :src="entry.imageUrl"
+              :alt="entry.card.cardName"
+              class="aspect-5/7 w-full rounded-lg object-contain"
+              @error="refreshImage(entry.fileId)"
+            />
             <span
               class="absolute -right-1 -top-1 flex h-8 min-w-8 items-center justify-center rounded-full px-1.5 text-sm font-extrabold shadow-lg ring-2"
-              :class="quantityBadgeClass">
+              :class="quantityBadgeClass"
+            >
               {{ entry.quantity }}
             </span>
-            <span v-if="regulation !== 'sealed' && entry.card.isBanned"
-              class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+            <span
+              v-if="regulation !== 'sealed' && entry.card.isBanned"
+              class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
+            >
               Banned
             </span>
             <p class="mt-1 truncate px-1 text-center text-[10px] font-semibold" :class="titleClass">
@@ -77,7 +121,11 @@
           </button>
         </div>
 
-        <div v-else class="flex min-h-40 items-center justify-center text-center text-sm" :class="mutedTextClass">
+        <div
+          v-else
+          class="flex min-h-40 items-center justify-center text-center text-sm"
+          :class="mutedTextClass"
+        >
           尚未加入主牌，從下方搜尋結果點擊卡片即可加入。
         </div>
       </div>
@@ -87,9 +135,18 @@
       <div class="border-b p-4 sm:p-5" :class="[sectionBorderClass, searchHeaderClass]">
         <div class="mb-4 flex items-start justify-between gap-3">
           <div class="flex items-center gap-2.5">
-            <span class="flex h-9 w-9 items-center justify-center rounded-xl" :class="searchIconClass">
-              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
-                aria-hidden="true">
+            <span
+              class="flex h-9 w-9 items-center justify-center rounded-xl"
+              :class="searchIconClass"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
                 <circle cx="11" cy="11" r="7"></circle>
                 <path d="m20 20-4-4"></path>
               </svg>
@@ -99,68 +156,117 @@
               <p class="mt-0.5 text-xs" :class="mutedTextClass">依名稱、卡號、類型或顏色尋找卡片</p>
             </div>
           </div>
-          <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold" :class="resultCountClass">
+          <span
+            class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold"
+            :class="resultCountClass"
+          >
             {{ totalResults }} 張
           </span>
         </div>
 
-        <form class="flex overflow-hidden rounded-xl border transition-colors" :class="searchBoxClass"
-          @submit.prevent="runSearch">
+        <form
+          class="flex overflow-hidden rounded-xl border transition-colors"
+          :class="searchBoxClass"
+          @submit.prevent="runSearch"
+        >
           <span class="flex w-12 shrink-0 items-center justify-center" :class="mutedTextClass">
-            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
-              aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m20 20-4-4"></path>
             </svg>
           </span>
           <label class="sr-only" for="deck-card-search">卡片搜尋</label>
-          <input id="deck-card-search" v-model.trim="searchQuery" type="search" placeholder="輸入卡片名稱或卡號..."
-            class="min-w-0 flex-1 bg-transparent py-3.5 pr-3 pl-2 text-sm outline-none placeholder:text-slate-400" />
-          <button type="submit"
+          <input
+            id="deck-card-search"
+            v-model.trim="searchQuery"
+            type="search"
+            placeholder="輸入卡片名稱或卡號..."
+            class="min-w-0 flex-1 bg-transparent py-3.5 pr-3 pl-2 text-sm outline-none placeholder:text-slate-400"
+          />
+          <button
+            type="submit"
             class="m-1.5 flex shrink-0 items-center justify-center rounded-lg px-4 text-sm font-bold transition"
-            :class="searchButtonClass">
+            :class="searchButtonClass"
+          >
             搜尋
           </button>
         </form>
 
         <div class="mt-4 grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-end">
           <label class="block">
-            <span class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider" :class="mutedTextClass">
+            <span
+              class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider"
+              :class="mutedTextClass"
+            >
               卡片類型
             </span>
             <span class="relative block">
-              <select v-model="selectedType"
+              <select
+                v-model="selectedType"
                 class="h-10 w-full appearance-none rounded-xl border py-0 pl-3 pr-10 text-xs font-semibold outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20"
-                :class="inputClass" aria-label="卡片類型" @change="runSearch">
+                :class="inputClass"
+                aria-label="卡片類型"
+                @change="runSearch"
+              >
                 <option value="">全部類型</option>
                 <option value="CHARACTER">角色卡</option>
                 <option value="EVENT">事件卡</option>
                 <option value="STAGE">場地卡</option>
               </select>
-              <svg viewBox="0 0 20 20" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2"
-                :class="mutedTextClass" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd"
+              <svg
+                viewBox="0 0 20 20"
+                class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2"
+                :class="mutedTextClass"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
                   d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06Z"
-                  clip-rule="evenodd" />
+                  clip-rule="evenodd"
+                />
               </svg>
             </span>
           </label>
 
           <div>
-            <span class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider" :class="mutedTextClass">
+            <span
+              class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider"
+              :class="mutedTextClass"
+            >
               顏色
             </span>
             <div class="flex flex-wrap gap-2" role="group" aria-label="搜尋顏色">
-              <button type="button"
+              <button
+                type="button"
                 class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold transition"
-                :class="colorButtonClass(null)" @click="setColor(null)">
-                <span class="h-2.5 w-2.5 rounded-full bg-linear-to-br from-rose-500 via-emerald-500 to-blue-500"></span>
+                :class="colorButtonClass(null)"
+                @click="setColor(null)"
+              >
+                <span
+                  class="h-2.5 w-2.5 rounded-full bg-linear-to-br from-rose-500 via-emerald-500 to-blue-500"
+                ></span>
                 ALL
               </button>
-              <button v-for="color in leaderColors" :key="color" type="button"
+              <button
+                v-for="color in leaderColors"
+                :key="color"
+                type="button"
                 class="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold transition"
-                :class="colorButtonClass(color)" @click="setColor(color)">
-                <span class="h-2.5 w-2.5 rounded-full ring-1 ring-black/10" :class="colorDotClass(color)"></span>
+                :class="colorButtonClass(color)"
+                @click="setColor(color)"
+              >
+                <span
+                  class="h-2.5 w-2.5 rounded-full ring-1 ring-black/10"
+                  :class="colorDotClass(color)"
+                ></span>
                 {{ color }}
               </button>
             </div>
@@ -168,58 +274,104 @@
         </div>
       </div>
 
-      <div ref="searchResultsScroll"
+      <div
+        ref="searchResultsScroll"
         class="max-h-[52vh] overflow-y-auto overscroll-contain p-3 sm:max-h-[56vh] sm:p-4 lg:max-h-155"
-        :class="searchResultsClass">
+        :class="searchResultsClass"
+      >
         <div v-if="isLoading" class="py-14 text-center">
-          <div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"></div>
+          <div
+            class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"
+          ></div>
           <p class="mt-3 text-sm" :class="mutedTextClass">正在搜尋卡片...</p>
         </div>
         <div v-else-if="searchError" class="py-12 text-center text-sm text-red-500">
           {{ searchError }}
         </div>
-        <div v-else-if="searchResults.length === 0" class="py-12 text-center text-sm" :class="mutedTextClass">
+        <div
+          v-else-if="searchResults.length === 0"
+          class="py-12 text-center text-sm"
+          :class="mutedTextClass"
+        >
           找不到符合條件的卡片。
         </div>
         <div v-else class="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-          <article v-for="card in searchResults" :key="card.cid"
+          <article
+            v-for="card in searchResults"
+            :key="card.cid"
             class="group relative overflow-hidden rounded-xl border text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:border-rose-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-            :class="[infoCardClass, deckQuantity(card.cid) ? selectedSearchCardClass : '']">
-            <button type="button" class="block w-full text-left focus-visible:outline-none"
-              :aria-label="`加入 ${card.cardName}`" @click="addCard(card)">
+            :class="[infoCardClass, deckQuantity(card.cid) ? selectedSearchCardClass : '']"
+          >
+            <button
+              type="button"
+              class="block w-full text-left focus-visible:outline-none"
+              :aria-label="`加入 ${card.cardName}`"
+              @click="addCard(card)"
+            >
               <div class="relative aspect-5/7 bg-slate-950/10">
-                <img v-if="cardImageUrlByCid.get(card.cid)" :src="cardImageUrlByCid.get(card.cid)"
+                <img
+                  v-if="cardImageUrlByCid.get(card.cid)"
+                  :src="cardImageUrlByCid.get(card.cid)"
                   :alt="`${card.cardName} (${card.cardId})`"
-                  class="h-full w-full object-contain transition group-hover:scale-[1.02]" loading="lazy"
-                  @error="card.fileId === undefined ? undefined : refreshImage(card.fileId)" />
-                <div v-else class="flex h-full items-center justify-center text-xs" :class="mutedTextClass">無圖片</div>
+                  class="h-full w-full object-contain transition group-hover:scale-[1.02]"
+                  loading="lazy"
+                  @error="card.fileId === undefined ? undefined : refreshImage(card.fileId)"
+                />
                 <div
-                  class="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/70 to-transparent">
+                  v-else
+                  class="flex h-full items-center justify-center text-xs"
+                  :class="mutedTextClass"
+                >
+                  無圖片
                 </div>
+                <div
+                  class="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/70 to-transparent"
+                ></div>
                 <span
-                  class="absolute bottom-1.5 left-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
+                  class="absolute bottom-1.5 left-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
+                >
                   {{ cardTypeLabel(card.cardType) }}
                 </span>
-                <span v-if="regulation !== 'sealed' && card.isBanned"
-                  class="absolute bottom-1.5 right-1.5 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+                <span
+                  v-if="regulation !== 'sealed' && card.isBanned"
+                  class="absolute bottom-1.5 right-1.5 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
+                >
                   Banned
                 </span>
               </div>
               <div class="p-2">
-                <div class="truncate text-[10px] font-bold" :class="titleClass">{{ card.cardId }}</div>
-                <div class="mt-0.5 truncate text-[10px]" :class="mutedTextClass">{{ card.cardName }}</div>
+                <div class="truncate text-[10px] font-bold" :class="titleClass">
+                  {{ card.cardId }}
+                </div>
+                <div class="mt-0.5 truncate text-[10px]" :class="mutedTextClass">
+                  {{ card.cardName }}
+                </div>
               </div>
             </button>
-            <span v-if="deckQuantity(card.cid)"
+            <span
+              v-if="deckQuantity(card.cid)"
               class="pointer-events-none absolute left-1 top-1 flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-sm font-extrabold shadow-lg ring-2"
-              :class="quantityBadgeClass">
+              :class="quantityBadgeClass"
+            >
               {{ deckQuantity(card.cid) }}
             </span>
-            <button type="button"
+            <button
+              type="button"
               class="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/90 text-indigo-600 shadow-[0_4px_14px_rgba(15,23,42,0.35)] backdrop-blur-md transition duration-200 hover:scale-110 hover:border-indigo-200 hover:bg-indigo-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900 active:scale-95"
-              :aria-label="`查看 ${card.cardName} 詳細資訊`" title="查看詳細資訊" @click="openSearchCardDetail(card)">
-              <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2.25"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              :aria-label="`查看 ${card.cardName} 詳細資訊`"
+              title="查看詳細資訊"
+              @click="openSearchCardDetail(card)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-4.5 w-4.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 <circle cx="12" cy="12" r="9"></circle>
                 <path d="M12 11v5"></path>
                 <path d="M12 8h.01"></path>
@@ -230,73 +382,131 @@
 
         <div ref="loadSentinel" class="h-1" aria-hidden="true"></div>
         <div v-if="isLoadingMore" class="py-5 text-center">
-          <div class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"></div>
+          <div
+            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"
+          ></div>
           <p class="mt-2 text-xs" :class="mutedTextClass">正在載入更多卡片...</p>
         </div>
       </div>
     </section>
 
-    <div class="sticky bottom-0 mt-4 grid grid-cols-1 gap-3 bg-inherit py-4 sm:grid-cols-[1fr_1fr_1.4fr]">
-      <button type="button" class="rounded-full border px-5 py-3.5 text-sm font-bold transition"
-        :class="returnToDecksButtonClass" @click="emit('close')">
+    <div
+      class="sticky bottom-0 mt-4 grid grid-cols-1 gap-3 bg-inherit py-4 sm:grid-cols-[1fr_1fr_1.4fr]"
+    >
+      <button
+        type="button"
+        class="rounded-full border px-5 py-3.5 text-sm font-bold transition"
+        :class="returnToDecksButtonClass"
+        @click="emit('close')"
+      >
         回到我的牌組
       </button>
-      <button type="button"
+      <button
+        type="button"
         class="rounded-full bg-slate-200 px-5 py-3.5 text-sm font-bold text-slate-900 transition hover:bg-slate-300"
-        @click="emit('cancel')">
+        @click="emit('cancel')"
+      >
         取消
       </button>
-      <button type="button"
+      <button
+        type="button"
         class="rounded-full border px-5 py-3.5 text-sm font-bold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-        :class="primaryActionButtonClass" :disabled="mainDeckCount === 0" @click="confirmDeck">
+        :class="primaryActionButtonClass"
+        :disabled="mainDeckCount === 0"
+        @click="confirmDeck"
+      >
         {{ isEditing ? '編輯完畢' : '製作' }}（{{ mainDeckCount }}/{{ maximumDeckCount }}）
       </button>
     </div>
 
-    <div v-if="detailCard"
+    <div
+      v-if="detailCard"
       class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-slate-950/75 sm:items-center sm:p-4"
-      role="dialog" aria-modal="true" aria-labelledby="deck-card-detail-title" @click.self="closeDeckCardDetail">
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deck-card-detail-title"
+      @click.self="closeDeckCardDetail"
+    >
       <div
         class="flex max-h-[96dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border shadow-2xl sm:max-h-[94vh] sm:rounded-3xl"
-        :class="panelClass">
+        :class="panelClass"
+      >
         <header class="relative shrink-0 px-5 pb-3 pt-5 text-center">
-          <h2 id="deck-card-detail-title" class="text-xl font-bold" :class="titleClass">卡牌詳細資訊</h2>
-          <button type="button"
+          <h2 id="deck-card-detail-title" class="text-xl font-bold" :class="titleClass">
+            卡牌詳細資訊
+          </h2>
+          <button
+            type="button"
             class="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full text-3xl font-light leading-none transition"
-            :class="dialogCloseButtonClass" aria-label="關閉卡牌詳細資訊" @click="closeDeckCardDetail">
+            :class="dialogCloseButtonClass"
+            aria-label="關閉卡牌詳細資訊"
+            @click="closeDeckCardDetail"
+          >
             ×
           </button>
         </header>
 
         <div class="min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-8">
-          <div class="mx-auto mt-4 aspect-5/7 w-full max-w-xs overflow-hidden rounded-xl bg-slate-950/10">
+          <div
+            class="mx-auto mt-4 aspect-5/7 w-full max-w-xs overflow-hidden rounded-xl bg-slate-950/10"
+          >
             <div v-if="isPreviewImageLoading" class="flex h-full items-center justify-center">
-              <div class="h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"></div>
+              <div
+                class="h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"
+              ></div>
             </div>
-            <img v-else-if="!previewImageError" :key="previewImageUrl" :src="previewImageUrl"
-              :alt="`${detailCard.cardName} (${detailCard.cardId})`" class="h-full w-full object-contain"
-              @error="detailFileId === null ? undefined : refreshImage(detailFileId)" />
-            <div v-else class="flex h-full items-center justify-center px-5 text-center text-sm text-red-500">
+            <img
+              v-else-if="!previewImageError"
+              :key="previewImageUrl"
+              :src="previewImageUrl"
+              :alt="`${detailCard.cardName} (${detailCard.cardId})`"
+              class="h-full w-full object-contain"
+              @error="detailFileId === null ? undefined : refreshImage(detailFileId)"
+            />
+            <div
+              v-else
+              class="flex h-full items-center justify-center px-5 text-center text-sm text-red-500"
+            >
               {{ previewImageError }}
             </div>
           </div>
 
-          <div v-if="activeDeckEntry && !isPreviewImageLoading && !previewImageError && cardArtOptions.length > 1"
-            class="mt-5">
+          <div
+            v-if="
+              activeDeckEntry &&
+              !isPreviewImageLoading &&
+              !previewImageError &&
+              cardArtOptions.length > 1
+            "
+            class="mt-5"
+          >
             <div class="mb-2 flex items-center justify-between gap-3">
               <p class="text-sm font-bold" :class="titleClass">選擇圖片版本</p>
-              <span class="text-xs" :class="mutedTextClass">{{ cardArtOptions.length }} 張圖片</span>
+              <span class="text-xs" :class="mutedTextClass"
+                >{{ cardArtOptions.length }} 張圖片</span
+              >
             </div>
             <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              <button v-for="art in cardArtOptions" :key="art.fileId" type="button"
+              <button
+                v-for="art in cardArtOptions"
+                :key="art.fileId"
+                type="button"
                 class="relative overflow-hidden rounded-xl border p-1 transition hover:-translate-y-0.5 hover:border-rose-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                 :class="pendingCardFileId === art.fileId ? selectedLeaderArtClass : infoCardClass"
-                :aria-pressed="pendingCardFileId === art.fileId" @click="selectCardArt(art)">
-                <img :src="art.url" :alt="`${activeDeckEntry.card.cardName} 圖片版本`"
-                  class="aspect-5/7 w-full rounded-lg object-contain" loading="lazy"
-                  @error="refreshImage(art.fileId)" />
-                <span v-if="pendingCardFileId === art.fileId"
-                  class="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white shadow">
+                :aria-pressed="pendingCardFileId === art.fileId"
+                @click="selectCardArt(art)"
+              >
+                <img
+                  :src="art.url"
+                  :alt="`${activeDeckEntry.card.cardName} 圖片版本`"
+                  class="aspect-5/7 w-full rounded-lg object-contain"
+                  loading="lazy"
+                  @error="refreshImage(art.fileId)"
+                />
+                <span
+                  v-if="pendingCardFileId === art.fileId"
+                  class="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white shadow"
+                >
                   已選擇
                 </span>
               </button>
@@ -311,15 +521,25 @@
           </div>
 
           <div class="mt-5 overflow-hidden rounded-xl border" :class="sectionBorderClass">
-            <button type="button"
+            <button
+              type="button"
               class="flex w-full items-center justify-between px-5 py-4 text-left text-base font-semibold transition"
-              :class="detailToggleClass" :aria-expanded="isCardDetailOpen"
-              @click="isCardDetailOpen = !isCardDetailOpen">
+              :class="detailToggleClass"
+              :aria-expanded="isCardDetailOpen"
+              @click="isCardDetailOpen = !isCardDetailOpen"
+            >
               詳細資訊
-              <span class="text-2xl font-light transition" :class="isCardDetailOpen ? 'rotate-45' : ''">＋</span>
+              <span
+                class="text-2xl font-light transition"
+                :class="isCardDetailOpen ? 'rotate-45' : ''"
+                >＋</span
+              >
             </button>
-            <dl v-if="isCardDetailOpen" class="grid grid-cols-2 gap-x-5 gap-y-3 border-t px-5 py-4 text-sm"
-              :class="sectionBorderClass">
+            <dl
+              v-if="isCardDetailOpen"
+              class="grid grid-cols-2 gap-x-5 gap-y-3 border-t px-5 py-4 text-sm"
+              :class="sectionBorderClass"
+            >
               <div>
                 <dt :class="mutedTextClass">類型</dt>
                 <dd class="mt-1 font-medium">{{ detailCard.cardType }}</dd>
@@ -356,94 +576,165 @@
           </div>
         </div>
 
-        <footer v-if="activeDeckEntry" class="shrink-0 border-t p-4 sm:px-8" :class="sectionBorderClass">
+        <footer
+          v-if="activeDeckEntry"
+          class="shrink-0 border-t p-4 sm:px-8"
+          :class="sectionBorderClass"
+        >
           <div class="mb-4 flex items-center justify-center gap-8">
-            <button type="button"
+            <button
+              type="button"
               class="flex h-12 w-12 items-center justify-center rounded-full border text-2xl transition disabled:cursor-not-allowed disabled:opacity-40"
-              :class="quantityControlClass" :disabled="editingQuantity <= 1" @click="editingQuantity -= 1">−</button>
-            <strong class="min-w-8 text-center text-xl" :class="titleClass">{{ editingQuantity }}</strong>
-            <button type="button"
+              :class="quantityControlClass"
+              :disabled="editingQuantity <= 1"
+              @click="editingQuantity -= 1"
+            >
+              −
+            </button>
+            <strong class="min-w-8 text-center text-xl" :class="titleClass">{{
+              editingQuantity
+            }}</strong>
+            <button
+              type="button"
               class="flex h-12 w-12 items-center justify-center rounded-full border text-2xl transition disabled:cursor-not-allowed disabled:opacity-40"
-              :class="quantityControlClass" :disabled="editingQuantity >= maximumEditingQuantity"
-              @click="editingQuantity += 1">＋</button>
+              :class="quantityControlClass"
+              :disabled="editingQuantity >= maximumEditingQuantity"
+              @click="editingQuantity += 1"
+            >
+              ＋
+            </button>
           </div>
           <div class="grid grid-cols-[0.8fr_1.2fr] gap-3">
-            <button type="button" class="rounded-full px-5 py-3.5 text-sm font-bold transition"
-              :class="removeCardButtonClass" @click="removeActiveDeckCard">
+            <button
+              type="button"
+              class="rounded-full px-5 py-3.5 text-sm font-bold transition"
+              :class="removeCardButtonClass"
+              @click="removeActiveDeckCard"
+            >
               刪除
             </button>
-            <button type="button"
+            <button
+              type="button"
               class="rounded-full border px-5 py-3.5 text-sm font-bold transition active:translate-y-px"
-              :class="primaryActionButtonClass" @click="applyDeckCardChanges">
+              :class="primaryActionButtonClass"
+              @click="applyDeckCardChanges"
+            >
               變更
             </button>
           </div>
         </footer>
         <footer v-else class="shrink-0 border-t p-4 sm:px-8" :class="sectionBorderClass">
-          <button type="button"
+          <button
+            type="button"
             class="w-full rounded-full border px-5 py-3.5 text-sm font-bold transition active:translate-y-px"
-            :class="primaryActionButtonClass" @click="closeDeckCardDetail">
+            :class="primaryActionButtonClass"
+            @click="closeDeckCardDetail"
+          >
             關閉
           </button>
         </footer>
       </div>
     </div>
 
-    <div v-if="isLeaderArtPickerOpen"
+    <div
+      v-if="isLeaderArtPickerOpen"
       class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-slate-950/75 sm:items-center sm:p-4"
-      role="dialog" aria-modal="true" aria-labelledby="leader-art-picker-title" @click.self="closeLeaderArtPicker">
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="leader-art-picker-title"
+      @click.self="closeLeaderArtPicker"
+    >
       <div
         class="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border shadow-2xl sm:rounded-3xl"
-        :class="panelClass">
-        <header class="relative shrink-0 border-b px-5 py-5 text-center" :class="sectionBorderClass">
-          <h2 id="leader-art-picker-title" class="text-xl font-bold" :class="titleClass">選擇領航卡圖片</h2>
-          <p class="mt-1 text-xs" :class="mutedTextClass">{{ leader.cardName }}・{{ leader.cardId }}</p>
-          <button type="button"
+        :class="panelClass"
+      >
+        <header
+          class="relative shrink-0 border-b px-5 py-5 text-center"
+          :class="sectionBorderClass"
+        >
+          <h2 id="leader-art-picker-title" class="text-xl font-bold" :class="titleClass">
+            選擇領航卡圖片
+          </h2>
+          <p class="mt-1 text-xs" :class="mutedTextClass">
+            {{ leader.cardName }}・{{ leader.cardId }}
+          </p>
+          <button
+            type="button"
             class="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-3xl font-light leading-none text-white transition hover:bg-slate-800"
-            aria-label="關閉領航卡圖片選擇" @click="closeLeaderArtPicker">
+            aria-label="關閉領航卡圖片選擇"
+            @click="closeLeaderArtPicker"
+          >
             ×
           </button>
         </header>
 
         <div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <div v-if="isLeaderArtLoading" class="py-16 text-center">
-            <div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent">
-            </div>
+            <div
+              class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent"
+            ></div>
             <p class="mt-3 text-sm" :class="mutedTextClass">正在載入領航卡圖片...</p>
           </div>
           <div v-else-if="leaderArtError" class="py-14 text-center text-sm text-red-500">
             {{ leaderArtError }}
           </div>
           <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            <button v-for="art in leaderArtOptions" :key="art.fileId" type="button"
+            <button
+              v-for="art in leaderArtOptions"
+              :key="art.fileId"
+              type="button"
               class="group relative overflow-hidden rounded-xl border p-1 transition hover:-translate-y-0.5 hover:border-rose-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
               :class="pendingLeaderFileId === art.fileId ? selectedLeaderArtClass : infoCardClass"
-              :aria-pressed="pendingLeaderFileId === art.fileId" @click="pendingLeaderFileId = art.fileId">
-              <img :src="art.url" :alt="`${leader.cardName} 圖片版本`" class="aspect-5/7 w-full rounded-lg object-contain"
-                loading="lazy" @error="refreshImage(art.fileId)" />
-              <span v-if="pendingLeaderFileId === art.fileId"
-                class="absolute right-2 top-2 rounded-full bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow">
+              :aria-pressed="pendingLeaderFileId === art.fileId"
+              @click="pendingLeaderFileId = art.fileId"
+            >
+              <img
+                :src="art.url"
+                :alt="`${leader.cardName} 圖片版本`"
+                class="aspect-5/7 w-full rounded-lg object-contain"
+                loading="lazy"
+                @error="refreshImage(art.fileId)"
+              />
+              <span
+                v-if="pendingLeaderFileId === art.fileId"
+                class="absolute right-2 top-2 rounded-full bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow"
+              >
                 已選擇
               </span>
             </button>
           </div>
         </div>
 
-        <footer class="grid shrink-0 grid-cols-[0.8fr_1.2fr] gap-3 border-t p-4 sm:px-6" :class="sectionBorderClass">
-          <button type="button" class="rounded-full px-5 py-3.5 text-sm font-bold transition"
-            :class="cancelPickerButtonClass" @click="closeLeaderArtPicker">
+        <footer
+          class="grid shrink-0 grid-cols-[0.8fr_1.2fr] gap-3 border-t p-4 sm:px-6"
+          :class="sectionBorderClass"
+        >
+          <button
+            type="button"
+            class="rounded-full px-5 py-3.5 text-sm font-bold transition"
+            :class="cancelPickerButtonClass"
+            @click="closeLeaderArtPicker"
+          >
             取消
           </button>
-          <button type="button"
+          <button
+            type="button"
             class="rounded-full border px-5 py-3.5 text-sm font-bold transition active:translate-y-px disabled:opacity-50"
-            :class="primaryActionButtonClass" :disabled="pendingLeaderFileId === null" @click="applyLeaderArt">
+            :class="primaryActionButtonClass"
+            :disabled="pendingLeaderFileId === null"
+            @click="applyLeaderArt"
+          >
             套用圖片
           </button>
         </footer>
       </div>
     </div>
 
-    <DeckSortDialog v-if="isSortDialogOpen" @close="isSortDialogOpen = false" @select="applyDeckSort" />
+    <DeckSortDialog
+      v-if="isSortDialogOpen"
+      @close="isSortDialogOpen = false"
+      @select="applyDeckSort"
+    />
   </main>
 </template>
 
@@ -544,7 +835,6 @@ const maximumEditingQuantity = computed(() => {
   return Math.max(1, maximumDeckCount.value - otherCardsCount)
 })
 
-
 async function fetchCards(page: number, append: boolean): Promise<void> {
   if (append) {
     isLoadingMore.value = true
@@ -573,7 +863,9 @@ async function fetchCards(page: number, append: boolean): Promise<void> {
       (card) => card.fileId !== undefined && !cardImageUrlByCid.value.has(card.cid),
     )
     const signedUrls = unsignedCards.length
-      ? await createSignedImageUrls(unsignedCards.flatMap((card) => (card.fileId === undefined ? [] : [card.fileId])))
+      ? await createSignedImageUrls(
+          unsignedCards.flatMap((card) => (card.fileId === undefined ? [] : [card.fileId])),
+        )
       : []
     registerSignedImages(signedUrls)
     const urlByFileId = new Map(signedUrls.map(({ fileId, url }) => [fileId, url]))
@@ -619,7 +911,10 @@ function addCard(card: CardRecord): void {
   if (card.cardType === 'LEADER' || mainDeckCount.value >= maximumDeckCount.value) return
   const existing = deckEntries.value.find((entry) => entry.card.cid === card.cid)
   if (existing) {
-    if (existing.quantity < maximumDeckCount.value && mainDeckCount.value < maximumDeckCount.value) {
+    if (
+      existing.quantity < maximumDeckCount.value &&
+      mainDeckCount.value < maximumDeckCount.value
+    ) {
       existing.quantity += 1
     }
     return
@@ -786,7 +1081,9 @@ function closeLeaderArtPicker(): void {
 }
 
 function applyLeaderArt(): void {
-  const selectedArt = leaderArtOptions.value.find(({ fileId }) => fileId === pendingLeaderFileId.value)
+  const selectedArt = leaderArtOptions.value.find(
+    ({ fileId }) => fileId === pendingLeaderFileId.value,
+  )
   if (!selectedArt) return
   currentLeaderFileId.value = selectedArt.fileId
   currentLeaderImageUrl.value = selectedArt.url
@@ -907,7 +1204,9 @@ const mutedTextClass = computed(() => (preferences.isDark ? 'text-slate-400' : '
 const panelClass = computed(() =>
   preferences.isDark ? 'border-white/10 bg-slate-900/70' : 'border-slate-200 bg-white shadow-sm',
 )
-const sectionBorderClass = computed(() => (preferences.isDark ? 'border-white/10' : 'border-slate-200'))
+const sectionBorderClass = computed(() =>
+  preferences.isDark ? 'border-white/10' : 'border-slate-200',
+)
 const infoCardClass = computed(() =>
   preferences.isDark ? 'border-white/10 bg-slate-900' : 'border-slate-200 bg-white',
 )
@@ -920,9 +1219,7 @@ const deckPanelClass = computed(() =>
 const deckHeaderClass = computed(() =>
   preferences.isDark ? 'border-white/10 bg-rose-500/10' : 'border-rose-100 bg-rose-50',
 )
-const deckHintClass = computed(() =>
-  preferences.isDark ? 'text-rose-300' : 'text-rose-700',
-)
+const deckHintClass = computed(() => (preferences.isDark ? 'text-rose-300' : 'text-rose-700'))
 const deckSortButtonClass = computed(() =>
   preferences.isDark
     ? 'bg-white/10 text-slate-100 hover:bg-white/15'
@@ -932,7 +1229,9 @@ const deckDividerClass = computed(() =>
   preferences.isDark ? 'border-white/10 bg-slate-950/30' : 'border-slate-200 bg-slate-50/70',
 )
 const activeDeckTabClass = computed(() =>
-  preferences.isDark ? 'border-rose-400 bg-rose-500/10 text-rose-300' : 'border-rose-500 bg-rose-50 text-rose-700',
+  preferences.isDark
+    ? 'border-rose-400 bg-rose-500/10 text-rose-300'
+    : 'border-rose-500 bg-rose-50 text-rose-700',
 )
 const inactiveDeckTabClass = computed(() =>
   preferences.isDark
@@ -963,7 +1262,9 @@ const returnToDecksButtonClass = computed(() =>
     : 'border-indigo-600 bg-indigo-600 text-white shadow-sm hover:border-indigo-700 hover:bg-indigo-700',
 )
 const detailToggleClass = computed(() =>
-  preferences.isDark ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-950 text-white hover:bg-slate-800',
+  preferences.isDark
+    ? 'bg-slate-950 text-white hover:bg-slate-800'
+    : 'bg-slate-950 text-white hover:bg-slate-800',
 )
 const quantityControlClass = computed(() =>
   preferences.isDark
@@ -987,7 +1288,9 @@ const cancelPickerButtonClass = computed(() =>
 )
 
 const inputClass = computed(() =>
-  preferences.isDark ? 'border-white/15 bg-slate-950 text-white' : 'border-slate-300 bg-white text-slate-700',
+  preferences.isDark
+    ? 'border-white/15 bg-slate-950 text-white'
+    : 'border-slate-300 bg-white text-slate-700',
 )
 const searchBoxClass = computed(() =>
   preferences.isDark
@@ -1034,36 +1337,36 @@ function colorButtonClass(color: string | null): string {
 function colorDotClass(color: string): string {
   const classes: Record<string, string> = {
     // 紅
-    紅: "bg-red-500",
-    赤: "bg-red-500",
-    Red: "bg-red-500",
+    紅: 'bg-red-500',
+    赤: 'bg-red-500',
+    Red: 'bg-red-500',
 
     // 綠
-    綠: "bg-emerald-500",
-    緑: "bg-emerald-500",
-    Green: "bg-emerald-500",
+    綠: 'bg-emerald-500',
+    緑: 'bg-emerald-500',
+    Green: 'bg-emerald-500',
 
     // 藍 / 青
-    藍: "bg-blue-500",
-    青: "bg-blue-500",
-    Blue: "bg-blue-500",
+    藍: 'bg-blue-500',
+    青: 'bg-blue-500',
+    Blue: 'bg-blue-500',
 
     // 紫
-    紫: "bg-purple-500",
-    Purple: "bg-purple-500",
+    紫: 'bg-purple-500',
+    Purple: 'bg-purple-500',
 
     // 黃
-    黃: "bg-yellow-400",
-    黄: "bg-yellow-400",
-    Yellow: "bg-yellow-400",
+    黃: 'bg-yellow-400',
+    黄: 'bg-yellow-400',
+    Yellow: 'bg-yellow-400',
 
     // 黑
-    黑: "bg-slate-900",
-    黒: "bg-slate-900",
-    Black: "bg-slate-900",
+    黑: 'bg-slate-900',
+    黒: 'bg-slate-900',
+    Black: 'bg-slate-900',
   }
 
-  return classes[color.trim()] ?? "bg-slate-400"
+  return classes[color.trim()] ?? 'bg-slate-400'
 }
 
 function cardTypeLabel(cardType: string): string {

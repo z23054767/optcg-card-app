@@ -1,68 +1,115 @@
 <template>
   <Teleport to="body">
     <Transition name="modal-fade" appear>
-      <div v-if="activeAlert" class="fixed inset-0 z-140 flex px-4 backdrop-blur-sm" :class="overlayClass"
-        @click.self="handleBackdropClick">
+      <div
+        v-if="activeAlert"
+        class="fixed inset-0 z-140 flex px-4 backdrop-blur-sm"
+        :class="overlayClass"
+        @click.self="handleBackdropClick"
+      >
         <div class="w-full" :class="panelWrapperClass">
-          <div class="modal-panel w-full overflow-hidden border shadow-2xl"
-            :class="[panelClass, activeAlert.presentation === 'sheet' ? 'max-w-xl' : 'max-w-md']" role="alertdialog"
-            :aria-labelledby="titleId" :aria-describedby="descriptionId" :aria-modal="true">
+          <div
+            class="modal-panel w-full overflow-hidden border shadow-2xl"
+            :class="[panelClass, activeAlert.presentation === 'sheet' ? 'max-w-xl' : 'max-w-md']"
+            role="alertdialog"
+            :aria-labelledby="titleId"
+            :aria-describedby="descriptionId"
+            :aria-modal="true"
+          >
             <div class="px-5 pt-5 sm:px-6">
-              <div class="flex gap-4" :class="activeAlert.presentation === 'sheet' ? 'items-start' : 'items-start'">
-                <div v-if="activeAlert.presentation !== 'sheet' || !activeAlert.showCancelButton"
+              <div
+                class="flex gap-4"
+                :class="activeAlert.presentation === 'sheet' ? 'items-start' : 'items-start'"
+              >
+                <div
+                  v-if="activeAlert.presentation !== 'sheet' || !activeAlert.showCancelButton"
                   class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg font-semibold"
-                  :class="iconContainerClass" aria-hidden="true">
+                  :class="iconContainerClass"
+                  aria-hidden="true"
+                >
                   {{ iconText }}
                 </div>
 
                 <div class="min-w-0 flex-1">
-                  <div class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
-                    :class="badgeClass">
+                  <div
+                    class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
+                    :class="badgeClass"
+                  >
                     {{ badgeText }}
                   </div>
 
-                  <h2 :id="titleId" class="mt-3 text-lg font-semibold tracking-tight"
-                    :class="preferences.isDark ? 'text-white' : 'text-slate-900'">
+                  <h2
+                    :id="titleId"
+                    class="mt-3 text-lg font-semibold tracking-tight"
+                    :class="preferences.isDark ? 'text-white' : 'text-slate-900'"
+                  >
                     {{ activeAlert.title }}
                   </h2>
 
-                  <p :id="descriptionId" class="mt-2 whitespace-pre-wrap text-sm leading-6"
-                    :class="preferences.isDark ? 'text-slate-300' : 'text-slate-600'">
+                  <p
+                    :id="descriptionId"
+                    class="mt-2 whitespace-pre-wrap text-sm leading-6"
+                    :class="preferences.isDark ? 'text-slate-300' : 'text-slate-600'"
+                  >
                     {{ activeAlert.text }}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div class="mt-5 border-t px-5 py-4 sm:px-6"
-              :class="preferences.isDark ? 'border-white/8' : 'border-slate-200'">
+            <div
+              class="mt-5 border-t px-5 py-4 sm:px-6"
+              :class="preferences.isDark ? 'border-white/8' : 'border-slate-200'"
+            >
               <div v-if="activeAlert.autoCloseMs" class="space-y-3">
                 <div class="flex justify-end">
-                  <button type="button" class="rounded-xl px-4 py-2 text-sm font-medium transition"
-                    :class="ghostButtonClass" @click="handleConfirm">
+                  <button
+                    type="button"
+                    class="rounded-xl px-4 py-2 text-sm font-medium transition"
+                    :class="ghostButtonClass"
+                    @click="handleConfirm"
+                  >
                     立即關閉
                   </button>
                 </div>
 
-                <div class="h-1.5 overflow-hidden rounded-full"
-                  :class="preferences.isDark ? 'bg-white/8' : 'bg-slate-100'">
-                  <div class="h-full rounded-full transition-[width] duration-150" :class="progressBarClass"
-                    :style="{ width: `${progressPercent}%` }"></div>
+                <div
+                  class="h-1.5 overflow-hidden rounded-full"
+                  :class="preferences.isDark ? 'bg-white/8' : 'bg-slate-100'"
+                >
+                  <div
+                    class="h-full rounded-full transition-[width] duration-150"
+                    :class="progressBarClass"
+                    :style="{ width: `${progressPercent}%` }"
+                  ></div>
                 </div>
               </div>
 
-              <div v-else class="flex" :class="activeAlert.presentation === 'sheet'
-                ? 'flex-col-reverse gap-2'
-                : 'justify-end gap-2'
-                ">
-                <button v-if="activeAlert.showCancelButton" type="button"
-                  class="rounded-2xl border px-4 py-3 text-sm font-medium transition" :class="secondaryButtonClass"
-                  @click="handleCancel">
+              <div
+                v-else
+                class="flex"
+                :class="
+                  activeAlert.presentation === 'sheet'
+                    ? 'flex-col-reverse gap-2'
+                    : 'justify-end gap-2'
+                "
+              >
+                <button
+                  v-if="activeAlert.showCancelButton"
+                  type="button"
+                  class="rounded-2xl border px-4 py-3 text-sm font-medium transition"
+                  :class="secondaryButtonClass"
+                  @click="handleCancel"
+                >
                   {{ activeAlert.cancelButtonText }}
                 </button>
 
-                <button type="button" class="rounded-2xl px-4 py-3 text-sm font-medium text-white transition"
-                  :class="primaryButtonClass" @click="handleConfirm">
+                <button
+                  type="button"
+                  class="rounded-2xl px-4 py-3 text-sm font-medium text-white transition"
+                  :class="primaryButtonClass"
+                  @click="handleConfirm"
+                >
                   {{ activeAlert.confirmButtonText }}
                 </button>
               </div>
@@ -72,34 +119,58 @@
       </div>
     </Transition>
 
-    <TransitionGroup tag="div" enter-active-class="transition-all duration-250 ease-out"
-      enter-from-class="translate-y-2 opacity-0 scale-[0.98]" enter-to-class="translate-y-0 opacity-100 scale-100"
-      leave-active-class="transition-all duration-200 ease-in" leave-from-class="translate-y-0 opacity-100 scale-100"
+    <TransitionGroup
+      tag="div"
+      enter-active-class="transition-all duration-250 ease-out"
+      enter-from-class="translate-y-2 opacity-0 scale-[0.98]"
+      enter-to-class="translate-y-0 opacity-100 scale-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100 scale-100"
       leave-to-class="translate-y-2 opacity-0 scale-[0.98]"
-      class="pointer-events-none fixed inset-x-0 bottom-5 z-150 flex flex-col items-center gap-3 px-4 sm:bottom-6">
-      <div v-for="toast in toasts" :key="toast.id"
+      class="pointer-events-none fixed inset-x-0 bottom-5 z-150 flex flex-col items-center gap-3 px-4 sm:bottom-6"
+    >
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
         class="pointer-events-auto w-full max-w-md overflow-hidden rounded-2xl border shadow-2xl"
-        :class="toastCardClass(toast.variant)">
+        :class="toastCardClass(toast.variant)"
+      >
         <div class="flex items-start gap-3 px-4 py-3.5">
-          <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
-            :class="toastIconClass(toast.variant)" aria-hidden="true">
+          <div
+            class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
+            :class="toastIconClass(toast.variant)"
+            aria-hidden="true"
+          >
             {{ toastIcon(toast.variant) }}
           </div>
 
           <div class="min-w-0 flex-1">
-            <div v-if="toast.title" class="text-sm font-semibold"
-              :class="preferences.isDark ? 'text-white' : 'text-slate-900'">
+            <div
+              v-if="toast.title"
+              class="text-sm font-semibold"
+              :class="preferences.isDark ? 'text-white' : 'text-slate-900'"
+            >
               {{ toast.title }}
             </div>
-            <div class="text-sm leading-6" :class="preferences.isDark ? 'text-slate-200' : 'text-slate-700'">
+            <div
+              class="text-sm leading-6"
+              :class="preferences.isDark ? 'text-slate-200' : 'text-slate-700'"
+            >
               {{ toast.text }}
             </div>
           </div>
 
-          <button type="button" class="rounded-full p-1 transition" :class="preferences.isDark
-            ? 'text-slate-400 hover:bg-white/8 hover:text-white'
-            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
-            " aria-label="關閉通知" @click="dismissToast(toast.id)">
+          <button
+            type="button"
+            class="rounded-full p-1 transition"
+            :class="
+              preferences.isDark
+                ? 'text-slate-400 hover:bg-white/8 hover:text-white'
+                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+            "
+            aria-label="關閉通知"
+            @click="dismissToast(toast.id)"
+          >
             ✕
           </button>
         </div>

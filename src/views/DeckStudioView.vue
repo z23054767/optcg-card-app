@@ -794,6 +794,7 @@ import {
   createSignedImageUrls,
   getCardColors,
   getLeaderCards,
+  getRegulationConfig,
   type LeaderCard,
   type LeaderRegulation,
 } from '@/api/cardsApi'
@@ -849,6 +850,7 @@ let copiedDeckCodeTimer: number | null = null
 const sharedDeckCode = ref('')
 const isImportingDeck = ref(false)
 const deckImportError = ref('')
+const rotatedThroughBlock = ref<number | null>(null)
 
 interface LeaderImage {
   fileId: number
@@ -858,28 +860,33 @@ interface LeaderImage {
   leader: LeaderCard
 }
 
-const regulationOptions: {
-  value: LeaderRegulation
-  label: string
-  description: string
-}[] = [
-  {
-    value: 'standard',
-    label: '常規賽制',
-    description: '除部分指定的卡牌之外，擴張記號①的卡牌將不可以在本活動中使用。',
-  },
-  {
-    value: 'extra',
-    label: '非常規賽制',
-    description: '所有擴張記號的卡牌皆可以在本活動中使用，不受擴張記號限制。',
-  },
-  {
-    value: 'sealed',
-    label: '現開賽',
-    description:
-      '5包現開賽是特殊規則的對戰。參與對戰的玩家購買5包補充包，然後用這5包中開出的卡牌構築30張卡的牌組、並參加對戰！',
-  },
-]
+const regulationOptions = computed(
+  (): {
+    value: LeaderRegulation
+    label: string
+    description: string
+  }[] => [
+    {
+      value: 'standard',
+      label: '常規賽制',
+      description:
+        rotatedThroughBlock.value === null
+          ? '正在載入目前的賽制規則。'
+          : `除部分指定的卡牌之外，擴張記號${toCircledNumber(rotatedThroughBlock.value)}及之前的卡牌將不可以在本活動中使用。`,
+    },
+    {
+      value: 'extra',
+      label: '非常規賽制',
+      description: '所有擴張記號的卡牌皆可以在本活動中使用，不受擴張記號限制。',
+    },
+    {
+      value: 'sealed',
+      label: '現開賽',
+      description:
+        '5包現開賽是特殊規則的對戰。參與對戰的玩家購買5包補充包，然後用這5包中開出的卡牌構築30張卡的牌組、並參加對戰！',
+    },
+  ],
+)
 
 function regulationShortLabel(regulation: LeaderRegulation): string {
   if (regulation === 'standard') return 'Standard'
@@ -1228,7 +1235,7 @@ function handleEscape(event: KeyboardEvent): void {
 
 onMounted(() => {
   window.addEventListener('keydown', handleEscape)
-  void loadMyDecks()
+  void Promise.all([loadMyDecks(), loadRegulationConfig()])
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleEscape)
@@ -1237,6 +1244,20 @@ onBeforeUnmount(() => {
 
 function openRegulationDialog(): void {
   isRegulationDialogOpen.value = true
+}
+
+async function loadRegulationConfig(): Promise<void> {
+  try {
+    const config = await getRegulationConfig()
+    rotatedThroughBlock.value = config.rotatedThroughBlock
+  } catch (error) {
+    loadError.value = resolveApiError(error)
+  }
+}
+
+function toCircledNumber(value: number): string {
+  if (value >= 1 && value <= 20) return String.fromCodePoint(0x2460 + value - 1)
+  return String(value)
 }
 
 function closeRegulationDialog(): void {
