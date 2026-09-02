@@ -42,7 +42,7 @@
       <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9">
         <article v-for="entry in sortedEntries" :key="entry.card.cid" class="relative">
           <img :src="entry.imageUrl" :alt="entry.card.cardName" class="aspect-5/7 w-full rounded-lg object-contain" />
-          <span v-if="entry.card.isBanned"
+          <span v-if="draft.regulation !== 'sealed' && entry.card.isBanned"
             class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
             Banned
           </span>
@@ -59,7 +59,7 @@
         <article class="relative">
           <img :src="draft.leaderImageUrl" :alt="draft.leader.cardName"
             class="aspect-5/7 w-full rounded-lg object-contain" />
-          <span v-if="draft.leader.isBanned"
+          <span v-if="draft.regulation !== 'sealed' && draft.leader.isBanned"
             class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
             Banned
           </span>
@@ -131,7 +131,9 @@ const isEditing = computed(() => persistedDeckId.value !== undefined)
 const regulationLabel = computed(() =>
   props.draft.regulation === 'standard'
     ? 'Standard Regulation For Asia'
-    : 'Extra Regulation For Asia',
+    : props.draft.regulation === 'extra'
+      ? 'Extra Regulation For Asia'
+      : 'sealed',
 )
 
 function createDeckCode(): string {
@@ -160,35 +162,48 @@ async function saveDeck(): Promise<void> {
   if (isSaving.value) return
 
   const allCards = [props.draft.leader, ...sortedEntries.value.map(({ card }) => card)]
+  const appliesCardRestrictions = props.draft.regulation !== 'sealed'
   const cardIds = new Set(allCards.map(({ cardId }) => cardId))
-  const bannedCardIds = Array.from(
-    new Set(allCards.filter(({ isBanned }) => isBanned).map(({ cardId }) => cardId)),
-  )
+  const bannedCardIds = appliesCardRestrictions
+    ? Array.from(
+        new Set(allCards.filter(({ isBanned }) => isBanned).map(({ cardId }) => cardId)),
+      )
+    : []
   const combinationKeys = new Set<string>()
   const prohibitedCombinations: [string, string][] = []
-  allCards.forEach((card) => {
-    card.prohibitedWithCardIds.forEach((otherCardId) => {
-      if (!cardIds.has(otherCardId)) return
-      const pair = [card.cardId, otherCardId].sort() as [string, string]
-      const key = pair.join('|')
-      if (combinationKeys.has(key)) return
-      combinationKeys.add(key)
-      prohibitedCombinations.push(pair)
+  if (appliesCardRestrictions) {
+    allCards.forEach((card) => {
+      card.prohibitedWithCardIds.forEach((otherCardId) => {
+        if (!cardIds.has(otherCardId)) return
+        const pair = [card.cardId, otherCardId].sort() as [string, string]
+        const key = pair.join('|')
+        if (combinationKeys.has(key)) return
+        combinationKeys.add(key)
+        prohibitedCombinations.push(pair)
+      })
     })
-  })
+  }
 
-  const cardCountViolations = sortedEntries.value.flatMap(({ card, quantity }) => {
-    if (card.deckLimit) {
-      if (card.deckLimit.maxCount === 0 || card.deckLimit.maxCount === null) return []
-      if (quantity <= card.deckLimit.maxCount) return []
-      return [{ cardId: card.cardId, quantity, maxCount: card.deckLimit.maxCount }]
-    }
-    return quantity > 4 ? [{ cardId: card.cardId, quantity, maxCount: 4 }] : []
-  })
+  const cardCountViolations = appliesCardRestrictions
+    ? sortedEntries.value.flatMap(({ card, quantity }) => {
+        if (card.deckLimit) {
+          if (card.deckLimit.maxCount === 0 || card.deckLimit.maxCount === null) return []
+          if (quantity <= card.deckLimit.maxCount) return []
+          return [{ cardId: card.cardId, quantity, maxCount: card.deckLimit.maxCount }]
+        }
+        return quantity > 4 ? [{ cardId: card.cardId, quantity, maxCount: 4 }] : []
+      })
+    : []
+  const requiredDeckCount = props.draft.regulation === 'sealed' ? 30 : null
+  const deckCountViolation =
+    requiredDeckCount !== null && mainDeckCount.value < requiredDeckCount
+      ? `牌組張數不足：目前 ${mainDeckCount.value} 張，需為 ${requiredDeckCount} 張`
+      : null
 
   let confirmedIllegalDeck = false
-  if (bannedCardIds.length || prohibitedCombinations.length || cardCountViolations.length) {
+  if (bannedCardIds.length || prohibitedCombinations.length || cardCountViolations.length || deckCountViolation) {
     const messages = [
+      ...(deckCountViolation ? [deckCountViolation] : []),
       ...(bannedCardIds.length ? [`禁止卡牌：${bannedCardIds.join('、')}`] : []),
       ...prohibitedCombinations.map((pair) => `禁止組合：${pair.join(' + ')}`),
       ...cardCountViolations.map(
@@ -237,6 +252,9 @@ async function saveDeck(): Promise<void> {
         }
         if (violation.type === 'prohibited_combination') {
           return `禁止組合：${violation.cardIds.join(' + ')}`
+        }
+        if (violation.type === 'deck_card_count') {
+          return `牌組張數不足：目前 ${violation.quantity} 張，需為 ${violation.requiredCount} 張`
         }
         return `張數超限：${violation.cardId} 目前 ${violation.quantity} 張，最多 ${violation.maxCount} 張`
       })

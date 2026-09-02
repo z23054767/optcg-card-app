@@ -1,6 +1,6 @@
 import { http } from '@/api/http'
 
-export type LeaderRegulation = 'standard' | 'extra'
+export type LeaderRegulation = 'standard' | 'extra' | 'sealed'
 
 export interface CardRecord {
   cid: number

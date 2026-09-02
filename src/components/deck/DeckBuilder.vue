@@ -31,7 +31,7 @@
       <div class="grid grid-cols-2 border-b text-center text-sm" :class="deckDividerClass">
         <button type="button" class="border-b-2 px-4 py-3 font-semibold transition"
           :class="activeDeckTab === 'main' ? activeDeckTabClass : inactiveDeckTabClass" @click="activeDeckTab = 'main'">
-          主牌 {{ mainDeckCount }}/50
+          主牌 {{ mainDeckCount }}/{{ maximumDeckCount }}
         </button>
         <button type="button" class="border-b-2 px-4 py-3 font-semibold transition"
           :class="activeDeckTab === 'leader' ? activeDeckTabClass : inactiveDeckTabClass"
@@ -67,7 +67,7 @@
               :class="quantityBadgeClass">
               {{ entry.quantity }}
             </span>
-            <span v-if="entry.card.isBanned"
+            <span v-if="regulation !== 'sealed' && entry.card.isBanned"
               class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
               Banned
             </span>
@@ -200,7 +200,7 @@
                   class="absolute bottom-1.5 left-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
                   {{ cardTypeLabel(card.cardType) }}
                 </span>
-                <span v-if="card.isBanned"
+                <span v-if="regulation !== 'sealed' && card.isBanned"
                   class="absolute bottom-1.5 right-1.5 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg">
                   Banned
                 </span>
@@ -249,7 +249,7 @@
       <button type="button"
         class="rounded-full border px-5 py-3.5 text-sm font-bold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         :class="primaryActionButtonClass" :disabled="mainDeckCount === 0" @click="confirmDeck">
-        {{ isEditing ? '編輯完畢' : '製作' }}（{{ mainDeckCount }}/50）
+        {{ isEditing ? '編輯完畢' : '製作' }}（{{ mainDeckCount }}/{{ maximumDeckCount }}）
       </button>
     </div>
 
@@ -528,6 +528,7 @@ const leaderColors = computed(() => props.leader.color.split('/').filter(Boolean
 const mainDeckCount = computed(() =>
   deckEntries.value.reduce((total, entry) => total + entry.quantity, 0),
 )
+const maximumDeckCount = computed(() => (props.regulation === 'sealed' ? 30 : 50))
 const isEditing = computed(() => props.deckId !== undefined)
 const canLoadMore = computed(() => currentPage.value * PAGE_SIZE < totalResults.value)
 const activeDeckEntry = computed(() =>
@@ -540,7 +541,7 @@ const detailFileId = computed(
 const maximumEditingQuantity = computed(() => {
   if (!activeDeckEntry.value) return 1
   const otherCardsCount = mainDeckCount.value - activeDeckEntry.value.quantity
-  return Math.max(1, 50 - otherCardsCount)
+  return Math.max(1, maximumDeckCount.value - otherCardsCount)
 })
 
 
@@ -615,10 +616,12 @@ function deckQuantity(cid: number): number {
 }
 
 function addCard(card: CardRecord): void {
-  if (card.cardType === 'LEADER' || mainDeckCount.value >= 50) return
+  if (card.cardType === 'LEADER' || mainDeckCount.value >= maximumDeckCount.value) return
   const existing = deckEntries.value.find((entry) => entry.card.cid === card.cid)
   if (existing) {
-    if (existing.quantity < 50 && mainDeckCount.value < 50) existing.quantity += 1
+    if (existing.quantity < maximumDeckCount.value && mainDeckCount.value < maximumDeckCount.value) {
+      existing.quantity += 1
+    }
     return
   }
 
@@ -876,11 +879,11 @@ async function confirmDeck(): Promise<void> {
     return
   }
   if (mainDeckCount.value === 0) return
-  if (mainDeckCount.value < 50) {
+  if (mainDeckCount.value < maximumDeckCount.value) {
     const result = await showConfirmAlert(
-      `目前主牌只有 ${mainDeckCount.value} 張，尚未達到 50 張。仍要繼續嗎？`,
+      `目前主牌只有 ${mainDeckCount.value} 張，尚未達到 ${maximumDeckCount.value} 張。仍要繼續嗎？`,
       {
-        title: '牌組尚未滿 50 張',
+        title: `牌組尚未滿 ${maximumDeckCount.value} 張`,
         confirmButtonText: props.deckId === undefined ? '仍要製作' : '仍要完成編輯',
         cancelButtonText: '繼續補牌',
       },
