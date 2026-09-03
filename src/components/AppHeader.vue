@@ -228,19 +228,10 @@ const actionLink = computed(() => {
   }
 })
 
-const isChatRoute = computed(() => route.path.startsWith('/chat'))
+const headerInnerClass =
+  'mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-6'
 
-const headerInnerClass = computed(() =>
-  isChatRoute.value
-    ? 'flex min-h-14 w-full items-center justify-between gap-3 px-3 sm:px-4'
-    : 'mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-6',
-)
-
-const logoClass = computed(() =>
-  isChatRoute.value
-    ? 'app-logo h-8 w-auto max-w-[138px] object-contain sm:max-w-[150px]'
-    : 'app-logo h-9 w-auto max-w-[150px] object-contain sm:h-10 sm:max-w-[180px]',
-)
+const logoClass = 'app-logo h-9 w-auto max-w-[150px] object-contain sm:h-10 sm:max-w-[180px]'
 
 const headerClass = computed(() =>
   preferences.isDark
