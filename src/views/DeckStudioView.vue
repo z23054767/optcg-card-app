@@ -421,10 +421,14 @@
               </p>
             </div>
           </header>
-          <div class="divide-y" :class="sectionBorderClass">
+          <div class="divide-y" :class="[sectionBorderClass, preferences.isDark ? 'divide-white/10' : 'divide-gray-200']">
             <button type="button" class="block w-full px-5 py-4 text-center text-sm font-bold transition"
-              :class="deckActionButtonClass" @click="editSelectedDeck">
-              編輯
+             :class="deckActionButtonClass" @click="viewSelectedDeck">
+             檢視
+           </button>
+           <button type="button" class="block w-full px-5 py-4 text-center text-sm font-bold transition"
+             :class="[deckActionButtonClass, deckEditActionClass]" @click="editSelectedDeck">
+             編輯
             </button>
             <button type="button"
               class="block w-full px-5 py-4 text-center text-sm font-bold text-indigo-600 transition disabled:cursor-not-allowed disabled:opacity-50"
@@ -894,12 +898,12 @@ function confirmDeck(draft: DeckDraft): void {
   isDeckBuilderOpen.value = false
 }
 
-async function openSavedDeck(deckId: number): Promise<void> {
+async function openSavedDeck(deckId: number, openBuilder = true): Promise<void> {
   deckListError.value = ''
 
   try {
     const deck = await getMyDeck(deckId)
-    await openDeckInBuilder(deck, { id: deck.id, code: deck.code })
+    await openDeckInBuilder(deck, { id: deck.id, code: deck.code }, openBuilder)
   } catch (error) {
     deckListError.value = resolveApiError(error)
   }
@@ -908,6 +912,7 @@ async function openSavedDeck(deckId: number): Promise<void> {
 async function openDeckInBuilder(
   deck: ImportedDeckDetail,
   persisted?: { id: number; code: string },
+  openBuilder = true,
 ): Promise<void> {
   const leaderFileId = deck.leader.fileId
   if (leaderFileId === undefined) {
@@ -947,7 +952,7 @@ async function openDeckInBuilder(
       imageUrl: urlByFileId.get(fileId) ?? '',
     })),
   }
-  isDeckBuilderOpen.value = true
+  isDeckBuilderOpen.value = openBuilder
 }
 
 function editDeck(draft: DeckDraft): void {
@@ -1074,6 +1079,13 @@ async function editSelectedDeck(): Promise<void> {
   if (!deck) return
   activeDeckActions.value = null
   await openSavedDeck(deck.id)
+}
+
+async function viewSelectedDeck(): Promise<void> {
+  const deck = activeDeckActions.value
+  if (!deck) return
+  activeDeckActions.value = null
+  await openSavedDeck(deck.id, false)
 }
 
 async function copySelectedDeck(): Promise<void> {
@@ -1225,6 +1237,9 @@ const leaderConfirmButtonClass = computed(() =>
 )
 const deckActionButtonClass = computed(() =>
   preferences.isDark ? 'bg-slate-900 hover:bg-white/5' : 'bg-white hover:bg-slate-50',
+)
+const deckEditActionClass = computed(() =>
+  preferences.isDark ? 'text-amber-300 hover:bg-amber-400/10' : 'text-amber-700 hover:bg-amber-50',
 )
 const deckCancelButtonClass = computed(() =>
   preferences.isDark
