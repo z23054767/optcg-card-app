@@ -6,7 +6,7 @@
       :leader-file-id="deckDraft?.leaderFileId ?? selectedLeader.fileId"
       :leader-image-url="deckDraft?.leaderImageUrl ?? selectedLeader.url" :regulation="selectedRegulation!"
       :deck-id="deckDraft?.id" :deck-name="deckDraft?.name" :initial-entries="deckDraft?.entries"
-      @cancel="closeDeckBuilder" @confirm="confirmDeck" />
+      @cancel="closeDeckBuilder" @close="returnToDeckList" @confirm="confirmDeck" />
 
     <DeckConfirmation v-else-if="deckDraft" :draft="deckDraft" @edit="editDeck" @saved="handleDeckSaved"
       @close="returnToDeckList" />
