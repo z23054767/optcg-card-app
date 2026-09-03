@@ -184,6 +184,19 @@
                                     {{ deck.totalCards }} 張
                                   </span>
                                 </p>
+                                <span
+                                  class="mt-1 inline-flex w-fit items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold"
+                                  :class="preferences.isDark
+                                    ? 'border-slate-400/20 bg-slate-400/10 text-slate-300'
+                                    : 'border-slate-200 bg-white text-slate-500'"
+                                  :title="deck.createdAt">
+                                  <svg viewBox="0 0 24 24" class="h-2.5 w-2.5" fill="none" stroke="currentColor"
+                                    stroke-width="2" aria-hidden="true">
+                                    <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                                    <path d="M16 3v4M8 3v4M3 10h18"></path>
+                                  </svg>
+                                  建立於 {{ formatDeckCreatedAt(deck.createdAt) }}
+                                </span>
                               </div>
                             </button>
                             <div class="mt-auto flex items-center gap-1.5 pt-1.5">
@@ -721,6 +734,17 @@ function regulationShortLabel(regulation: LeaderRegulation): string {
   if (regulation === 'extra') return 'Extra'
   if (regulation === 'idea') return 'Idea'
   return 'Sealed'
+}
+
+function formatDeckCreatedAt(createdAt: string): string {
+  const date = new Date(createdAt)
+  if (Number.isNaN(date.getTime())) return createdAt
+
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
 }
 
 const deckFilterOptions: Array<{ value: LeaderRegulation | null; label: string }> = [

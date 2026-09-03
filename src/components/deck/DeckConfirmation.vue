@@ -12,7 +12,14 @@
         :class="borderClass"
       >
         <div>
-          <p class="text-xs font-medium" :class="mutedTextClass">牌組名稱</p>
+          <p class="text-xs font-medium" :class="mutedTextClass">賽制</p>
+          <span
+            class="mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide shadow-sm"
+            :class="regulationBadgeClass"
+          >
+            {{ regulationShortLabel }}
+          </span>
+          <p class="mt-4 text-xs font-medium" :class="mutedTextClass">牌組名稱</p>
           <h2 class="mt-1 text-xl font-extrabold" :class="titleClass">{{ draft.name }}</h2>
           <p class="mt-4 text-xs font-medium" :class="mutedTextClass">牌組代碼</p>
           <div class="mt-1 flex items-center gap-2">
@@ -28,7 +35,6 @@
               複製
             </button>
           </div>
-          <p class="mt-2 text-base font-bold" :class="titleClass">{{ regulationLabel }}</p>
         </div>
 
         <div class="flex flex-wrap gap-2">
@@ -199,6 +205,32 @@ const regulationLabel = computed(() =>
         ? 'sealed'
         : 'idea',
 )
+const regulationShortLabel = computed(() =>
+  props.draft.regulation === 'standard'
+    ? 'Standard'
+    : props.draft.regulation === 'extra'
+      ? 'Extra'
+      : props.draft.regulation === 'sealed'
+        ? 'Sealed'
+        : 'Idea',
+)
+const regulationBadgeClass = computed(() =>
+  props.draft.regulation === 'standard'
+    ? preferences.isDark
+      ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-300'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : props.draft.regulation === 'extra'
+      ? preferences.isDark
+        ? 'border-violet-400/30 bg-violet-400/15 text-violet-300'
+        : 'border-violet-200 bg-violet-50 text-violet-700'
+      : props.draft.regulation === 'idea'
+        ? preferences.isDark
+          ? 'border-sky-400/30 bg-sky-400/15 text-sky-300'
+          : 'border-sky-200 bg-sky-50 text-sky-700'
+        : preferences.isDark
+          ? 'border-amber-400/30 bg-amber-400/15 text-amber-300'
+          : 'border-amber-200 bg-amber-50 text-amber-700',
+)
 
 function createDeckCode(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
@@ -255,7 +287,8 @@ async function saveDeck(): Promise<void> {
         return quantity > 4 ? [{ cardId: card.cardId, quantity, maxCount: 4 }] : []
       })
     : []
-  const requiredDeckCount = props.draft.regulation === 'sealed' ? 30 : null
+  const requiredDeckCount =
+    props.draft.regulation === 'sealed' ? 30 : props.draft.regulation === 'idea' ? null : 50
   const deckCountViolation =
     requiredDeckCount !== null && mainDeckCount.value < requiredDeckCount
       ? `牌組張數不足：目前 ${mainDeckCount.value} 張，需為 ${requiredDeckCount} 張`
