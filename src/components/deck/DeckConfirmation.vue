@@ -70,7 +70,7 @@
             class="aspect-5/7 w-full rounded-lg object-contain"
           />
           <span
-            v-if="appliesCardRestrictions && entry.card.isBanned"
+            v-if="showBannedIndicator && entry.card.isBanned"
             class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
           >
             Banned
@@ -95,7 +95,7 @@
             class="aspect-5/7 w-full rounded-lg object-contain"
           />
           <span
-            v-if="appliesCardRestrictions && draft.leader.isBanned"
+            v-if="showBannedIndicator && draft.leader.isBanned"
             class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
           >
             Banned
@@ -189,6 +189,7 @@ const isEditing = computed(() => persistedDeckId.value !== undefined)
 const appliesCardRestrictions = computed(
   () => props.draft.regulation !== 'sealed' && props.draft.regulation !== 'idea',
 )
+const showBannedIndicator = computed(() => props.draft.regulation !== 'sealed')
 const regulationLabel = computed(() =>
   props.draft.regulation === 'standard'
     ? 'Standard Regulation For Asia'

@@ -110,7 +110,7 @@
               {{ entry.quantity }}
             </span>
             <span
-              v-if="appliesCardRestrictions && entry.card.isBanned"
+              v-if="showBannedIndicator && entry.card.isBanned"
               class="absolute bottom-7 right-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
             >
               Banned
@@ -333,7 +333,7 @@
                   {{ cardTypeLabel(card.cardType) }}
                 </span>
                 <span
-                  v-if="appliesCardRestrictions && card.isBanned"
+                  v-if="showBannedIndicator && card.isBanned"
                   class="absolute bottom-1.5 right-1.5 rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-lg"
                 >
                   Banned
@@ -825,6 +825,7 @@ const maximumDeckCount = computed(() =>
 const appliesCardRestrictions = computed(
   () => props.regulation !== 'sealed' && props.regulation !== 'idea',
 )
+const showBannedIndicator = computed(() => props.regulation !== 'sealed')
 const isEditing = computed(() => props.deckId !== undefined)
 const canLoadMore = computed(() => currentPage.value * PAGE_SIZE < totalResults.value)
 const activeDeckEntry = computed(() =>
@@ -837,7 +838,13 @@ const detailFileId = computed(
 const maximumEditingQuantity = computed(() => {
   if (!activeDeckEntry.value) return 1
   const otherCardsCount = mainDeckCount.value - activeDeckEntry.value.quantity
-  return Math.max(1, maximumDeckCount.value - otherCardsCount)
+  return Math.max(
+    1,
+    Math.min(
+      maximumCopiesForCard(activeDeckEntry.value.card),
+      maximumDeckCount.value - otherCardsCount,
+    ),
+  )
 })
 
 async function fetchCards(page: number, append: boolean): Promise<void> {
@@ -917,7 +924,7 @@ function addCard(card: CardRecord): void {
   const existing = deckEntries.value.find((entry) => entry.card.cid === card.cid)
   if (existing) {
     if (
-      existing.quantity < maximumDeckCount.value &&
+      existing.quantity < maximumCopiesForCard(existing.card) &&
       mainDeckCount.value < maximumDeckCount.value
     ) {
       existing.quantity += 1
@@ -928,6 +935,13 @@ function addCard(card: CardRecord): void {
   const imageUrl = cardImageUrlByCid.value.get(card.cid)
   if (!imageUrl || card.fileId === undefined) return
   deckEntries.value.push({ card, fileId: card.fileId, imageUrl, quantity: 1 })
+}
+
+function maximumCopiesForCard(card: CardRecord): number {
+  if (!appliesCardRestrictions.value) return maximumDeckCount.value
+  if (card.deckLimit?.maxCount === null) return maximumDeckCount.value
+  if (card.deckLimit?.maxCount === 0) return 4
+  return card.deckLimit?.maxCount ?? 4
 }
 
 async function openDeckCardDetail(entry: DeckEntry): Promise<void> {

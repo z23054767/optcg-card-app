@@ -83,167 +83,150 @@
                         class="w-full appearance-none rounded-lg border px-3 py-2 pr-12 text-sm font-semibold outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                         :class="preferences.isDark
                           ? 'border-white/15 bg-slate-900 text-slate-100'
-                          : 'border-gray-300 bg-white text-gray-800'"
-                        :value="activeDeckFilter ?? ''"
-                        @change="handleDeckFilterSelect"
-                      >
-                        <option v-for="option in deckFilterOptions" :key="option.value ?? 'all'" :value="option.value ?? ''">
+                          : 'border-gray-300 bg-white text-gray-800'" :value="activeDeckFilter ?? ''"
+                        @change="handleDeckFilterSelect">
+                        <option v-for="option in deckFilterOptions" :key="option.value ?? 'All'"
+                          :value="option.value ?? ''">
                           {{ option.label }}
                         </option>
                       </select>
-                      <svg
-                        class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2"
-                        :class="preferences.isDark ? 'text-slate-300' : 'text-slate-500'"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
+                      <svg class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2"
+                        :class="preferences.isDark ? 'text-slate-300' : 'text-slate-500'" viewBox="0 0 20 20"
+                        fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="m5 7 5 5 5-5"></path>
                       </svg>
                     </div>
                   </label>
                   <div class="mb-3 hidden gap-2 sm:flex" role="group" aria-label="牌組賽制篩選">
-                    <button
-                      v-for="option in deckFilterOptions"
-                      :key="option.value ?? 'all'"
-                      type="button"
+                    <button v-for="option in deckFilterOptions" :key="option.value ?? 'All'" type="button"
                       class="shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition"
-                      :class="deckFilterButtonClass(option.value)"
-                      :aria-pressed="activeDeckFilter === option.value"
-                      @click="selectDeckFilter(option.value)"
-                    >
+                      :class="deckFilterButtonClass(option.value)" :aria-pressed="activeDeckFilter === option.value"
+                      @click="selectDeckFilter(option.value)">
                       {{ option.label }}
                     </button>
                   </div>
-                  <div
-                    ref="deckListContainer"
-                    class="overflow-y-scroll overscroll-contain pr-1"
-                    :class="activeDeckFilter === null ? 'max-h-80' : 'max-h-80 sm:max-h-[32rem]'"
-                    tabindex="0"
-                    aria-label="我的牌組清單"
-                    @scroll.passive="handleDeckListScroll"
-                  >
-                      <div v-if="isDeckListLoading" class="flex h-full items-center justify-center">
-                        <span
-                          class="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></span>
-                      </div>
-                      <div v-else-if="myDecks.length" class="grid grid-cols-1 gap-2 lg:grid-cols-2 xl:grid-cols-3">
-                        <article v-for="deck in myDecks" :key="deck.id"
-                          class="relative overflow-hidden rounded-xl border transition hover:border-indigo-500 hover:shadow-md"
-                          :class="[
-                            infoCardClass,
-                            !deck.isLegal ? invalidDeckCardClass : 'hover:border-indigo-500',
-                          ]">
-                          <span v-if="!deck.isLegal"
-                            class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white shadow-lg">
-                            不合法
-                          </span>
-                          <div class="flex gap-2.5 p-2.5">
+                  <div ref="deckListContainer" class="overflow-y-scroll overscroll-contain pr-1"
+                    :class="activeDeckFilter === null ? 'max-h-80' : 'max-h-80 sm:max-h-32rem'" tabindex="0"
+                    aria-label="我的牌組清單" @scroll.passive="handleDeckListScroll">
+                    <div v-if="isDeckListLoading" class="flex h-full items-center justify-center">
+                      <span
+                        class="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></span>
+                    </div>
+                    <div v-else-if="myDecks.length" class="grid grid-cols-1 gap-2 lg:grid-cols-2 xl:grid-cols-3">
+                      <article v-for="deck in myDecks" :key="deck.id"
+                        class="relative overflow-hidden rounded-xl border transition hover:border-indigo-500 hover:shadow-md"
+                        :class="[
+                          infoCardClass,
+                          !deck.isLegal ? invalidDeckCardClass : 'hover:border-indigo-500',
+                        ]">
+                        <span v-if="!deck.isLegal"
+                          class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white shadow-lg">
+                          不合法
+                        </span>
+                        <div class="flex gap-2.5 p-2.5">
+                          <button type="button"
+                            class="aspect-5/7 w-16 shrink-0 overflow-hidden rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                            :class="preferences.isDark ? 'bg-slate-950/10' : 'bg-white'"
+                            :aria-label="`開啟牌組 ${deck.name}`" @click="activeDeckActions = deck">
+                            <img v-if="deckImageUrlById.get(deck.id)" :src="deckImageUrlById.get(deck.id)"
+                              :alt="`${deck.leaderCardName} (${deck.leaderCardId})`"
+                              class="h-full w-full object-contain" loading="lazy" />
+                            <span v-else class="flex h-full items-center justify-center text-2xl">
+                              🃏
+                            </span>
+                          </button>
+                          <div class="flex min-w-0 flex-1 flex-col">
                             <button type="button"
-                              class="aspect-5/7 w-16 shrink-0 overflow-hidden rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                              :class="preferences.isDark ? 'bg-slate-950/10' : 'bg-white'"
-                              :aria-label="`開啟牌組 ${deck.name}`" @click="activeDeckActions = deck">
-                              <img v-if="deckImageUrlById.get(deck.id)" :src="deckImageUrlById.get(deck.id)"
-                                :alt="`${deck.leaderCardName} (${deck.leaderCardId})`"
-                                class="h-full w-full object-contain" loading="lazy" />
-                              <span v-else class="flex h-full items-center justify-center text-2xl">
-                                🃏
-                              </span>
-                            </button>
-                            <div class="flex min-w-0 flex-1 flex-col">
-                              <button type="button"
-                                class="block min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                                @click="activeDeckActions = deck">
-                                <span
-                                  class="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide shadow-sm"
-                                  :class="deck.regulation === 'standard'
+                              class="block min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                              @click="activeDeckActions = deck">
+                              <span
+                                class="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide shadow-sm"
+                                :class="deck.regulation === 'standard'
+                                  ? preferences.isDark
+                                    ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-300'
+                                    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                  : deck.regulation === 'extra'
                                     ? preferences.isDark
-                                      ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-300'
-                                      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : deck.regulation === 'extra'
+                                      ? 'border-violet-400/30 bg-violet-400/15 text-violet-300'
+                                      : 'border-violet-200 bg-violet-50 text-violet-700'
+                                    : deck.regulation === 'idea'
                                       ? preferences.isDark
-                                        ? 'border-violet-400/30 bg-violet-400/15 text-violet-300'
-                                        : 'border-violet-200 bg-violet-50 text-violet-700'
-                                      : deck.regulation === 'idea'
-                                        ? preferences.isDark
-                                          ? 'border-sky-400/30 bg-sky-400/15 text-sky-300'
-                                          : 'border-sky-200 bg-sky-50 text-sky-700'
-                                        : preferences.isDark
-                                          ? 'border-amber-400/30 bg-amber-400/15 text-amber-300'
-                                          : 'border-amber-200 bg-amber-50 text-amber-700'">
-                                  {{ regulationShortLabel(deck.regulation) }}
-                                </span>
-                                <div class="mt-1.5 rounded-lg border px-2 py-1.5" :class="preferences.isDark
-                                  ? 'border-white/10 bg-black/15'
-                                  : 'border-slate-200 bg-slate-50/70'">
-                                  <p class="truncate text-sm font-extrabold"
-                                    :class="preferences.isDark ? 'text-indigo-200' : 'text-indigo-700'">
-                                    {{ deck.name }}
-                                  </p>
-                                  <div class="mt-1 flex items-center gap-1.5">
-                                    <span
-                                      class="shrink-0 rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wide"
-                                      :class="preferences.isDark
-                                        ? 'border-indigo-400/20 bg-indigo-400/10 text-indigo-200'
-                                        : 'border-indigo-200 bg-indigo-50 text-indigo-700'">
-                                      {{ deck.leaderCardId }}
-                                    </span>
-                                    <p class="min-w-0 truncate text-[11px] font-semibold" :class="mutedTextClass">
-                                      {{ deck.leaderCardName }}
-                                    </p>
-                                  </div>
-                                  <p class="mt-1 text-[10px]" :class="mutedTextClass">
-                                    主牌
-                                    <span class="font-bold"
-                                      :class="preferences.isDark ? 'text-emerald-300' : 'text-emerald-700'">
-                                      {{ deck.totalCards }} 張
-                                    </span>
+                                        ? 'border-sky-400/30 bg-sky-400/15 text-sky-300'
+                                        : 'border-sky-200 bg-sky-50 text-sky-700'
+                                      : preferences.isDark
+                                        ? 'border-amber-400/30 bg-amber-400/15 text-amber-300'
+                                        : 'border-amber-200 bg-amber-50 text-amber-700'">
+                                {{ regulationShortLabel(deck.regulation) }}
+                              </span>
+                              <div class="mt-1.5 rounded-lg border px-2 py-1.5" :class="preferences.isDark
+                                ? 'border-white/10 bg-black/15'
+                                : 'border-slate-200 bg-slate-50/70'">
+                                <p class="truncate text-sm font-extrabold"
+                                  :class="preferences.isDark ? 'text-indigo-200' : 'text-indigo-700'">
+                                  {{ deck.name }}
+                                </p>
+                                <div class="mt-1 flex items-center gap-1.5">
+                                  <span
+                                    class="shrink-0 rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wide"
+                                    :class="preferences.isDark
+                                      ? 'border-indigo-400/20 bg-indigo-400/10 text-indigo-200'
+                                      : 'border-indigo-200 bg-indigo-50 text-indigo-700'">
+                                    {{ deck.leaderCardId }}
+                                  </span>
+                                  <p class="min-w-0 truncate text-[11px] font-semibold" :class="mutedTextClass">
+                                    {{ deck.leaderCardName }}
                                   </p>
                                 </div>
-                              </button>
-                              <div class="mt-auto flex items-center gap-1.5 pt-1.5">
-                                <code
-                                  class="min-w-0 flex-1 select-all truncate rounded-md px-1.5 py-1 font-mono text-[9px] font-bold tracking-[0.06em] ring-1 ring-inset"
-                                  :class="inlineDeckCodeClass" :title="deck.code">
+                                <p class="mt-1 text-[10px]" :class="mutedTextClass">
+                                  主牌
+                                  <span class="font-bold"
+                                    :class="preferences.isDark ? 'text-emerald-300' : 'text-emerald-700'">
+                                    {{ deck.totalCards }} 張
+                                  </span>
+                                </p>
+                              </div>
+                            </button>
+                            <div class="mt-auto flex items-center gap-1.5 pt-1.5">
+                              <code
+                                class="min-w-0 flex-1 select-all truncate rounded-md px-1.5 py-1 font-mono text-[9px] font-bold tracking-[0.06em] ring-1 ring-inset"
+                                :class="inlineDeckCodeClass" :title="deck.code">
                               {{ deck.code }}
                             </code>
-                                <button type="button"
-                                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                                  :class="copyDeckCodeButtonClass(copiedDeckCode === deck.code)"
-                                  :aria-label="`複製牌組代碼 ${deck.code}`"
-                                  :title="copiedDeckCode === deck.code ? '已複製' : '複製牌組代碼'"
-                                  @click.stop="copyDeckCode(deck.code)">
-                                  <svg v-if="copiedDeckCode !== deck.code" viewBox="0 0 24 24" class="h-3.5 w-3.5"
-                                    fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                    <rect x="9" y="9" width="11" height="11" rx="2"></rect>
-                                    <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path>
-                                  </svg>
-                                  <svg v-else viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor"
-                                    stroke-width="2.5" aria-hidden="true">
-                                    <path d="m5 12 4 4L19 6"></path>
-                                  </svg>
-                                </button>
-                              </div>
+                              <button type="button"
+                                class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                :class="copyDeckCodeButtonClass(copiedDeckCode === deck.code)"
+                                :aria-label="`複製牌組代碼 ${deck.code}`"
+                                :title="copiedDeckCode === deck.code ? '已複製' : '複製牌組代碼'"
+                                @click.stop="copyDeckCode(deck.code)">
+                                <svg v-if="copiedDeckCode !== deck.code" viewBox="0 0 24 24" class="h-3.5 w-3.5"
+                                  fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                  <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                                  <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path>
+                                </svg>
+                                <svg v-else viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor"
+                                  stroke-width="2.5" aria-hidden="true">
+                                  <path d="m5 12 4 4L19 6"></path>
+                                </svg>
+                              </button>
                             </div>
                           </div>
-                        </article>
-                      </div>
-                      <p v-else class="flex h-full items-center justify-center text-sm" :class="mutedTextClass">
-                        尚無牌組
-                      </p>
-                      <div v-if="isLoadingMoreDecks" class="flex items-center justify-center gap-2 py-4 text-xs"
-                        :class="mutedTextClass">
-                        <span
-                          class="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></span>
-                        正在載入更多牌組...
-                      </div>
-                      <p v-else-if="myDecks.length && myDecks.length >= totalDecks"
-                        class="py-3 text-center text-xs" :class="mutedTextClass">
-                        已顯示全部 {{ totalDecks }} 副牌組
-                      </p>
+                        </div>
+                      </article>
                     </div>
+                    <p v-else class="flex h-full items-center justify-center text-sm" :class="mutedTextClass">
+                      尚無牌組
+                    </p>
+                    <div v-if="isLoadingMoreDecks" class="flex items-center justify-center gap-2 py-4 text-xs"
+                      :class="mutedTextClass">
+                      <span
+                        class="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></span>
+                      正在載入更多牌組...
+                    </div>
+                    <p v-else-if="myDecks.length && myDecks.length >= totalDecks" class="py-3 text-center text-xs"
+                      :class="mutedTextClass">
+                      已顯示全部 {{ totalDecks }} 副牌組
+                    </p>
+                  </div>
                 </div>
               </template>
 
@@ -734,18 +717,18 @@ const regulationOptions = computed(
 )
 
 function regulationShortLabel(regulation: LeaderRegulation): string {
-  if (regulation === 'standard') return '常規賽制'
-  if (regulation === 'extra') return '非常規賽制'
-  if (regulation === 'idea') return '構思'
-  return '現開賽制'
+  if (regulation === 'standard') return 'Standard'
+  if (regulation === 'extra') return 'Extra'
+  if (regulation === 'idea') return 'Idea'
+  return 'Sealed'
 }
 
 const deckFilterOptions: Array<{ value: LeaderRegulation | null; label: string }> = [
-  { value: null, label: '全部' },
-  { value: 'standard', label: '常規賽制' },
-  { value: 'extra', label: '非常規賽制' },
-  { value: 'sealed', label: '現開賽制' },
-  { value: 'idea', label: '構思' },
+  { value: null, label: 'All' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'extra', label: 'Extra' },
+  { value: 'sealed', label: 'Sealed' },
+  { value: 'idea', label: 'Idea' },
 ]
 
 async function copyDeckCode(code: string): Promise<void> {
