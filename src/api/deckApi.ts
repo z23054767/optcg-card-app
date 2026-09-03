@@ -66,9 +66,13 @@ export interface PaginatedDecks {
   total: number
 }
 
-export async function getMyDecks(page = 1, pageSize = 6): Promise<PaginatedDecks> {
+export async function getMyDecks(
+  regulation?: LeaderRegulation,
+  page = 1,
+  pageSize = 6,
+): Promise<PaginatedDecks> {
   const { data } = await http.get<PaginatedDecks>('/decks', {
-    params: { page, pageSize },
+    params: { regulation, page, pageSize },
   })
   return data
 }
