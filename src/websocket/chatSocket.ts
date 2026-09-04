@@ -123,22 +123,16 @@ function createSocket(): void {
   }
 
   /**
-   * 根據目前網站協定決定 WebSocket 協定
-   *
-   * http  -> ws
-   * https -> wss
-   */
-  const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-
-  /**
    * 建立 WebSocket URL
    */
-  const webSocketURL = `${protocol}://localhost:3000/chat?token=${encodeURIComponent(connectionToken)}`
+  const webSocketURL =
+    `${import.meta.env.VITE_WS_URL}?token=${encodeURIComponent(connectionToken)}`;
 
-  isConnecting = true
-  socket = new WebSocket(webSocketURL)
+  isConnecting = true;
 
-  console.log('[WS] connect to', `${protocol}://localhost:3000/chat`)
+  socket = new WebSocket(webSocketURL);
+
+  console.log("[WS] connect to", import.meta.env.VITE_WS_URL);
 
   /**
    * WebSocket 建立成功
