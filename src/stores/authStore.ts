@@ -11,7 +11,15 @@ export type AuthUser = {
   bio?: string | null
 }
 
-function parseJwt(token: string): AuthUser {
+type JwtPayload = {
+  userId: string | number
+  name: string
+  displayName?: string
+  email?: string | null
+  exp?: number
+}
+
+function parseJwtPayload(token: string): JwtPayload {
   const parts = token.split('.')
   if (parts.length !== 3) {
     throw new Error('Invalid JWT format')
@@ -28,13 +36,26 @@ function parseJwt(token: string): AuthUser {
   const binary = atob(base64)
   const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
   const json = new TextDecoder('utf-8').decode(bytes)
-  const payload = JSON.parse(json)
+  return JSON.parse(json) as JwtPayload
+}
+
+function parseJwt(token: string): AuthUser {
+  const payload = parseJwtPayload(token)
 
   return {
     userId: String(payload.userId),
     name: payload.name,
     displayName: payload.displayName || payload.name,
     email: payload.email ?? null,
+  }
+}
+
+function getJwtExpiry(token: string): number | null {
+  try {
+    const expiry = parseJwtPayload(token).exp
+    return typeof expiry === 'number' ? expiry * 1000 : null
+  } catch {
+    return null
   }
 }
 
@@ -58,6 +79,10 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.token && !!state.user,
     userId: (state) => state.user?.userId ?? '',
     userName: (state) => state.user?.name ?? '',
+    isAccessTokenExpiring: (state) => (withinMs = 60_000) => {
+      const expiresAt = getJwtExpiry(state.token)
+      return expiresAt === null || expiresAt <= Date.now() + withinMs
+    },
   },
 
   actions: {

@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import ChatInviteView from '@/views/ChatInviteView.vue'
 import ChatView from '@/views/ChatView.vue'
+import BattleLobbyView from '@/views/BattleLobbyView.vue'
 import DeckStudioView from '@/views/DeckStudioView.vue'
 import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
 import HomeView from '@/views/HomeView.vue'
@@ -62,6 +63,12 @@ const router = createRouter({
       path: '/chat',
       name: 'chat',
       component: ChatView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/battle',
+      name: 'battle',
+      component: BattleLobbyView,
       meta: { requiresAuth: true },
     },
     {

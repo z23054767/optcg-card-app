@@ -7,7 +7,10 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
+    "battle:sync": "node scripts/sync-battle.mjs",
     "dev": "vite",
+    "cocos:preview": "node scripts/start-cocos-preview.mjs",
+    "prebuild": "npm run battle:sync",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
@@ -20,6 +23,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/vue-fontawesome": "^3.3.3",
     "@tailwindcss/vite": "^4.1.18",
+    "@z23054767/optcg-card-battle": "^0.1.6",
     "axios": "^1.13.3",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.1.18",

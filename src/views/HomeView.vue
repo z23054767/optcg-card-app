@@ -44,6 +44,14 @@
                 <span aria-hidden="true">💬</span>
                 {{ auth.isAuthenticated ? '前往聊天室' : '登入後進入聊天' }}
               </RouterLink>
+
+              <RouterLink
+                :to="battleLink"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 dark:text-cyan-200"
+              >
+                <span aria-hidden="true">⚔️</span>
+                {{ auth.isAuthenticated ? '進入線上對戰' : '登入後開始對戰' }}
+              </RouterLink>
             </div>
           </div>
 
@@ -140,6 +148,9 @@ const deckStudioLink = computed(() =>
 )
 const chatLink = computed(() =>
   auth.isAuthenticated ? '/chat' : { path: '/login', query: { redirect: '/chat' } },
+)
+const battleLink = computed(() =>
+  auth.isAuthenticated ? '/battle' : { path: '/login', query: { redirect: '/battle' } },
 )
 
 const primaryButtonClass = computed(

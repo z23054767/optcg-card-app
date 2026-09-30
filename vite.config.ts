@@ -15,16 +15,20 @@ export default defineConfig({
   server: {
     port: 3001,
     proxy: {
-      "/api": {
-        target: "http://localhost:3000",
+      '/api': {
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        ws: true
-      }
-    }
+      },
+      '/ws/battle': {
+        target: 'ws://localhost:3000',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
 })

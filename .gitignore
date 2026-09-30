@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.env
+.env.development
+.env.*.local
 .DS_Store
 dist
 dist-ssr
@@ -34,3 +37,5 @@ coverage
 
 # Vitest
 __screenshots__/
+
+/public/battle-game/
