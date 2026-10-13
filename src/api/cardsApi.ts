@@ -19,6 +19,7 @@ export interface CardRecord {
   block: string
   feature: string
   effect: string
+  trigger: string
   fileId?: number
   relatedFileIds: number[]
   isBanned: boolean

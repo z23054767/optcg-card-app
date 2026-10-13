@@ -572,6 +572,10 @@
                 <dt :class="mutedTextClass">效果</dt>
                 <dd class="mt-1 whitespace-pre-line leading-6">{{ detailCard.effect || '—' }}</dd>
               </div>
+              <div class="col-span-2">
+                <dt :class="mutedTextClass">觸發效果</dt>
+                <dd class="mt-1 whitespace-pre-line leading-6">{{ detailCard.trigger || '—' }}</dd>
+              </div>
             </dl>
           </div>
         </div>
