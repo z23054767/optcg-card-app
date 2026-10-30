@@ -6,12 +6,14 @@ export interface CreateDeckRequest {
   code: string
   name: string
   regulation: LeaderRegulation
-  leaderCid: number
-  leaderFileId: number
+  leaderCardId: string
+  leaderSeriesId: string
+  leaderImageCode: string
   cards: {
-    cid: number
+    cardId: string
     quantity: number
-    fileId: number
+    seriesId: string
+    imageCode: string
   }[]
 }
 
@@ -35,9 +37,10 @@ export interface DeckListItem {
   code: string
   name: string
   regulation: LeaderRegulation
-  leaderCid: number
   leaderCardId: string
   leaderCardName: string
+  leaderSeriesId?: string
+  leaderImageCode?: string
   leaderFileId?: number
   totalCards: number
   isLegal: boolean

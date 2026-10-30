@@ -69,7 +69,7 @@
         主牌組 {{ mainDeckCount }}
       </div>
       <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9">
-        <article v-for="entry in sortedEntries" :key="entry.card.cid" class="relative">
+        <article v-for="entry in sortedEntries" :key="entry.card.cardId" class="relative">
           <img
             :src="entry.imageUrl"
             :alt="entry.card.cardName"
@@ -162,6 +162,7 @@ import { createDeck, updateDeck } from '@/api/deckApi'
 import { resolveApiError } from '@/api/resolveApiError'
 import DeckSortDialog from '@/components/deck/DeckSortDialog.vue'
 import { usePreferencesStore } from '@/stores/preferencesStore'
+import { toDeckRequest } from '@/utils/deckRequest'
 import type { DeckDraft } from '@/types/deck'
 import { showConfirmAlert, showSuccessAlert, showWarningAlert } from '@/utils/alerts'
 import { sortDeckEntries, type DeckSortOption } from '@/utils/deckSort'
@@ -328,18 +329,7 @@ async function saveDeck(): Promise<void> {
 
   try {
     const wasEditing = persistedDeckId.value !== undefined
-    const input = {
-      code: deckCode.value,
-      name: props.draft.name,
-      regulation: props.draft.regulation,
-      leaderCid: props.draft.leader.cid,
-      leaderFileId: props.draft.leaderFileId,
-      cards: sortedEntries.value.map(({ card, quantity, fileId }) => ({
-        cid: card.cid,
-        quantity,
-        fileId,
-      })),
-    }
+    const input = toDeckRequest(props.draft, deckCode.value, sortedEntries.value)
     const saved =
       persistedDeckId.value === undefined
         ? await createDeck(input)

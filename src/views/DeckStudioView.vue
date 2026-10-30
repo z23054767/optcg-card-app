@@ -4,6 +4,8 @@
 
     <DeckBuilder v-if="isDeckBuilderOpen && selectedLeader" :leader="selectedLeader.leader"
       :leader-file-id="deckDraft?.leaderFileId ?? selectedLeader.fileId"
+      :leader-series-id="deckDraft?.leaderSeriesId ?? selectedLeader.seriesId"
+      :leader-image-code="deckDraft?.leaderImageCode ?? selectedLeader.imageCode"
       :leader-image-url="deckDraft?.leaderImageUrl ?? selectedLeader.url" :regulation="selectedRegulation!"
       :deck-id="deckDraft?.id" :deck-name="deckDraft?.name" :initial-entries="deckDraft?.entries"
       @cancel="closeDeckBuilder" @close="returnToDeckList" @confirm="confirmDeck" />
@@ -305,7 +307,7 @@
                           class="group overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 hover:border-indigo-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                           :class="[
                             infoCardClass,
-                            selectedLeader?.leader.cid === image.leader.cid
+                            selectedLeader?.leader.cardId === image.leader.cardId
                               ? 'ring-2 ring-indigo-500'
                               : '',
                           ]" @click="openLeaderDialog(image)">
@@ -322,7 +324,7 @@
                               <div class="truncate text-xs font-semibold" :class="titleClass">
                                 {{ image.cardId }}
                               </div>
-                              <span v-if="selectedLeader?.leader.cid === image.leader.cid"
+                              <span v-if="selectedLeader?.leader.cardId === image.leader.cardId"
                                 class="shrink-0 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
                                 已選擇
                               </span>
@@ -677,6 +679,8 @@ const deckImportError = ref('')
 const rotatedThroughBlock = ref<number | null>(null)
 
 interface LeaderImage {
+  seriesId: string
+  imageCode: string
   fileId: number
   url: string
   cardId: string
@@ -802,11 +806,13 @@ async function importSharedDeck(): Promise<void> {
 
 const leaderImages = computed(() =>
   leaders.value.flatMap((leader) => {
-    if (leader.fileId === undefined) return []
+    if (leader.fileId === undefined || leader.imageCode === undefined) return []
     const url = imageUrlByFileId.value.get(leader.fileId)
     if (!url) return []
     return [
       {
+        seriesId: leader.seriesId,
+        imageCode: leader.imageCode,
         fileId: leader.fileId,
         url,
         cardId: leader.cardId,
@@ -831,10 +837,9 @@ const leaderReleaseGroups = computed(() => {
 const activeLeaderVariants = computed<LeaderImage[]>(() => {
   if (!activeLeaderImage.value) return []
   const leader = activeLeaderImage.value.leader
-  return [leader.fileId, ...leader.relatedFileIds].flatMap((fileId) => {
-    if (fileId === undefined) return []
-    const url = imageUrlByFileId.value.get(fileId)
-    return url ? [{ fileId, url, cardId: leader.cardId, cardName: leader.cardName, leader }] : []
+  return leader.imageOptions.flatMap((option) => {
+    const url = imageUrlByFileId.value.get(option.fileId)
+    return url ? [{ ...option, url, cardId: leader.cardId, cardName: leader.cardName, leader }] : []
   })
 })
 
@@ -915,14 +920,14 @@ async function openDeckInBuilder(
   openBuilder = true,
 ): Promise<void> {
   const leaderFileId = deck.leader.fileId
-  if (leaderFileId === undefined) {
+  if (leaderFileId === undefined || deck.leader.imageCode === undefined) {
     throw new Error('此牌組的 Leader 圖片資料不完整。')
   }
   const entries = deck.cards.map(({ card, quantity }) => {
-    if (card.fileId === undefined) {
+    if (card.fileId === undefined || card.imageCode === undefined) {
       throw new Error(`卡片 ${card.cardId} 的圖片資料不完整。`)
     }
-    return { card, quantity, fileId: card.fileId }
+    return { card, quantity, fileId: card.fileId, seriesId: card.seriesId, imageCode: card.imageCode }
   })
   const fileIds = [leaderFileId, ...entries.map(({ fileId }) => fileId)]
   const signedUrls = await createSignedImageUrls(fileIds)
@@ -931,6 +936,8 @@ async function openDeckInBuilder(
 
   selectedRegulation.value = deck.regulation
   selectedLeader.value = {
+    seriesId: deck.leader.seriesId,
+    imageCode: deck.leader.imageCode,
     fileId: leaderFileId,
     url: leaderImageUrl,
     cardId: deck.leader.cardId,
@@ -943,10 +950,14 @@ async function openDeckInBuilder(
     name: persisted ? deck.name : '',
     regulation: deck.regulation,
     leader: deck.leader,
+    leaderSeriesId: deck.leader.seriesId,
+    leaderImageCode: deck.leader.imageCode,
     leaderFileId,
     leaderImageUrl,
-    entries: entries.map(({ card, quantity, fileId }) => ({
+    entries: entries.map(({ card, quantity, fileId, seriesId, imageCode }) => ({
       card,
+      seriesId,
+      imageCode,
       fileId,
       quantity,
       imageUrl: urlByFileId.get(fileId) ?? '',

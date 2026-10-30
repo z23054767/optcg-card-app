@@ -2,8 +2,18 @@ import { http } from '@/api/http'
 
 export type LeaderRegulation = 'standard' | 'extra' | 'sealed' | 'idea'
 
+/** 復刻卡圖片以來源系列及圖片代碼共同識別，與爬取流水號無關。 */
+export interface CardImageReference {
+  seriesId: string
+  imageCode: string
+}
+
+/** fileId 僅用於取得當前圖片簽章網址。 */
+export interface CardImageOption extends CardImageReference {
+  fileId: number
+}
+
 export interface CardRecord {
-  cid: number
   cardSpecies: string
   getInfo: string
   seriesId: string
@@ -20,6 +30,8 @@ export interface CardRecord {
   feature: string
   effect: string
   trigger: string
+  imageCode?: string
+  imageOptions: CardImageOption[]
   fileId?: number
   relatedFileIds: number[]
   isBanned: boolean

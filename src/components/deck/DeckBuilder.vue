@@ -91,7 +91,7 @@
         >
           <button
             v-for="entry in deckEntries"
-            :key="entry.card.cid"
+            :key="entry.card.cardId"
             type="button"
             class="relative rounded-xl p-1 text-left transition hover:-translate-y-0.5 hover:ring-2 hover:ring-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
             :class="selectedDeckCardClass"
@@ -298,9 +298,9 @@
         <div v-else class="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
           <article
             v-for="card in searchResults"
-            :key="card.cid"
+            :key="card.cardId"
             class="group relative overflow-hidden rounded-xl border text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:border-rose-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-            :class="[infoCardClass, deckQuantity(card.cid) ? selectedSearchCardClass : '']"
+            :class="[infoCardClass, deckQuantity(card.cardId) ? selectedSearchCardClass : '']"
           >
             <button
               type="button"
@@ -310,8 +310,8 @@
             >
               <div class="relative aspect-5/7 bg-slate-950/10">
                 <img
-                  v-if="cardImageUrlByCid.get(card.cid)"
-                  :src="cardImageUrlByCid.get(card.cid)"
+                  v-if="cardImageUrlByCardId.get(card.cardId)"
+                  :src="cardImageUrlByCardId.get(card.cardId)"
                   :alt="`${card.cardName} (${card.cardId})`"
                   class="h-full w-full object-contain transition group-hover:scale-[1.02]"
                   loading="lazy"
@@ -349,11 +349,11 @@
               </div>
             </button>
             <span
-              v-if="deckQuantity(card.cid)"
+              v-if="deckQuantity(card.cardId)"
               class="pointer-events-none absolute left-1 top-1 flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-sm font-extrabold shadow-lg ring-2"
               :class="quantityBadgeClass"
             >
-              {{ deckQuantity(card.cid) }}
+              {{ deckQuantity(card.cardId) }}
             </span>
             <button
               type="button"
@@ -753,6 +753,7 @@ import {
   type LeaderRegulation,
   type SignedImageUrl,
 } from '@/api/cardsApi'
+import { signedCardImageOptions, type SignedCardImageOption } from '@/utils/cardImages'
 import { resolveApiError } from '@/api/resolveApiError'
 import DeckSortDialog from '@/components/deck/DeckSortDialog.vue'
 import { usePreferencesStore } from '@/stores/preferencesStore'
@@ -764,6 +765,8 @@ const props = defineProps<{
   deckId?: number
   deckName?: string
   leader: LeaderCard
+  leaderSeriesId: string
+  leaderImageCode: string
   leaderFileId: number
   leaderImageUrl: string
   regulation: LeaderRegulation
@@ -783,7 +786,7 @@ const searchQuery = ref('')
 const selectedColor = ref<string | null>(null)
 const selectedType = ref<'' | 'CHARACTER' | 'EVENT' | 'STAGE'>('')
 const searchResults = ref<CardRecord[]>([])
-const cardImageUrlByCid = ref(new Map<number, string>())
+const cardImageUrlByCardId = ref(new Map<string, string>())
 const currentPage = ref(1)
 const totalResults = ref(0)
 const isLoading = ref(false)
@@ -793,6 +796,8 @@ const deckEntries = ref<DeckEntry[]>(
   (props.initialEntries ?? []).map((entry) => ({ ...entry, card: { ...entry.card } })),
 )
 const activeDeckTab = ref<'main' | 'leader'>('main')
+const currentLeaderSeriesId = ref(props.leaderSeriesId)
+const currentLeaderImageCode = ref(props.leaderImageCode)
 const currentLeaderFileId = ref(props.leaderFileId)
 const currentLeaderImageUrl = ref(props.leaderImageUrl)
 const isLeaderArtPickerOpen = ref(false)
@@ -800,8 +805,8 @@ const isSortDialogOpen = ref(false)
 const isLeaderArtLoading = ref(false)
 const leaderArtError = ref('')
 const pendingLeaderFileId = ref<number | null>(null)
-const leaderArtOptions = ref<Array<{ fileId: number; url: string }>>([])
-const activeDeckEntryCid = ref<number | null>(null)
+const leaderArtOptions = ref<SignedCardImageOption[]>([])
+const activeDeckEntryCardId = ref<string | null>(null)
 const readonlySearchCard = ref<CardRecord | null>(null)
 const editingQuantity = ref(1)
 const isCardDetailOpen = ref(false)
@@ -809,7 +814,7 @@ const isPreviewImageLoading = ref(false)
 const previewImageError = ref('')
 const previewImageUrl = ref('')
 const pendingCardFileId = ref<number | null>(null)
-const cardArtOptions = ref<Array<{ fileId: number; url: string }>>([])
+const cardArtOptions = ref<SignedCardImageOption[]>([])
 const loadSentinel = ref<HTMLElement | null>(null)
 const searchResultsScroll = ref<HTMLElement | null>(null)
 let loadObserver: IntersectionObserver | null = null
@@ -833,7 +838,7 @@ const showBannedIndicator = computed(() => props.regulation !== 'sealed')
 const isEditing = computed(() => props.deckId !== undefined)
 const canLoadMore = computed(() => currentPage.value * PAGE_SIZE < totalResults.value)
 const activeDeckEntry = computed(() =>
-  deckEntries.value.find(({ card }) => card.cid === activeDeckEntryCid.value),
+  deckEntries.value.find(({ card }) => card.cardId === activeDeckEntryCardId.value),
 )
 const detailCard = computed(() => readonlySearchCard.value ?? activeDeckEntry.value?.card ?? null)
 const detailFileId = computed(
@@ -870,13 +875,13 @@ async function fetchCards(page: number, append: boolean): Promise<void> {
     })
     const candidates = result.items.filter((card) => card.cardType !== 'LEADER')
     const nextCards = append ? [...searchResults.value, ...candidates] : candidates
-    const uniqueCards = new Map(nextCards.map((card) => [card.cid, card]))
+    const uniqueCards = new Map(nextCards.map((card) => [card.cardId, card]))
     searchResults.value = [...uniqueCards.values()]
     currentPage.value = page
     totalResults.value = result.total
 
     const unsignedCards = searchResults.value.filter(
-      (card) => card.fileId !== undefined && !cardImageUrlByCid.value.has(card.cid),
+      (card) => card.fileId !== undefined && !cardImageUrlByCardId.value.has(card.cardId),
     )
     const signedUrls = unsignedCards.length
       ? await createSignedImageUrls(
@@ -885,13 +890,13 @@ async function fetchCards(page: number, append: boolean): Promise<void> {
       : []
     registerSignedImages(signedUrls)
     const urlByFileId = new Map(signedUrls.map(({ fileId, url }) => [fileId, url]))
-    const nextImageUrls = new Map(cardImageUrlByCid.value)
+    const nextImageUrls = new Map(cardImageUrlByCardId.value)
     unsignedCards.forEach((card) => {
       if (card.fileId === undefined) return
       const url = urlByFileId.get(card.fileId)
-      if (url) nextImageUrls.set(card.cid, url)
+      if (url) nextImageUrls.set(card.cardId, url)
     })
-    cardImageUrlByCid.value = nextImageUrls
+    cardImageUrlByCardId.value = nextImageUrls
   } catch (error) {
     searchError.value = resolveApiError(error)
   } finally {
@@ -904,7 +909,7 @@ async function fetchCards(page: number, append: boolean): Promise<void> {
 }
 
 async function runSearch(): Promise<void> {
-  cardImageUrlByCid.value = new Map()
+  cardImageUrlByCardId.value = new Map()
   await fetchCards(1, false)
 }
 
@@ -919,13 +924,13 @@ async function setColor(color: string | null): Promise<void> {
   await runSearch()
 }
 
-function deckQuantity(cid: number): number {
-  return deckEntries.value.find((entry) => entry.card.cid === cid)?.quantity ?? 0
+function deckQuantity(cardId: string): number {
+  return deckEntries.value.find((entry) => entry.card.cardId === cardId)?.quantity ?? 0
 }
 
 function addCard(card: CardRecord): void {
   if (card.cardType === 'LEADER' || mainDeckCount.value >= maximumDeckCount.value) return
-  const existing = deckEntries.value.find((entry) => entry.card.cid === card.cid)
+  const existing = deckEntries.value.find((entry) => entry.card.cardId === card.cardId)
   if (existing) {
     if (
       existing.quantity < maximumCopiesForCard(existing.card) &&
@@ -936,9 +941,9 @@ function addCard(card: CardRecord): void {
     return
   }
 
-  const imageUrl = cardImageUrlByCid.value.get(card.cid)
-  if (!imageUrl || card.fileId === undefined) return
-  deckEntries.value.push({ card, fileId: card.fileId, imageUrl, quantity: 1 })
+  const imageUrl = cardImageUrlByCardId.value.get(card.cardId)
+  if (!imageUrl || card.fileId === undefined || card.imageCode === undefined) return
+  deckEntries.value.push({ card, fileId: card.fileId, seriesId: card.seriesId, imageCode: card.imageCode, imageUrl, quantity: 1 })
 }
 
 function maximumCopiesForCard(card: CardRecord): number {
@@ -951,7 +956,7 @@ function maximumCopiesForCard(card: CardRecord): number {
 async function openDeckCardDetail(entry: DeckEntry): Promise<void> {
   const requestId = ++previewRequestId
   readonlySearchCard.value = null
-  activeDeckEntryCid.value = entry.card.cid
+  activeDeckEntryCardId.value = entry.card.cardId
   editingQuantity.value = entry.quantity
   isCardDetailOpen.value = false
   isPreviewImageLoading.value = true
@@ -961,13 +966,7 @@ async function openDeckCardDetail(entry: DeckEntry): Promise<void> {
   cardArtOptions.value = []
 
   try {
-    const fileIds = Array.from(
-      new Set([
-        entry.fileId,
-        ...(entry.card.fileId === undefined ? [] : [entry.card.fileId]),
-        ...entry.card.relatedFileIds,
-      ]),
-    )
+    const fileIds = entry.card.imageOptions.map(({ fileId }) => fileId)
     const signedImages = await createSignedImageUrls(fileIds)
     if (requestId !== previewRequestId) return
     registerSignedImages(signedImages)
@@ -975,7 +974,7 @@ async function openDeckCardDetail(entry: DeckEntry): Promise<void> {
       previewImageError.value = '找不到這張卡片的圖片。'
       return
     }
-    cardArtOptions.value = signedImages.map(({ fileId, url }) => ({ fileId, url }))
+    cardArtOptions.value = signedCardImageOptions(entry.card.imageOptions, signedImages)
     const selectedArt = cardArtOptions.value.find(({ fileId }) => fileId === entry.fileId)
     if (!selectedArt) {
       previewImageError.value = '找不到目前選擇的圖片版本。'
@@ -992,12 +991,12 @@ async function openDeckCardDetail(entry: DeckEntry): Promise<void> {
 
 async function openSearchCardDetail(card: CardRecord): Promise<void> {
   const requestId = ++previewRequestId
-  activeDeckEntryCid.value = null
+  activeDeckEntryCardId.value = null
   readonlySearchCard.value = card
   isCardDetailOpen.value = false
   isPreviewImageLoading.value = true
   previewImageError.value = ''
-  previewImageUrl.value = cardImageUrlByCid.value.get(card.cid) ?? ''
+  previewImageUrl.value = cardImageUrlByCardId.value.get(card.cardId) ?? ''
   pendingCardFileId.value = card.fileId ?? null
   cardArtOptions.value = []
 
@@ -1026,7 +1025,7 @@ async function openSearchCardDetail(card: CardRecord): Promise<void> {
 
 function closeDeckCardDetail(): void {
   previewRequestId += 1
-  activeDeckEntryCid.value = null
+  activeDeckEntryCardId.value = null
   readonlySearchCard.value = null
   isCardDetailOpen.value = false
   previewImageError.value = ''
@@ -1037,19 +1036,23 @@ function closeDeckCardDetail(): void {
 
 function applyDeckCardChanges(): void {
   if (!activeDeckEntry.value || pendingCardFileId.value === null) return
+  const selectedArt = cardArtOptions.value.find(({ fileId }) => fileId === pendingCardFileId.value)
+  if (!selectedArt) return
+  activeDeckEntry.value.seriesId = selectedArt.seriesId
+  activeDeckEntry.value.imageCode = selectedArt.imageCode
   activeDeckEntry.value.quantity = editingQuantity.value
   activeDeckEntry.value.fileId = pendingCardFileId.value
   activeDeckEntry.value.imageUrl = previewImageUrl.value
   closeDeckCardDetail()
 }
 
-function selectCardArt(art: { fileId: number; url: string }): void {
+function selectCardArt(art: SignedCardImageOption): void {
   pendingCardFileId.value = art.fileId
   previewImageUrl.value = art.url
 }
 
 function removeActiveDeckCard(): void {
-  const index = deckEntries.value.findIndex(({ card }) => card.cid === activeDeckEntryCid.value)
+  const index = deckEntries.value.findIndex(({ card }) => card.cardId === activeDeckEntryCardId.value)
   if (index < 0) return
   deckEntries.value.splice(index, 1)
   closeDeckCardDetail()
@@ -1074,17 +1077,11 @@ async function openLeaderArtPicker(): Promise<void> {
   pendingLeaderFileId.value = currentLeaderFileId.value
 
   try {
-    const fileIds = Array.from(
-      new Set([
-        currentLeaderFileId.value,
-        ...(props.leader.fileId === undefined ? [] : [props.leader.fileId]),
-        ...props.leader.relatedFileIds,
-      ]),
-    )
+    const fileIds = props.leader.imageOptions.map(({ fileId }) => fileId)
     const signedImages = await createSignedImageUrls(fileIds)
     if (requestId !== leaderArtRequestId) return
     registerSignedImages(signedImages)
-    leaderArtOptions.value = signedImages.map(({ fileId, url }) => ({ fileId, url }))
+    leaderArtOptions.value = signedCardImageOptions(props.leader.imageOptions, signedImages)
     if (!leaderArtOptions.value.length) {
       leaderArtError.value = '找不到此領航卡的圖片。'
     }
@@ -1108,6 +1105,8 @@ function applyLeaderArt(): void {
     ({ fileId }) => fileId === pendingLeaderFileId.value,
   )
   if (!selectedArt) return
+  currentLeaderSeriesId.value = selectedArt.seriesId
+  currentLeaderImageCode.value = selectedArt.imageCode
   currentLeaderFileId.value = selectedArt.fileId
   currentLeaderImageUrl.value = selectedArt.url
   closeLeaderArtPicker()
@@ -1136,13 +1135,13 @@ function registerSignedImages(images: SignedImageUrl[]): void {
     const url = urlByFileId.get(entry.fileId)
     if (url) entry.imageUrl = url
   })
-  const nextSearchUrls = new Map(cardImageUrlByCid.value)
+  const nextSearchUrls = new Map(cardImageUrlByCardId.value)
   searchResults.value.forEach((card) => {
     if (card.fileId === undefined) return
     const url = urlByFileId.get(card.fileId)
-    if (url) nextSearchUrls.set(card.cid, url)
+    if (url) nextSearchUrls.set(card.cardId, url)
   })
-  cardImageUrlByCid.value = nextSearchUrls
+  cardImageUrlByCardId.value = nextSearchUrls
   cardArtOptions.value = cardArtOptions.value.map((art) => ({
     ...art,
     url: urlByFileId.get(art.fileId) ?? art.url,
@@ -1216,6 +1215,8 @@ async function confirmDeck(): Promise<void> {
     name: normalizedDeckName,
     regulation: props.regulation,
     leader: props.leader,
+    leaderSeriesId: currentLeaderSeriesId.value,
+    leaderImageCode: currentLeaderImageCode.value,
     leaderFileId: currentLeaderFileId.value,
     leaderImageUrl: currentLeaderImageUrl.value,
     entries: deckEntries.value.map((entry) => ({ ...entry, card: { ...entry.card } })),
